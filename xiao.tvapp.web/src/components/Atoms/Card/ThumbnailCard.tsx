@@ -7,17 +7,18 @@ interface CardElementProps {
   title: string;
 }
 
-export const CardElement: React.FC<CardElementProps> = ( { id, title } ) => {
+export const ThumbnailCardElement: React.FC<CardElementProps> = ( { id, title } ) => {
   const thumbnailUrl = process.env.NEXT_PUBLIC_TVER_THUMBNAIL;
   const [imageLoaded, setImageLoaded] = useState(false);
+  const type_web = id.startsWith('ep') ? 'episodes' : 'series';
   const type = id.startsWith('ep') ? 'episode' : 'series';
 
   return (
-    <Box sx={{ padding:'4px', maxWidth: 260, flex: '0 0 auto'}}>
+    <Box sx={{ padding:'0px', maxWidth: 260, flex: '0 0 auto'}}>
       <Card>
         <CardActionArea
           onClick={() => {
-            window.open(`https://tver.jp/${type}/${id}`, '_blank');
+            window.open(`https://tver.jp/${type_web}/${id}`, '_blank');
           }}>
           <Box sx={{ boxShadow: 4 , display: 'flex'}}>
             <img

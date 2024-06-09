@@ -1,7 +1,7 @@
 import React, { useState, useEffect} from 'react';
 import { platformToken } from '../../models/Token';
 import { useSessionService } from '../../hooks/SessionHook';
-import { CardElement } from '../Atoms/Card/CardElement';
+import { ItemContainer } from '../Atoms/Card/ItemContainer';
 
 export default function HomeComponent( ) {
   // #region Variable -----------------------
@@ -14,8 +14,10 @@ export default function HomeComponent( ) {
   });
   const sessionService = useSessionService();
   const episodeid = "epy7lvmdcg";
-  const episodeTitle = "９ボーダー 第8話 2人を引き裂く運命…事件当日の真相と罪の告白";
-
+  const episodeTitle = "第8話 2人を引き裂く運命…事件当日の真相と罪の告白";
+  const seriesTitle = "９ボーダー";
+  const broadcasterName = "TBS";
+  const broadcastDateLabel = "6月7日(金)放送分";
   
   // #endregion
 
@@ -54,7 +56,13 @@ export default function HomeComponent( ) {
       <p>Loading...</p>
     )} 
 
-    <CardElement id={episodeid} title={episodeTitle} ></CardElement>
+    <ItemContainer 
+      id={episodeid} 
+      episodeTitle={episodeTitle} 
+      seriesTitle={seriesTitle} 
+      broadcastDateLabel={broadcastDateLabel} 
+      broadcasterName={broadcasterName} 
+    ></ItemContainer>
     </>
   );
 }
