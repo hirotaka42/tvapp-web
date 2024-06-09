@@ -3,8 +3,34 @@ import { platformToken } from '../../models/Token';
 import { useSessionService } from '../../hooks/SessionHook';
 import { useTvHomeService } from '../../hooks/TvHomeHook';
 import { ItemContainer } from '../Atoms/Card/ItemContainer';
+import { RankingItemContainer } from '../Molecules/RankingItemContainer';
 
+interface Content {
+  type: string;
+  content: {
+    id: string;
+    version: number;
+    title: string;
+    seriesID: string;
+    endAt: number;
+    broadcastDateLabel: string;
+    isNHKContent: boolean;
+    isSubtitle: boolean;
+    ribbonID: number;
+    seriesTitle: string;
+    isAvailable: boolean;
+    broadcasterName: string;
+    productionProviderName: string;
+  };
+  rank: number;
+}
 
+interface ComponentType {
+  componentID: string;
+  type: string;
+  label: string;
+  contents: Content[];
+}
 
 export default function HomeComponent( ) {
   // #region Variable -----------------------
@@ -15,13 +41,10 @@ export default function HomeComponent( ) {
     platformUid: '',
     platformToken: '',
   });
+  const [rankingData, setRankingData] = useState<Content[]>([]);
   const sessionService = useSessionService();
   const tvHomeService = useTvHomeService();
-  const episodeid = "epy7lvmdcg";
-  const episodeTitle = "第8話 2人を引き裂く運命…事件当日の真相と罪の告白";
-  const seriesTitle = "９ボーダー";
-  const broadcasterName = "TBS";
-  const broadcastDateLabel = "6月7日(金)放送分";
+
   
   // #endregion
 
@@ -36,6 +59,14 @@ export default function HomeComponent( ) {
         if (session.platformUid && session.platformToken) {
           const data = await tvHomeService.callHome(session.platformUid, session.platformToken);
           console.log(data); // 番組情報をコンソールに出力します
+          const rankingComponents = data.result.components.filter(
+            (component: ComponentType) => component.componentID === 'ranking-drama.' && component.type === 'episodeRanking'
+          );
+          if (rankingComponents.length > 0) {
+            setRankingData(rankingComponents[0].contents);
+            console.log("A: ");
+            console.log(rankingData)
+          }
         }
       } catch (error) {
         console.error('Error fetching session:', error);
@@ -66,13 +97,18 @@ export default function HomeComponent( ) {
       <p>Loading...</p>
     )} 
 
-    <ItemContainer 
-      id={episodeid} 
-      episodeTitle={episodeTitle} 
-      seriesTitle={seriesTitle} 
-      broadcastDateLabel={broadcastDateLabel} 
-      broadcasterName={broadcasterName} 
-    ></ItemContainer>
+    <RankingItemContainer rankingData={rankingData}></RankingItemContainer>
+
+    {/* {rankingData.map((content, index) => (
+        <ItemContainer
+          key={index}
+          id={content.content.id}
+          episodeTitle={content.content.title}
+          seriesTitle={content.content.seriesTitle}
+          broadcastDateLabel={content.content.broadcastDateLabel}
+          broadcasterName={content.content.broadcasterName}
+        />
+      ))} */}
     </>
   );
 }
