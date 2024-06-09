@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="90px" height="90px" viewBox="0 0 90 90" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>PC_img_ranking_2</title>
+    <defs>
+        <path d="M57.9445153,68 L58.7538265,61.6154337 L42.1779337,61.6154337 L52.8788265,50.0153061 C54.6373299,48.0769558 56.0910927,46.3983844 57.2401148,44.9795918 C58.3891369,43.5607993 59.2234269,42.3618197 59.7429847,41.3826531 C60.8020833,39.4243197 61.3316327,37.1262755 61.3316327,34.4885204 C61.3316327,30.4319728 60.0527211,27.1747449 57.494898,24.7168367 C54.9570578,22.2389456 51.559949,21 47.3035714,21 C41.8282313,21 37.7816752,22.8784014 35.1639031,26.6352041 C33.6052296,28.8533163 32.6560374,32.2404337 32.3163265,36.7965561 L32.3163265,36.7965561 L38.8207908,36.7965561 C38.9606718,35.1179847 39.2304422,33.6742134 39.630102,32.4652423 C40.0297619,31.2562713 40.564307,30.2621173 41.2337372,29.4827806 C41.9031675,28.7034439 42.727466,28.1289328 43.7066327,27.7592474 C44.6857993,27.3895621 45.8248299,27.2047194 47.1237245,27.2047194 C48.2827381,27.2047194 49.3318452,27.3745748 50.2710459,27.7142857 C51.2102466,28.0539966 52.0045706,28.5435799 52.6540179,29.1830357 C53.3034651,29.8224915 53.80304,30.5968325 54.1527423,31.5060587 C54.5024447,32.4152849 54.6772959,33.4394133 54.6772959,34.5784439 C54.6772959,36.4368622 54.2576531,38.0355017 53.4183673,39.3743622 C52.9787415,40.073767 52.1894133,41.1028912 51.0503827,42.4617347 C49.911352,43.8205782 48.3826531,45.5491071 46.4642857,47.6473214 L46.4642857,47.6473214 L28,68 L57.9445153,68 Z" id="path-1"></path>
+        <filter x="-51.4%" y="-30.9%" width="200.9%" height="170.2%" filterUnits="objectBoundingBox" id="filter-2">
+            <feMorphology radius="0.5" operator="dilate" in="SourceAlpha" result="shadowSpreadOuter1"></feMorphology>
+            <feOffset dx="0" dy="2" in="shadowSpreadOuter1" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="5" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feComposite in="shadowBlurOuter1" in2="SourceAlpha" operator="out" result="shadowBlurOuter1"></feComposite>
+            <feColorMatrix values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1  0 0 0 1 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="PC_img_ranking_2" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="2-copy" fill-rule="nonzero">
+            <use fill="black" fill-opacity="1" filter="url(#filter-2)" xlink:href="#path-1"></use>
+            <use stroke="#FAFBFC" stroke-width="1" fill="#21ABE6" xlink:href="#path-1"></use>
+        </g>
+    </g>
+</svg>
