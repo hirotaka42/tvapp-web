@@ -1,7 +1,10 @@
 import React, { useState, useEffect} from 'react';
 import { platformToken } from '../../models/Token';
 import { useSessionService } from '../../hooks/SessionHook';
+import { useTvHomeService } from '../../hooks/TvHomeHook';
 import { ItemContainer } from '../Atoms/Card/ItemContainer';
+
+
 
 export default function HomeComponent( ) {
   // #region Variable -----------------------
@@ -13,6 +16,7 @@ export default function HomeComponent( ) {
     platformToken: '',
   });
   const sessionService = useSessionService();
+  const tvHomeService = useTvHomeService();
   const episodeid = "epy7lvmdcg";
   const episodeTitle = "第8話 2人を引き裂く運命…事件当日の真相と罪の告白";
   const seriesTitle = "９ボーダー";
@@ -27,6 +31,12 @@ export default function HomeComponent( ) {
       try {
         const session = await sessionService.getSession();
         setToken(session);
+
+        // トークンが取得できたら、TvHomeServiceを呼び出します
+        if (session.platformUid && session.platformToken) {
+          const data = await tvHomeService.callHome(session.platformUid, session.platformToken);
+          console.log(data); // 番組情報をコンソールに出力します
+        }
       } catch (error) {
         console.error('Error fetching session:', error);
       setToken({ platformUid: 'Error', platformToken: 'Error' });
@@ -34,7 +44,7 @@ export default function HomeComponent( ) {
     }
     fetchData();
 
-  }, [sessionService]);
+  }, [sessionService, tvHomeService]);
   // #endregion
 
 
