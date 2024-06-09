@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="90px" height="90px" viewBox="0 0 90 90" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>PC_img_ranking_6</title>
+    <defs>
+        <path d="M35.7142857,54.1451247 C35.7142857,59.1096322 38.9421573,62.244898 43.9860139,62.244898 C49.6350727,62.244898 53.9387755,57.9335862 53.9387755,52.3162503 C53.9387755,47.4824554 50.5090438,44.0204082 45.6674254,44.0204082 C40.2198486,44.0204082 35.7142857,48.5927779 35.7142857,54.1451247 L35.7142857,54.1451247 Z M43.3855426,38.4669075 C44.9766905,38.1333907 45.7722645,37.9999841 47.0980969,37.9999841 C54.6554908,37.9999841 59.6938776,43.266925 59.6938776,51.2668293 C59.6938776,60.600051 52.5340844,68 43.5182004,68 C35.2315614,68 29,61.7999617 29,53.5336188 C29,49.2668532 30.7238057,45.0000877 34.701303,39.6001148 L48.4902582,21 L53.3956146,24.8669202 L43.3855426,38.4669075 Z" id="path-1"></path>
+        <filter x="-83.1%" y="-50.5%" width="266.2%" height="209.0%" filterUnits="objectBoundingBox" id="filter-2">
+            <feMorphology radius="0.5" operator="dilate" in="SourceAlpha" result="shadowSpreadOuter1"></feMorphology>
+            <feOffset dx="0" dy="2" in="shadowSpreadOuter1" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="8" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feComposite in="shadowBlurOuter1" in2="SourceAlpha" operator="out" result="shadowBlurOuter1"></feComposite>
+            <feColorMatrix values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1  0 0 0 0.9 0" type="matrix" in="shadowBlurOuter1" result="shadowMatrixOuter1"></feColorMatrix>
+            <feMorphology radius="0.5" operator="dilate" in="SourceAlpha" result="shadowSpreadOuter2"></feMorphology>
+            <feOffset dx="0" dy="2" in="shadowSpreadOuter2" result="shadowOffsetOuter2"></feOffset>
+            <feGaussianBlur stdDeviation="5" in="shadowOffsetOuter2" result="shadowBlurOuter2"></feGaussianBlur>
+            <feComposite in="shadowBlurOuter2" in2="SourceAlpha" operator="out" result="shadowBlurOuter2"></feComposite>
+            <feColorMatrix values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1  0 0 0 1 0" type="matrix" in="shadowBlurOuter2" result="shadowMatrixOuter2"></feColorMatrix>
+            <feMerge>
+                <feMergeNode in="shadowMatrixOuter1"></feMergeNode>
+                <feMergeNode in="shadowMatrixOuter2"></feMergeNode>
+            </feMerge>
+        </filter>
+    </defs>
+    <g id="PC_img_ranking_6" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Fill-1">
+            <use fill="black" fill-opacity="1" filter="url(#filter-2)" xlink:href="#path-1"></use>
+            <use stroke="#FFFFFF" stroke-width="1" fill="#21ABE6" fill-rule="evenodd" xlink:href="#path-1"></use>
+        </g>
+    </g>
+</svg>
