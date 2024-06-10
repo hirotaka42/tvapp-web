@@ -2,7 +2,6 @@ import React, { useState, useEffect} from 'react';
 import { platformToken } from '../../models/Token';
 import { useSessionService } from '../../hooks/SessionHook';
 import { useTvHomeService } from '../../hooks/TvHomeHook';
-import { ItemContainer } from '../Atoms/Card/ItemContainer';
 import { RankingItemContainer } from '../Molecules/RankingItemContainer';
 
 interface Content {
@@ -41,10 +40,10 @@ export default function HomeComponent( ) {
     platformUid: '',
     platformToken: '',
   });
-  const [rankingDrama, setRankingDrama] = useState<Content[]>([]);
-  const [rankingVariety, setRankingVariety] = useState<Content[]>([]);
-  const [rankingAnime, setRankingAnime] = useState<Content[]>([]);
-  const [rankingNews, setRankingNews] = useState<Content[]>([]);
+  const [rankingDramaComponent, setRankingDramaComponent] = useState<ComponentType>({componentID: '', type: '', label: '', contents: []});
+  const [rankingVarietyComponent, setRankingVarietyComponent] = useState<ComponentType>({componentID: '', type: '', label: '', contents: []});
+  const [rankingAnimeComponent, setRankingAnimeComponent] = useState<ComponentType>({componentID: '', type: '', label: '', contents: []});
+  const [rankingNewsComponent, setRankingNewsComponent] = useState<ComponentType>({componentID: '', type: '', label: '', contents: []});
   const sessionService = useSessionService();
   const tvHomeService = useTvHomeService();
 
@@ -68,18 +67,18 @@ export default function HomeComponent( ) {
             (component: ComponentType) => component.componentID === 'ranking-drama.' && component.type === 'episodeRanking'
           );
           if (rankingComponents.length > 0) {
-            setRankingDrama(rankingComponents[0].contents);
+            setRankingDramaComponent(rankingComponents[0]);
             console.log("A: ");
-            console.log(rankingDrama)
+            console.log(rankingDramaComponent)
           }
           // ランキングバラエティのデータを取得
           const rankingVarietyComponents = data.result.components.filter(
             (component: ComponentType) => component.componentID === 'ranking-variety.' && component.type === 'episodeRanking'
           );
           if (rankingVarietyComponents.length > 0) {
-            setRankingVariety(rankingVarietyComponents[0].contents);
+            setRankingVarietyComponent(rankingVarietyComponents[0]);
             console.log("B: ");
-            console.log(rankingVariety)
+            console.log(rankingVarietyComponent)
           }
 
           // ランキングアニメのデータを取得
@@ -87,9 +86,9 @@ export default function HomeComponent( ) {
             (component: ComponentType) => component.componentID === 'ranking-anime.' && component.type === 'episodeRanking'
           );
           if (rankingAnimeComponents.length > 0) {
-            setRankingAnime(rankingAnimeComponents[0].contents);
+            setRankingAnimeComponent(rankingAnimeComponents[0]);
             console.log("C: ");
-            console.log(rankingAnime)
+            console.log(rankingAnimeComponent)
           }
 
           // ランキングニュースのデータを取得
@@ -97,9 +96,9 @@ export default function HomeComponent( ) {
             (component: ComponentType) => component.componentID === 'ranking-news.' && component.type === 'episodeRanking'
           );
           if (rankingNewsComponents.length > 0) {
-            setRankingNews(rankingNewsComponents[0].contents);
+            setRankingNewsComponent(rankingNewsComponents[0]);
             console.log("D: ");
-            console.log(rankingNews)
+            console.log(rankingNewsComponent)
           }
 
         }
@@ -123,30 +122,12 @@ export default function HomeComponent( ) {
   return (
     <>
     <h1>Home</h1>
-    {token ? (
-      <>
-        <h3>{token.platformUid}</h3>
-        <h3>{token.platformToken}</h3>
-      </>
-    ) : (
-      <p>Loading...</p>
-    )} 
 
-    <RankingItemContainer rankingData={rankingDrama}></RankingItemContainer>
-    <RankingItemContainer rankingData={rankingVariety}></RankingItemContainer>
-    <RankingItemContainer rankingData={rankingAnime}></RankingItemContainer>
-    <RankingItemContainer rankingData={rankingNews}></RankingItemContainer>
+    <RankingItemContainer rankingData={rankingDramaComponent}></RankingItemContainer>
+    <RankingItemContainer rankingData={rankingVarietyComponent}></RankingItemContainer>
+    <RankingItemContainer rankingData={rankingAnimeComponent}></RankingItemContainer>
+    <RankingItemContainer rankingData={rankingNewsComponent}></RankingItemContainer>
 
-    {/* {rankingData.map((content, index) => (
-        <ItemContainer
-          key={index}
-          id={content.content.id}
-          episodeTitle={content.content.title}
-          seriesTitle={content.content.seriesTitle}
-          broadcastDateLabel={content.content.broadcastDateLabel}
-          broadcasterName={content.content.broadcasterName}
-        />
-      ))} */}
     </>
   );
 }

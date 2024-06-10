@@ -19,13 +19,21 @@ interface Content {
       productionProviderName: string;
     };
     rank: number;
-  }
+}
 
-export const RankingItemContainer: React.FC<{ rankingData: Content[] }> = ({ rankingData }) => {
+interface ComponentType {
+  componentID: string;
+  type: string;
+  label: string;
+  contents: Content[];
+}
+
+export const RankingItemContainer: React.FC<{ rankingData: ComponentType }> = ({ rankingData }) => {
     return (
         <>
+        <h3>{rankingData.label}</h3>
         <div style={{ display: 'flex', flexDirection: 'row', overflowX: 'auto'}}>
-            {rankingData.map((content, index) => (
+            {rankingData.contents.map((content, index) => (
                 <ItemContainer
                     key={index}
                     id={content.content.id}
@@ -36,17 +44,6 @@ export const RankingItemContainer: React.FC<{ rankingData: Content[] }> = ({ ran
                 />
             ))}
         </div>
-
-        {rankingData.map((content, index) => (
-        <ItemContainer
-          key={index}
-          id={content.content.id}
-          episodeTitle={content.content.title}
-          seriesTitle={content.content.seriesTitle}
-          broadcastDateLabel={content.content.broadcastDateLabel}
-          broadcasterName={content.content.broadcasterName}
-        />
-      ))} 
       </>
     );
 }
