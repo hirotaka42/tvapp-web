@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardActionArea, Box } from '@mui/material';
 import EpisodeImg from '../../../../public/images/PC_img_episode_noimage_small.svg';
-import { ItemPageComponent } from '../../Templates/ItemPageComponent';
 
 interface Content {
   type: string;
@@ -34,7 +33,7 @@ export const ThumbnailCardElement: React.FC<{ item: Content }> = ({ item }) => {
       <Card>
         <CardActionArea
           onClick={() => {
-            window.open(`/ItemPage`, '_blank');
+            window.open(`/${type_web}/${item.content.id}`, '_blank');
             //window.open(`https://tver.jp/${type_web}/${item.content.id}`, '_blank');
           }}>
           <Box sx={{ boxShadow: 4, width: 260, height: 146, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
