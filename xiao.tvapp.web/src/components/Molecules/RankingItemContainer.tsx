@@ -36,11 +36,7 @@ export const RankingItemContainer: React.FC<{ rankingData: ComponentType }> = ({
             {rankingData.contents.map((content, index) => (
                 <ItemContainer
                     key={index}
-                    id={content.content.id}
-                    episodeTitle={content.content.title}
-                    seriesTitle={content.content.seriesTitle}
-                    broadcastDateLabel={content.content.broadcastDateLabel}
-                    broadcasterName={content.content.broadcasterName}
+                    item={content}
                 />
             ))}
         </div>

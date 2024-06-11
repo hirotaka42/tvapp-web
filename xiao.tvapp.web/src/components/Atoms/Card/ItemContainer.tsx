@@ -2,19 +2,31 @@ import React from 'react';
 import { CardContent, Typography } from '@mui/material';
 import { ThumbnailCardElement } from './ThumbnailCard';
 
-interface ItemContainerProps {
-    seriesTitle: string;
-    episodeTitle: string;
-    broadcasterName: string;
-    broadcastDateLabel: string;
+interface Content {
+  type: string;
+  content: {
     id: string;
+    version: number;
+    title: string;
+    seriesID: string;
+    endAt: number;
+    broadcastDateLabel: string;
+    isNHKContent: boolean;
+    isSubtitle: boolean;
+    ribbonID: number;
+    seriesTitle: string;
+    isAvailable: boolean;
+    broadcasterName: string;
+    productionProviderName: string;
+  };
+  rank: number;
 }
 
-export const ItemContainer: React.FC<ItemContainerProps> = ({ seriesTitle, episodeTitle, broadcasterName,broadcastDateLabel, id }) => {
+export const ItemContainer: React.FC<{ item:Content }> = ({ item }) => {
   return (
     <>
     <div style={{ display: 'inline-block', width: 'auto', maxWidth: 260 }}>
-      <ThumbnailCardElement id={id} title={episodeTitle} />
+      <ThumbnailCardElement item={item} />
       <CardContent 
         sx={{ 
           marginTop: 1,
@@ -39,7 +51,7 @@ export const ItemContainer: React.FC<ItemContainerProps> = ({ seriesTitle, episo
             marginBottom: '0.5px',
           }}
         >
-          {seriesTitle}
+          {item.content.seriesTitle}
         </Typography>
         <Typography variant="body2" color="text.secondary"
           sx={{
@@ -52,7 +64,7 @@ export const ItemContainer: React.FC<ItemContainerProps> = ({ seriesTitle, episo
             marginBottom: '0.5px',
           }}
         >
-          {episodeTitle}
+          {item.content.title}
         </Typography>
         <Typography 
             variant="body2" color="text.secondary"
@@ -66,7 +78,7 @@ export const ItemContainer: React.FC<ItemContainerProps> = ({ seriesTitle, episo
                 backgroundRepeat: 'no-repeat',
             }}
         >
-            {broadcasterName} {broadcastDateLabel}
+            {item.content.broadcasterName} {item.content.broadcastDateLabel}
         </Typography>
       </CardContent>
     </div>
