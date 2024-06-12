@@ -116,7 +116,11 @@ export const EpisodeItemPageComponent: React.FC<{ episodeId: string }> = ({ epis
     return (
       <>
       <h1>Response Page: {episodeId}</h1>
-      <p>{episodeInfo.title}</p>
+      <p>{episodeInfo.title}<br></br>
+        {episodeInfo.description}<br></br>
+        {episodeInfo.broadcastProviderLabel} {episodeInfo.broadcastDateLabel}</p>
+
+      <p>https://tver.jp/episodes/{episodeInfo.id}</p>
   
       </>
     );
