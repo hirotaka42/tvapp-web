@@ -1,4 +1,7 @@
 import type { NextPage, GetServerSideProps } from 'next';
+import { CallEpisodeService } from '../../services/implementation/CallEpisodeService';
+import { CallEpisodeServiceContext } from '../../contexts/CallEpisodeContext';
+import { EpisodeItemPageComponent } from '../../components/Templates/EpisodeItemPageComponent';
 
 interface EpisodePageProps {
   id: string;
@@ -22,7 +25,10 @@ export const getServerSideProps: GetServerSideProps<EpisodePageProps> = async (c
 const EpisodePage: NextPage<EpisodePageProps> = ({ id }) => {
   return (
     <>
-    <h1>Episode Page: {id}</h1>
+    <CallEpisodeServiceContext.Provider value={CallEpisodeService}>
+      <h1>Episode Page: {id}</h1>
+      <EpisodeItemPageComponent episodeId={id} />
+    </CallEpisodeServiceContext.Provider>
     </>
   )
 }
