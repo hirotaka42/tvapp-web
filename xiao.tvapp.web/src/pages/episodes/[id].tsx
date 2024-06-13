@@ -26,7 +26,6 @@ const EpisodePage: NextPage<EpisodePageProps> = ({ id }) => {
   return (
     <>
     <CallEpisodeServiceContext.Provider value={CallEpisodeService}>
-      <h1>Episode Page: {id}</h1>
       <EpisodeItemPageComponent episodeId={id} />
     </CallEpisodeServiceContext.Provider>
     </>
