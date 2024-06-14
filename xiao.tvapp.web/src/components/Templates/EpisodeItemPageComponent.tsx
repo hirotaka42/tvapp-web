@@ -1,6 +1,8 @@
 import React, { useState, useEffect} from 'react';
 import { useCallEpisodeService } from '../../hooks/CallEpisodeHook';
 import { SeriesPlayerLayoutBody } from '../Organisms/SeriesPlayerLayoutBody';
+import { StreamingServiceContext } from '../../contexts/StreamingContext';
+import { StreamingService } from '../../services/implementation/StreamingService';
 
 interface Video {
   videoRefID: string;
@@ -116,7 +118,9 @@ export const EpisodeItemPageComponent: React.FC<{ episodeId: string }> = ({ epis
   
     return (
       <>
-      <SeriesPlayerLayoutBody episodeInfo={episodeInfo} />
+        <StreamingServiceContext.Provider value={StreamingService}>
+          <SeriesPlayerLayoutBody episodeInfo={episodeInfo} />
+        </StreamingServiceContext.Provider>
       </>
     );
 }

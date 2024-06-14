@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-export class CallEpisodeService {
-  static async callEpisode(episodeId: string) {
-    const url = `http://localhost:5231/api/TVapp/content/episode/${episodeId}`;
+export class StreamingService {
+  static async getVideoUrl(episodeId: string) {
+    const url = `http://localhost:5231/api/TVapp/streaming/${episodeId}`;
     const response = await axios.get(url, {
       headers: {
         'accept': '*/*'
