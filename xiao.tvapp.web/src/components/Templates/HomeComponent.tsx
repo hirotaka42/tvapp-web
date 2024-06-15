@@ -46,6 +46,8 @@ export default function HomeComponent( ) {
   const [rankingNewsComponent, setRankingNewsComponent] = useState<ComponentType>({componentID: '', type: '', label: '', contents: []});
   const sessionService = useSessionService();
   const tvHomeService = useTvHomeService();
+  const thumbnailUrl = process.env.NEXT_PUBLIC_IMAG_THUMBNAIL;
+  const test = process.env.REACT_APP_BFF_SERVER;
 
   
   // #endregion
@@ -121,8 +123,10 @@ export default function HomeComponent( ) {
 
   return (
     <>
-    <h1>Home ip:{process.env.BFF_SERVER}</h1>
-
+    <h1>Home</h1>
+    <div>env: {process.env.BFF_SERVER|| "IPを取得できませんでした"}</div>
+    <div>host: {test|| "IPを取得できませんでした"}</div>
+    <div>{thumbnailUrl|| "取得できませんでした"}</div>
     <RankingItemContainer rankingData={rankingDramaComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingVarietyComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingAnimeComponent}></RankingItemContainer>

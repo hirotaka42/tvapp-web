@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export class CallEpisodeService {
   static async callEpisode(episodeId: string) {
-    const host = process.env.BFF_SERVER || 'localhost';
+    const host = process.env.BFF_SERVER || '192.168.10.11';
     const url = `http://${host}:5231/api/TVapp/content/episode/${episodeId}`;
     const response = await axios.get(url, {
       headers: {
