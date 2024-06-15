@@ -23,7 +23,7 @@ interface Content {
 }
 
 export const ThumbnailCardElement: React.FC<{ item: Content }> = ({ item }) => {
-  const thumbnailUrl = process.env.NEXT_PUBLIC_TVER_THUMBNAIL;
+  const thumbnailUrl = process.env.NEXT_PUBLIC_IMAG_THUMBNAIL;
   const [imageLoaded, setImageLoaded] = useState(false);
   const type_web = item.content.id.startsWith('ep') ? 'episodes' : 'series';
   const type = item.content.id.startsWith('ep') ? 'episode' : 'series';
@@ -34,7 +34,6 @@ export const ThumbnailCardElement: React.FC<{ item: Content }> = ({ item }) => {
         <CardActionArea
           onClick={() => {
             window.open(`/${type_web}/${item.content.id}`, '_blank');
-            //window.open(`https://tver.jp/${type_web}/${item.content.id}`, '_blank');
           }}>
           <Box sx={{ boxShadow: 4, width: 260, height: 146, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img

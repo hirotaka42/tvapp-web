@@ -1,0 +1,8 @@
+services:
+  tvapp-bff:
+    image: tvapp-web
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "3000:3000"

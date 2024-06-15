@@ -8,7 +8,10 @@ RUN cd xiao.tvapp.web && npm install --force
 # アプリケーションのソースをバンドルする
 COPY xiao.tvapp.web ./xiao.tvapp.web
 
+# アプリケーションをビルドする
+RUN cd xiao.tvapp.web && npm run build
+
 # ポートを開放する
 EXPOSE 3000
 
-CMD [ "npm", "--prefix", "xiao.tvapp.web", "run", "dev" ]
+CMD [ "npm", "--prefix", "xiao.tvapp.web", "run", "start", "--", "-H", "0.0.0.0"]
