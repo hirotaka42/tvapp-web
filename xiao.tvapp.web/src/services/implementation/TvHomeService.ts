@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export class TvHomeService {
   static async callHome(platformUid: string, platformToken: string) {
-    const host = 'tvapp-bff';
+    const host = process.env.NEXT_PUBLIC_IP;
     const response = await axios.get(`http://${host}:5231/api/TVapp/service/callHome`, {
       params: {
         platformUid: platformUid,
