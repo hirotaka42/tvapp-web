@@ -1,10 +1,38 @@
 services:
   tvapp-bff:
+    image: tvapp-bff
+    build:
+      context: ./tvapp-bff
+      dockerfile: Dockerfile.bff
+    ports:
+      - "5231:5231"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5231
+    networks:
+      - my-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.00'
+          memory: 700M
+        reservations:
+          cpus: '0.3'
+          memory: 500M
+
+  tvapp-web:
     image: tvapp-web
     build:
       context: .
       dockerfile: Dockerfile.web
     ports:
       - "3000:3000"
-    environment:
-      - BFF_SERVER=host.docker.internal
+    depends_on:
+      - tvapp-bff
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    driver: bridge
+

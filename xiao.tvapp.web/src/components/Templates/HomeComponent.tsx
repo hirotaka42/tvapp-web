@@ -47,7 +47,7 @@ export default function HomeComponent( ) {
   const sessionService = useSessionService();
   const tvHomeService = useTvHomeService();
   const thumbnailUrl = process.env.NEXT_PUBLIC_IMAG_THUMBNAIL;
-  const test = process.env.REACT_APP_BFF_SERVER;
+  const test = process.env.NEXT_PUBLIC_BFF_SERVER;
 
   
   // #endregion
@@ -124,7 +124,7 @@ export default function HomeComponent( ) {
   return (
     <>
     <h1>Home</h1>
-    <div>env: {process.env.BFF_SERVER|| "IPを取得できませんでした"}</div>
+    <div>env: {process.env.NEXT_PUBLIC_BFF_SERVER|| "IPを取得できませんでした"}</div>
     <div>host: {test|| "IPを取得できませんでした"}</div>
     <div>{thumbnailUrl|| "取得できませんでした"}</div>
     <RankingItemContainer rankingData={rankingDramaComponent}></RankingItemContainer>

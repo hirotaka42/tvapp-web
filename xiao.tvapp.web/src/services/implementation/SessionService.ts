@@ -4,7 +4,7 @@ import { platformToken } from '../../models/Token';
 
 export class SessionService implements ISessionService {
     async getSession(): Promise<platformToken> {
-      const host = process.env.BFF_SERVER || '192.168.10.11';
+      const host = 'tvapp-bff';
       const response = await fetch(`http://${host}:5231/api/TVapp/session`, {
         method: 'POST',
         headers: {
