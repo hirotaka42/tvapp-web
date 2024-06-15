@@ -2,7 +2,8 @@ import axios from 'axios';
 
 export class StreamingService {
   static async getVideoUrl(episodeId: string) {
-    const url = `http://localhost:5231/api/TVapp/streaming/${episodeId}`;
+    const host = process.env.BFF_SERVER || 'localhost';
+    const url = `http://${host}:5231/api/TVapp/streaming/${episodeId}`;
     const response = await axios.get(url, {
       headers: {
         'accept': '*/*'

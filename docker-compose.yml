@@ -6,3 +6,5 @@ services:
       dockerfile: Dockerfile.web
     ports:
       - "3000:3000"
+    environment:
+      - BFF_SERVER=host.docker.internal

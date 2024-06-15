@@ -121,7 +121,7 @@ export default function HomeComponent( ) {
 
   return (
     <>
-    <h1>Home</h1>
+    <h1>Home ip:{process.env.BFF_SERVER}</h1>
 
     <RankingItemContainer rankingData={rankingDramaComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingVarietyComponent}></RankingItemContainer>

@@ -2,7 +2,8 @@ import axios from 'axios';
 
 export class CallEpisodeService {
   static async callEpisode(episodeId: string) {
-    const url = `http://localhost:5231/api/TVapp/content/episode/${episodeId}`;
+    const host = process.env.BFF_SERVER || 'localhost';
+    const url = `http://${host}:5231/api/TVapp/content/episode/${episodeId}`;
     const response = await axios.get(url, {
       headers: {
         'accept': '*/*'
