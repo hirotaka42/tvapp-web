@@ -34,6 +34,7 @@ git clone https://github.com/hirotaka42/tvapp-bff.git
 ```
 NEXT_PUBLIC_IMAG_LOGO='URL'
 NEXT_PUBLIC_IMAG_THUMBNAIL='URL'
+NEXT_PUBLIC_IP='192.168.10.XX'
 ```
 
 ## 使い方 (Docker-Compose)
