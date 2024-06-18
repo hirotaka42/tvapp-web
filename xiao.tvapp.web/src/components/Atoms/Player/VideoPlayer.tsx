@@ -10,7 +10,7 @@ export const VideoPlayer: React.FC<{ url: string }> = ({ url }) => {
 
   return (
     <div className='player-wrapper'>
-      {clientSide && (
+      {clientSide ? (
         <ReactPlayer
           className='react-player'
           url={url}
@@ -18,6 +18,10 @@ export const VideoPlayer: React.FC<{ url: string }> = ({ url }) => {
           width='100%'
           height='100%'
         />
+      ) : (
+        <div className="loading-placeholder">
+          <p>読み込み中...</p>
+        </div>
       )}
     </div>
   );

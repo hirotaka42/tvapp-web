@@ -78,15 +78,33 @@ export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse }> 
   // #endregion
   return (
       <>
-      <VideoPlayer url={videoUrl} />
-      <p>{episodeInfo.share.text.replace('\n#TVer', '')}</p>
-      <h3>{episodeInfo.title}</h3>
-      <p>
-          {episodeInfo.broadcastProviderLabel}<br></br>
-          {episodeInfo.broadcastDateLabel}<br></br></p>
-          {episodeInfo.description}<br></br>
+      <div style={{ 
+        width: '90vw', // 横幅の90%
+        height: 'calc(90vw * 9 / 16)', // 16:9のアスペクト比を保つ
+        position: 'relative', 
+        margin: 'auto' 
+      }}>
+        <VideoPlayer url={videoUrl} />
+      </div>
+      
+      <div style={
+        {
+          width: '90vw',
+          margin: 'auto',
+          marginTop: '20px',
+          textAlign: 'left'
+        }
+      }>
+        <p>{episodeInfo.share.text.replace('\n#TVer', '')}</p>
+        <h3>{episodeInfo.title}</h3>
+        <p>
+            {episodeInfo.broadcastProviderLabel}<br></br>
+            {episodeInfo.broadcastDateLabel}<br></br></p>
+            {episodeInfo.description}<br></br>
 
-      <p>https://tver.jp/episodes/{episodeInfo.id}</p>
+        <p>https://tver.jp/episodes/{episodeInfo.id}</p>
+      </div>
+      
       </>
   );
 }
