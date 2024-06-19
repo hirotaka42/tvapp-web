@@ -79,8 +79,8 @@ export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse }> 
   return (
       <>
       <div style={{ 
-        width: '90vw', // 横幅の90%
-        height: 'calc(90vw * 9 / 16)', // 16:9のアスペクト比を保つ
+        width: '100vw', // 横幅の90%
+        height: 'calc(100vw * 9 / 16)', // 16:9のアスペクト比を保つ
         position: 'relative', 
         margin: 'auto' 
       }}>
@@ -89,7 +89,7 @@ export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse }> 
       
       <div style={
         {
-          width: '90vw',
+          width: '95vw',
           margin: 'auto',
           marginTop: '20px',
           textAlign: 'left'
