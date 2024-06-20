@@ -3,7 +3,7 @@ import axios from 'axios';
 export class StreamingService {
   static async getVideoUrl(episodeId: string) {
     const host = process.env.NEXT_PUBLIC_IP;
-    const url = `http://${host}:5231/api/TVapp/streaming/${episodeId}`;
+    const url = `http://${host}:5231/api/StreamingUrls/episode/${episodeId}`;
     const response = await axios.get(url, {
       headers: {
         'accept': '*/*'
