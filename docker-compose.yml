@@ -9,16 +9,48 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5231
+    depends_on:
+      - mysql
+    restart: always
+    logging:
+        driver: json-file
+        options:
+            max-file: "1"
+            max-size: 10m
     networks:
       - my-network
-    deploy:
-      resources:
-        limits:
-          cpus: '2.00'
-          memory: 700M
-        reservations:
-          cpus: '0.3'
-          memory: 500M
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 5230:8080
+    depends_on:
+      - mysql
+    networks:
+      - my-network
+
+  mysql:
+    image: mariadb:10.5
+    # image: mysql:8.0 # 囲み文字を使用する場合
+    volumes:
+        - mysql-db:/var/lib/mysql
+    environment:
+        MYSQL_ROOT_PASSWORD: root
+        MYSQL_DATABASE: xiaobff
+        MYSQL_USER: xiaobff
+        MYSQL_PASSWORD: xiaobff
+        TZ: "Asia/Tokyo"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --performance-schema=false --expire_logs_days=1 # for mariadb
+    # command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_as_ci --performance-schema=false --expire_logs_days=1 --default-authentication-plugin=mysql_native_password # for myql
+    restart: always
+    logging:
+        options:
+            max-size: "10m"
+            max-file: "3"
+    networks:
+      - my-network
+    
 
   tvapp-web:
     image: tvapp-web
@@ -31,6 +63,9 @@ services:
       - tvapp-bff
     networks:
       - my-network
+
+volumes:
+    mysql-db:
 
 networks:
   my-network:
