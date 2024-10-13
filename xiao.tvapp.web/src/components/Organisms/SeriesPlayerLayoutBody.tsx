@@ -95,7 +95,7 @@ export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse, ep
           textAlign: 'left'
         }
       }>
-        {/* <p>{episodeInfo.share.text.replace('\n#TVer', '')}</p> */}
+        <p>{episodeInfo.share.text.replace('\n#TVer', '')}</p>
         <h3>{episodeInfo.title}</h3>
         <p>
             {episodeInfo.broadcastProviderLabel}<br></br>

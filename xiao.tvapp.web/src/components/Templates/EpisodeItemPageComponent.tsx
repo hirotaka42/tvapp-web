@@ -98,8 +98,7 @@ export const EpisodeItemPageComponent: React.FC<{ episodeId: string }> = ({ epis
       const fetchData = async () => {
         try {
           const response = await callEpisodeService.callEpisode(episodeId);
-          setEpisodeInfo(response);
-          console.log(response);
+          setEpisodeInfo(response.data);
         } catch (error) {
           console.error(error);
         }
