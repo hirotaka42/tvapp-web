@@ -5,7 +5,7 @@ import { platformToken } from '../../models/Token';
 export class SessionService implements ISessionService {
     async getSession(): Promise<platformToken> {
       const host = process.env.NEXT_PUBLIC_IP;
-      const response = await fetch(`http://${host}:5231/api/TVapp/session`, {
+      const response = await fetch(`api/session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
