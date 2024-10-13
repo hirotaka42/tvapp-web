@@ -48,7 +48,7 @@ interface Video {
     svod: SVOD[];
   }
 
-export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse }> = ({ episodeInfo }) => {
+export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse, episodeId: string }> = ({ episodeInfo, episodeId }) => {
   // #region Variable -----------------------
   const streamingService = useStreamingService();
   // #endregion
@@ -61,8 +61,8 @@ export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse }> 
   // #region React Event -----------------------
   useEffect(() => {
     const fetchUrl = async () => {
-      if (episodeInfo && episodeInfo.id) {
-        const url = await streamingService.getVideoUrl(episodeInfo.id);
+      if (episodeId) {
+        const url = await streamingService.getVideoUrl(episodeId);
         setVideoUrl(url);
       }
     };

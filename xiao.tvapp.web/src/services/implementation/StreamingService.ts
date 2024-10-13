@@ -2,18 +2,15 @@ import axios from 'axios';
 
 export class StreamingService {
   static async getVideoUrl(episodeId: string) {
-    const host = process.env.NEXT_PUBLIC_IP;
-    const url = `api/callstreaminglink?episode=${episodeId}`;
-    const response = await axios.get(url, {
-      headers: {
-        'accept': '*/*'
-      }
-    });
+    const url = `../api/callstreaminglink?episodeId=${episodeId}`;
+    const response = await axios.get(url);
+    //console.log('api/callstreaminglink?episodeId=' + episodeId);
+    console.log('response: ' + response);
 
     if (!response) {
       throw new Error('Network response was not ok');
     }
     console.log(response.data);
-    return response.data;
+    return response.data.video_url;
   }
 }

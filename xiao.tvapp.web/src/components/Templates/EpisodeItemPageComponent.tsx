@@ -119,7 +119,7 @@ export const EpisodeItemPageComponent: React.FC<{ episodeId: string }> = ({ epis
     return (
       <>
         <StreamingServiceContext.Provider value={StreamingService}>
-          <SeriesPlayerLayoutBody episodeInfo={episodeInfo} />
+          <SeriesPlayerLayoutBody episodeInfo={episodeInfo} episodeId={episodeId}/>
         </StreamingServiceContext.Provider>
       </>
     );
