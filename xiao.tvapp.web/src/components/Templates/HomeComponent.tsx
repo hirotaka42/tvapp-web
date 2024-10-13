@@ -1,5 +1,5 @@
 import React, { useState, useEffect} from 'react';
-import { platformToken } from '../../models/Token';
+import { platformToken } from '../../types/Token';
 import { useSessionService } from '../../hooks/SessionHook';
 import { useTvHomeService } from '../../hooks/TvHomeHook';
 import { RankingItemContainer } from '../Molecules/RankingItemContainer';
@@ -70,8 +70,6 @@ export default function HomeComponent( ) {
           );
           if (rankingComponents.length > 0) {
             setRankingDramaComponent(rankingComponents[0]);
-            console.log("A: ");
-            console.log(rankingDramaComponent)
           }
           // ランキングバラエティのデータを取得
           const rankingVarietyComponents = data.result.components.filter(
@@ -79,8 +77,6 @@ export default function HomeComponent( ) {
           );
           if (rankingVarietyComponents.length > 0) {
             setRankingVarietyComponent(rankingVarietyComponents[0]);
-            console.log("B: ");
-            console.log(rankingVarietyComponent)
           }
 
           // ランキングアニメのデータを取得
@@ -89,8 +85,6 @@ export default function HomeComponent( ) {
           );
           if (rankingAnimeComponents.length > 0) {
             setRankingAnimeComponent(rankingAnimeComponents[0]);
-            console.log("C: ");
-            console.log(rankingAnimeComponent)
           }
 
           // ランキングニュースのデータを取得
@@ -99,8 +93,6 @@ export default function HomeComponent( ) {
           );
           if (rankingNewsComponents.length > 0) {
             setRankingNewsComponent(rankingNewsComponents[0]);
-            console.log("D: ");
-            console.log(rankingNewsComponent)
           }
 
         }
@@ -124,9 +116,6 @@ export default function HomeComponent( ) {
   return (
     <>
     <h1>Home</h1>
-    <div>env: {process.env.NEXT_PUBLIC_BFF_SERVER|| "IPを取得できませんでした"}</div>
-    <div>host: {test|| "IPを取得できませんでした"}</div>
-    <div>{thumbnailUrl|| "取得できませんでした"}</div>
     <RankingItemContainer rankingData={rankingDramaComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingVarietyComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingAnimeComponent}></RankingItemContainer>

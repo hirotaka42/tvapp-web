@@ -1,11 +1,10 @@
 
 import { ISessionService } from '../ISessionService';
-import { platformToken } from '../../models/Token';
+import { platformToken } from '../../types/Token';
 
 export class SessionService implements ISessionService {
     async getSession(): Promise<platformToken> {
-      const host = process.env.NEXT_PUBLIC_IP;
-      const response = await fetch(`api/session`, {
+      const response = await fetch(`/api/session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -18,7 +18,7 @@ export default async function handler(
   if (
     typeof episodeId !== 'string' || episodeId.trim() === ''
   ) {
-    return res.status(400).json({ error: 'episodeId are required' });
+    return res.status(400).json({ error: 'episodeId が必須です。' });
   }
 
   try {

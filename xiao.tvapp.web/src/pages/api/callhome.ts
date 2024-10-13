@@ -17,7 +17,7 @@ export default async function handler(
     typeof platformUid !== 'string' || platformUid.trim() === '' ||
     typeof platformToken !== 'string' || platformToken.trim() === ''
   ) {
-    return res.status(400).json({ error: 'platformUid and platformToken are required' });
+    return res.status(400).json({ error: 'platformUid, platformToken が必須です。' });
   }
 
   try {

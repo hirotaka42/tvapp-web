@@ -1,6 +1,4 @@
-
-export interface ContentObject {
-    type: string
+export interface ContentData {
     content: {
       id: string;
       version: number;
@@ -15,7 +13,5 @@ export interface ContentObject {
       isAvailable: boolean;
       broadcasterName: string;
       productionProviderName: string;
-    },
-    isLater: boolean,
-    score: number  
+    }
 }

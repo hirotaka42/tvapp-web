@@ -1,5 +1,5 @@
 import { createContext, Dispatch, SetStateAction } from 'react';
-import { platformToken } from '../models/Token'
+import { platformToken } from '../types/Token'
 
 type TokenContextType = {
   platformToken: platformToken | null;

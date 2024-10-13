@@ -14,7 +14,7 @@ export default async function handler(
   const { genre } = req.query;
 
   if (typeof genre !== 'string' || genre.trim() === '') {
-    return res.status(400).json({ error: 'Genre is required' });
+    return res.status(400).json({ error: 'Genre が必須です。' });
   }
 
   try {
