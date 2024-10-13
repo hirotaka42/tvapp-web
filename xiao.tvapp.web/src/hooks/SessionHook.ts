@@ -1,11 +1,10 @@
-// useSessionService.ts
 import { useContext } from 'react';
 import { SessionServiceContext } from '../contexts/SessionContext';
 
 export function useSessionService() {
   const sessionService = useContext(SessionServiceContext);
   if (!sessionService) {
-    throw new Error('useSessionService must be used within a SessionServiceContext.Provider');
+    throw new Error('`useSessionService` を使用するコンポーネントが `SessionServiceContext.Provider` でラップされていることを確認してください。');
   }
   return sessionService;
 }

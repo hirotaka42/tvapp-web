@@ -4,7 +4,7 @@ import { TvHomeServiceContext } from '../contexts/TvHomeContext';
 export function useTvHomeService() {
   const tvHomeService = useContext(TvHomeServiceContext);
   if (!tvHomeService) {
-    throw new Error('useTvHomeService must be used within a TvHomeServiceContext.Provider');
+    throw new Error('`useTvHomeService` を使用するコンポーネントが `TvHomeServiceContext.Provider` でラップされていることを確認してください。');
   }
   return tvHomeService;
 }
