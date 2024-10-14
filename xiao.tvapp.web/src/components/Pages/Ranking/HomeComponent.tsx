@@ -42,7 +42,21 @@ export default function HomeComponent( ) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('fetching session');
+        const cachedData = localStorage.getItem('rankingData');
+        const currentTime = new Date().getTime();
+        
+        // 15分以内のキャッシュがある場合、キャッシュデータを使用
+        if (cachedData) {
+          const parsedData = JSON.parse(cachedData);
+          if (currentTime - parsedData.timestamp < 15 * 60 * 1000) {
+            setToken(parsedData.token);
+            setRankingDramaComponent(parsedData.rankingDramaComponent);
+            setRankingVarietyComponent(parsedData.rankingVarietyComponent);
+            setRankingAnimeComponent(parsedData.rankingAnimeComponent);
+            setRankingNewsComponent(parsedData.rankingNewsComponent);
+            return;
+          }
+        }
         const session = await sessionService.getSession();
         setToken(session);
 
@@ -52,11 +66,11 @@ export default function HomeComponent( ) {
           console.log(data); 
 
           // ランキングドラマのデータを取得
-          const rankingComponents = data.result.components.filter(
+          const rankingDramaComponents = data.result.components.filter(
             (component: ComponentType) => component.componentID === 'ranking-drama.' && component.type === 'episodeRanking'
           );
-          if (rankingComponents.length > 0) {
-            setRankingDramaComponent(rankingComponents[0]);
+          if (rankingDramaComponents.length > 0) {
+            setRankingDramaComponent(rankingDramaComponents[0]);
           }
           // ランキングバラエティのデータを取得
           const rankingVarietyComponents = data.result.components.filter(
@@ -82,6 +96,16 @@ export default function HomeComponent( ) {
             setRankingNewsComponent(rankingNewsComponents[0]);
           }
 
+          // データをキャッシュに保存
+          localStorage.setItem('rankingData', JSON.stringify({
+            token: session,
+            rankingDramaComponent: rankingDramaComponents[0],
+            rankingVarietyComponent: rankingVarietyComponents[0],
+            rankingAnimeComponent: rankingAnimeComponents[0],
+            rankingNewsComponent: rankingNewsComponents[0],
+            timestamp: currentTime,
+          }));
+
         }
       } catch (error) {
         console.error('Error fetching session:', error);
@@ -89,7 +113,6 @@ export default function HomeComponent( ) {
       }
     }
     fetchData();
-
   }, []);
   // #endregion
 
