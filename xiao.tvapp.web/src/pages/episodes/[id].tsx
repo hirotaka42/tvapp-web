@@ -1,7 +1,7 @@
 import type { NextPage, GetServerSideProps } from 'next';
-import { CallEpisodeService } from '@/../src/services/implementation/CallEpisodeService';
-import { CallEpisodeServiceContext } from '@/../src/contexts/CallEpisodeContext';
-import { EpisodeItemPageComponent } from '@/../src/components/Templates/EpisodeItemPageComponent';
+import { CallEpisodeService } from '@/services/implementation/CallEpisodeService';
+import { CallEpisodeServiceContext } from '@/contexts/CallEpisodeContext';
+import { EpisodeItemPageComponent } from '@/components/Templates/EpisodeItemPageComponent';
 
 interface EpisodePageProps {
   id: string;

@@ -1,9 +1,9 @@
 import React, { useState, useEffect} from 'react';
-import { sessionToken } from '@/../src/types/SessionToken';
-import { useSessionService } from '@/../src/hooks/SessionHook';
-import { useTvHomeService } from '@/../src/hooks/TvHomeHook';
-import { RankingItemContainer } from '@/../src/components/Molecules/RankingItemContainer';
-import { ContentData } from '@/../src/types/ContentData';
+import { sessionToken } from '@/types/SessionToken';
+import { useSessionService } from '@/hooks/SessionHook';
+import { useTvHomeService } from '@/hooks/TvHomeHook';
+import { RankingItemContainer } from '@/components/Molecules/RankingItemContainer';
+import { ContentData } from '@/types/ContentData';
 
 interface Content {
   type: string;

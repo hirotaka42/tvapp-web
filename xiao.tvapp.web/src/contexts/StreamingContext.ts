@@ -1,4 +1,4 @@
 import { createContext } from 'react';
-import { IStreamingService } from '@/../src/services/IStreamingService';
+import { IStreamingService } from '@/services/IStreamingService';
 
 export const StreamingServiceContext = createContext<IStreamingService | null>(null);

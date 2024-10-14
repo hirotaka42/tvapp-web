@@ -1,9 +1,9 @@
 import type { NextPage } from 'next';
-import { SessionService } from '@/../src/services/implementation/SessionService'
-import { TvHomeService } from '@/../src/services/implementation/TvHomeService'
-import { SessionServiceContext } from '@/../src/contexts/SessionContext'
-import { TvHomeServiceContext } from '@/../src/contexts/TvHomeContext'
-import HomeComponent from '@/../src/components/Pages/Ranking/HomeComponent';
+import { SessionService } from '@/services/implementation/SessionService'
+import { TvHomeService } from '@/services/implementation/TvHomeService'
+import { SessionServiceContext } from '@/contexts/SessionContext'
+import { TvHomeServiceContext } from '@/contexts/TvHomeContext'
+import HomeComponent from '@/components/Pages/Ranking/HomeComponent';
 
 // グローバルでインスタンスを生成
 const sessionServiceInstance = new SessionService();

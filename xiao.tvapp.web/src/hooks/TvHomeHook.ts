@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { TvHomeServiceContext } from '@/../src/contexts/TvHomeContext';
+import { TvHomeServiceContext } from '@/contexts/TvHomeContext';
 
 export function useTvHomeService() {
   const tvHomeService = useContext(TvHomeServiceContext);

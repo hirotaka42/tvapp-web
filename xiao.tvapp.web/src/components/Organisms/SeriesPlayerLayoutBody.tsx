@@ -1,6 +1,6 @@
 import React, { useState, useEffect} from 'react';
-import { VideoPlayer } from '@/../src/components/Atoms/Player/VideoPlayer';
-import { useStreamingService } from '@/../src/hooks/StreamingHook';
+import { VideoPlayer } from '@/components/Atoms/Player/VideoPlayer';
+import { useStreamingService } from '@/hooks/StreamingHook';
 
 
 interface Video {

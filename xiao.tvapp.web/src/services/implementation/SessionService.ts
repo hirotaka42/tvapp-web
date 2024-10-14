@@ -1,6 +1,6 @@
 
-import { ISessionService } from '@/../src/services/ISessionService';
-import { sessionToken } from '@/../src/types/SessionToken';
+import { ISessionService } from '@/services/ISessionService';
+import { sessionToken } from '@/types/SessionToken';
 
 export class SessionService implements ISessionService {
     async getSession(): Promise<sessionToken> {
