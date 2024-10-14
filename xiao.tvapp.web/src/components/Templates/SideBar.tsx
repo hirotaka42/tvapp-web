@@ -8,6 +8,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import IconButton from '@mui/material/IconButton';
 import SvgIcon from '@mui/material/SvgIcon';
+import Switch from '@mui/material/Switch';
 import { useRouter } from 'next/router'; 
 
 type Anchor = 'top' | 'left' | 'bottom' | 'right';
@@ -19,6 +20,7 @@ export default function SideBar() {
         bottom: false,
         right: false,
     });
+    const [isDarkMode, setIsDarkMode] = React.useState(false);
     const router = useRouter();
     const genreMapping: { [key: string]: string } = {
         '総合': 'all',
@@ -42,7 +44,11 @@ export default function SideBar() {
 
         setState({ ...state, [anchor]: open });
     };
-
+    const handleToggleDarkMode = (event: React.ChangeEvent<HTMLInputElement>) => {
+        event.stopPropagation(); // イベントの伝播を停止
+        setIsDarkMode(!isDarkMode);
+        // todo テーマの切り替えロジックはここに追加
+    };
     const handleClick = (genre: keyof typeof genreMapping) => {
         const englishGenre = genreMapping[genre];
         if (englishGenre) {
@@ -54,7 +60,6 @@ export default function SideBar() {
         <Box
         sx={{ width: anchor === 'top' || anchor === 'bottom' ? 'auto' : 250 }}
         role="presentation"
-        onClick={toggleDrawer(anchor, false)}
         onKeyDown={toggleDrawer(anchor, false)}
         >
         <List>
@@ -67,6 +72,8 @@ export default function SideBar() {
                         // 他のケースの処理
                         // todo
                     }
+                    setState({ ...state, [anchor]: false }); // サイドバーを閉じる
+                    // `left`プロパティが`false`になり、左側のサイドバーが閉じる
                 }}>
                 <ListItemText primary={text} />
                 </ListItemButton>
@@ -77,11 +84,22 @@ export default function SideBar() {
         <List>
             {['総合', 'ドラマ', 'バラエティ', 'アニメ', '報道', 'スポーツ', 'その他'].map((text, index) => (
             <ListItem key={text} disablePadding>
-                <ListItemButton onClick={() => handleClick(text)}>
+                <ListItemButton onClick={() => {
+                    handleClick(text);
+                    setState({ ...state, [anchor]: false }); // サイドバーを閉じる
+                    // `left`プロパティが`false`になり、左側のサイドバーが閉じる
+                }}>
                 <ListItemText primary={text} />
                 </ListItemButton>
             </ListItem>
             ))}
+        </List>
+        <Divider />
+        <List>
+            <ListItem>
+                <ListItemText primary="ダークモード" />
+                <Switch checked={isDarkMode} onChange={handleToggleDarkMode} />
+            </ListItem>
         </List>
         </Box>
     );
