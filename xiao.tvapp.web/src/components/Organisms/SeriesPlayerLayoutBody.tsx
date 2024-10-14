@@ -67,7 +67,7 @@ export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse, ep
       }
     };
     fetchUrl();
-  }, [episodeInfo.id]);
+  }, [episodeId]);
   // #endregion
 
 

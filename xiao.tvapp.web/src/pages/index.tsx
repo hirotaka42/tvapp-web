@@ -5,11 +5,13 @@ import { SessionServiceContext } from '../contexts/SessionContext'
 import { TvHomeServiceContext } from '../contexts/TvHomeContext'
 import HomeComponent from '../components/Templates/HomeComponent';
 
+// グローバルでインスタンスを生成
+const sessionServiceInstance = new SessionService();
 
 const Home: NextPage = () => {
   return (
     <>
-    <SessionServiceContext.Provider value={new SessionService()}>
+    <SessionServiceContext.Provider value={sessionServiceInstance}>
       <TvHomeServiceContext.Provider value={TvHomeService}>
         <HomeComponent />
       </TvHomeServiceContext.Provider>

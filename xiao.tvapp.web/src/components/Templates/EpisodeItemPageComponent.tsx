@@ -105,7 +105,7 @@ export const EpisodeItemPageComponent: React.FC<{ episodeId: string }> = ({ epis
       };
       fetchData();
   
-    }, []);
+    }, [episodeId]);
     // #endregion
   
   

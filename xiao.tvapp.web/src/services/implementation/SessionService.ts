@@ -1,9 +1,9 @@
 
 import { ISessionService } from '../ISessionService';
-import { platformToken } from '../../types/Token';
+import { sessionToken } from '../../types/SessionToken';
 
 export class SessionService implements ISessionService {
-    async getSession(): Promise<platformToken> {
+    async getSession(): Promise<sessionToken> {
       const response = await fetch(`/api/session`, {
         method: 'POST',
         headers: {
@@ -15,7 +15,7 @@ export class SessionService implements ISessionService {
         throw new Error('Network response was not ok');
       }
   
-      const data: platformToken = await response.json();
+      const data: sessionToken = await response.json();
       console.log(data);
       return data;
     }
