@@ -6,8 +6,8 @@ import Divider from '@mui/material/Divider';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
-import IconButton from '@mui/material/IconButton'; // 追加
-import SvgIcon from '@mui/material/SvgIcon'; // 追加
+import IconButton from '@mui/material/IconButton';
+import SvgIcon from '@mui/material/SvgIcon';
 
 type Anchor = 'top' | 'left' | 'bottom' | 'right';
 
@@ -41,7 +41,7 @@ export default function SideBar() {
       onKeyDown={toggleDrawer(anchor, false)}
     >
       <List>
-        {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
+        {['ホーム', 'お気に入り', 'あとで見る', '視聴履歴'].map((text, index) => (
           <ListItem key={text} disablePadding>
             <ListItemButton>
               <ListItemText primary={text} />
@@ -51,7 +51,7 @@ export default function SideBar() {
       </List>
       <Divider />
       <List>
-        {['All mail', 'Trash', 'Spam'].map((text, index) => (
+        {['総合', 'ドラマ', 'バラエティ', 'アニメ', '報道', 'スポーツ', 'その他'].map((text, index) => (
           <ListItem key={text} disablePadding>
             <ListItemButton>
               <ListItemText primary={text} />
