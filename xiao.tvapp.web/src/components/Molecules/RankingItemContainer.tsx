@@ -1,6 +1,6 @@
 import React from 'react';
-import { ItemContainer } from '../Atoms/Card/ItemContainer';
-import { ContentData } from '../../types/ContentData';
+import { ItemContainer } from '@/../src/components/Atoms/Card/ItemContainer';
+import { ContentData } from '@/../src/types/ContentData';
 
 interface Content {
     type: string;

@@ -1,4 +1,4 @@
-import { sessionToken } from "./SessionToken";
+import { sessionToken } from "@/../src/types/SessionToken";
 
 export interface SearchType {
     keyword: string;

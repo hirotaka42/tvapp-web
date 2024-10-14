@@ -1,4 +1,4 @@
-import { ContentData } from './ContentData';
+import { ContentData } from '@/../src/types/ContentData';
 
 export interface ContentObject {
     type: string

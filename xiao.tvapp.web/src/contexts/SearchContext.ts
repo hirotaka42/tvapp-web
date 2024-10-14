@@ -1,5 +1,5 @@
 import { createContext, Dispatch, SetStateAction } from 'react';
-import { ContentObject } from '../types/ContentObject';
+import { ContentObject } from '@/../src/types/ContentObject';
 
 type SearchContextType = {
     resultObject: ContentObject[] | null;

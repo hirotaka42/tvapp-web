@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { StreamingServiceContext } from '../contexts/StreamingContext';
+import { StreamingServiceContext } from '@/../src/contexts/StreamingContext';
 
 export function useStreamingService() {
   const streamingService = useContext(StreamingServiceContext);

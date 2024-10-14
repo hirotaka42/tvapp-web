@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardActionArea, Box } from '@mui/material';
-import EpisodeImg from '../../../../public/images/PC_img_episode_noimage_small.svg';
+import EpisodeImg from '@/../public/images/PC_img_episode_noimage_small.svg';
 
 interface Content {
   type: string;

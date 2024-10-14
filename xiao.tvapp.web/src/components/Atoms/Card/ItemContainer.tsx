@@ -1,6 +1,6 @@
 import React from 'react';
 import { CardContent, Typography } from '@mui/material';
-import { ThumbnailCardElement } from './ThumbnailCard';
+import { ThumbnailCardElement } from '@/../src/components/Atoms/Card/ThumbnailCard';
 
 interface Content {
   type: string;

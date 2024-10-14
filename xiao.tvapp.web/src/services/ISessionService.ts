@@ -1,4 +1,4 @@
-import { sessionToken } from "../types/SessionToken";
+import { sessionToken } from "@/../src/types/SessionToken";
 
 export interface ISessionService {
   getSession: () => Promise<sessionToken>;
