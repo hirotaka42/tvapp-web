@@ -1,26 +1,13 @@
 import React, { useState, useEffect} from 'react';
-import { platformToken } from '../../types/Token';
-import { useSessionService } from '../../hooks/SessionHook';
-import { useTvHomeService } from '../../hooks/TvHomeHook';
-import { RankingItemContainer } from '../Molecules/RankingItemContainer';
+import { sessionToken } from '@/types/SessionToken';
+import { useSessionService } from '@/hooks/SessionHook';
+import { useTvHomeService } from '@/hooks/TvHomeHook';
+import { RankingItemContainer } from '@/components/Molecules/RankingItemContainer';
+import { ContentData } from '@/types/ContentData';
 
 interface Content {
   type: string;
-  content: {
-    id: string;
-    version: number;
-    title: string;
-    seriesID: string;
-    endAt: number;
-    broadcastDateLabel: string;
-    isNHKContent: boolean;
-    isSubtitle: boolean;
-    ribbonID: number;
-    seriesTitle: string;
-    isAvailable: boolean;
-    broadcasterName: string;
-    productionProviderName: string;
-  };
+  content: ContentData;
   rank: number;
 }
 
@@ -36,7 +23,7 @@ export default function HomeComponent( ) {
   // #endregion
   
   // #region State -----------------------
-  const [token, setToken] = useState<platformToken>({
+  const [token, setToken] = useState<sessionToken>({
     platformUid: '',
     platformToken: '',
   });
@@ -47,7 +34,6 @@ export default function HomeComponent( ) {
   const sessionService = useSessionService();
   const tvHomeService = useTvHomeService();
   const thumbnailUrl = process.env.NEXT_PUBLIC_IMAG_THUMBNAIL;
-  const test = process.env.NEXT_PUBLIC_BFF_SERVER;
 
   
   // #endregion
@@ -56,6 +42,7 @@ export default function HomeComponent( ) {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log('fetching session');
         const session = await sessionService.getSession();
         setToken(session);
 
@@ -103,7 +90,7 @@ export default function HomeComponent( ) {
     }
     fetchData();
 
-  }, [sessionService, tvHomeService]);
+  }, []);
   // #endregion
 
 
@@ -115,12 +102,10 @@ export default function HomeComponent( ) {
 
   return (
     <>
-    <h1>Home</h1>
     <RankingItemContainer rankingData={rankingDramaComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingVarietyComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingAnimeComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingNewsComponent}></RankingItemContainer>
-
     </>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect} from 'react';
-import { VideoPlayer } from '../Atoms/Player/VideoPlayer';
-import { useStreamingService } from '../../hooks/StreamingHook';
+import { VideoPlayer } from '@/components/Atoms/Player/VideoPlayer';
+import { useStreamingService } from '@/hooks/StreamingHook';
 
 
 interface Video {
@@ -67,7 +67,7 @@ export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse, ep
       }
     };
     fetchUrl();
-  }, [episodeInfo.id]);
+  }, [episodeId]);
   // #endregion
 
 

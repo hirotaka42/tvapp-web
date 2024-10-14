@@ -1,24 +1,11 @@
 import React from 'react';
 import { CardContent, Typography } from '@mui/material';
-import { ThumbnailCardElement } from './ThumbnailCard';
+import { ThumbnailCardElement } from '@/components/Atoms/Card/ThumbnailCard';
+import { ContentData } from '@/types/ContentData';
 
 interface Content {
   type: string;
-  content: {
-    id: string;
-    version: number;
-    title: string;
-    seriesID: string;
-    endAt: number;
-    broadcastDateLabel: string;
-    isNHKContent: boolean;
-    isSubtitle: boolean;
-    ribbonID: number;
-    seriesTitle: string;
-    isAvailable: boolean;
-    broadcasterName: string;
-    productionProviderName: string;
-  };
+  content: ContentData;
   rank: number;
 }
 

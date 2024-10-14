@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { CallEpisodeServiceContext } from '../contexts/CallEpisodeContext';
+import { CallEpisodeServiceContext } from '@/contexts/CallEpisodeContext';
 
 export function useCallEpisodeService() {
   const callEpisodeService = useContext(CallEpisodeServiceContext);

@@ -1,23 +1,10 @@
 import React from 'react';
-import { ItemContainer } from '../Atoms/Card/ItemContainer';
+import { ItemContainer } from '@/components/Atoms/Card/ItemContainer';
+import { ContentData } from '@/types/ContentData';
 
 interface Content {
     type: string;
-    content: {
-      id: string;
-      version: number;
-      title: string;
-      seriesID: string;
-      endAt: number;
-      broadcastDateLabel: string;
-      isNHKContent: boolean;
-      isSubtitle: boolean;
-      ribbonID: number;
-      seriesTitle: string;
-      isAvailable: boolean;
-      broadcasterName: string;
-      productionProviderName: string;
-    };
+    content: ContentData;
     rank: number;
 }
 

@@ -1,5 +1,6 @@
+import { sessionToken } from "@/types/SessionToken";
+
 export interface SearchType {
-    keyword: string
-    platformUid: string;
-    platformToken: string;
+    keyword: string;
+    sessionToken: sessionToken;
 }
