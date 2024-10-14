@@ -102,7 +102,6 @@ export default function HomeComponent( ) {
 
   return (
     <>
-    <h1>Home</h1>
     <RankingItemContainer rankingData={rankingDramaComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingVarietyComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingAnimeComponent}></RankingItemContainer>
