@@ -60,7 +60,14 @@ export default function SideBar() {
         <List>
             {['ホーム', 'お気に入り', 'あとで見る', '視聴履歴'].map((text, index) => (
             <ListItem key={text} disablePadding>
-                <ListItemButton>
+                <ListItemButton onClick={() => {
+                    if (text === 'ホーム') {
+                        router.push('/');
+                    } else {
+                        // 他のケースの処理
+                        // todo
+                    }
+                }}>
                 <ListItemText primary={text} />
                 </ListItemButton>
             </ListItem>
