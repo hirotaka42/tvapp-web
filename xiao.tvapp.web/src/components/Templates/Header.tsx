@@ -8,7 +8,7 @@ type Props = {
 
 const Header: React.FC<Props> = ({ title }) => {
     return (
-        <AppBar position="static" sx={{ bgcolor: '#FFF' }} elevation={0}>
+        <AppBar position="static" sx={{ bgcolor: '#ffffff' }} elevation={0}>
             <Toolbar>
                 <SideBar />
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black', ml: 2 }}>
