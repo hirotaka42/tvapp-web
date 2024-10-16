@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/app/utils/database";
-import { UserModel } from "@/app/utils/schemaModels";
+import { UserRegisterModel } from "@/app/utils/schemaModels";
 
 type UserRegisterData = {
     firstname: string;
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     try {
         console.log('Request Body:', await request.json());
         await connectDB();
-        await UserModel.create(mockUser);
+        await UserRegisterModel.create(mockUser);
         return NextResponse.json({ message: "Success: connected to MongoDB" });
     } catch {
         return NextResponse.json({ message: "Failure: unconnected to MongoDB" });

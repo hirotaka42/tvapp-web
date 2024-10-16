@@ -1,20 +1,40 @@
 import mongoose from "mongoose";
 
 const Schema = mongoose.Schema;
-const UserSchema = new Schema({
-    firstname: String,
-    lastname: String,
-    birsday: String,
-    email: String,
+const UserRegisterSchema = new Schema({
+    firstname: {
+        type: String,
+        required: true
+    },
+    lastname: {
+        type: String,
+        required: true
+    },
+    birsday: {
+        type: String
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true
+    },
     emailConfirmed: Boolean,
-    phoneNamber: String,
+    phoneNamber: {
+        type: String
+    },
     phoneNamberConfirmed: Boolean,
-    password_hash: String,
+    password_hash: {
+        type: String,
+        required: true
+    },
     date: {
         type: Date,
         default: Date.now
     },
-    IsDeleted: Boolean
+    IsDeleted: {
+        type: Boolean,
+        default: false
+    },
 });
 
-export const UserModel = mongoose.models.User || mongoose.model('User', UserSchema);
+export const UserRegisterModel = mongoose.models.UserRegister || mongoose.model('UserRegister', UserRegisterSchema);
