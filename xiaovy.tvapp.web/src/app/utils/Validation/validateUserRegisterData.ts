@@ -6,7 +6,7 @@ type UserRegisterData = {
     emailConfirmed?: boolean;
     phoneNumber?: string;
     phoneNumberConfirmed?: boolean;
-    password_hash: string;
+    password: string;
     IsDeleted?: boolean;
 };
 
@@ -25,8 +25,8 @@ export function validateUserRegisterData(data: UserRegisterData) {
         errors.push("Email is required.");
     }
     
-    if (!data.password_hash) {
-        errors.push("Password hash is required.");
+    if (!data.password) {
+        errors.push("Password is required.");
     }
 
     return {
