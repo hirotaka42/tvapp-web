@@ -3,6 +3,7 @@ import connectDB from "@/app/utils/database";
 import bcrypt from "bcrypt";
 import { UserRegisterModel } from "@/app/utils/schemaModels";
 import { validateUserLoginData } from "@/app/utils/Validation/validateUserLoginData";
+import { createToken } from "@/app/utils/Util/createToken";
 
 export async function POST(request: NextRequest) {
     console.log('▶︎Call POST');
@@ -21,7 +22,8 @@ export async function POST(request: NextRequest) {
         if (!isPasswordValid) {
             return NextResponse.json({ message: "パスワードが正しくありません。" }, { status: 401 });
         }
-        return NextResponse.json({ message: "ログイン成功" });
+        const token = await createToken(savedUserData._id, savedUserData.email, savedUserData.uuid);
+        return NextResponse.json({ message: "ログイン成功", token });
     } catch {
         return NextResponse.json({ message: "サーバーエラーが発生しました。" }, { status: 500 });
     }
