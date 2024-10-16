@@ -1,38 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/app/utils/database";
 import { UserRegisterModel } from "@/app/utils/schemaModels";
-
-type UserRegisterData = {
-    firstname: string;
-    lastname: string;
-    birsday: string;
-    email: string;
-    emailConfirmed: boolean;
-    phoneNamber: string;
-    phoneNamberConfirmed: boolean;
-    password_hash: string;
-    IsDeleted: boolean;
-};
-
-const mockUser: UserRegisterData = {
-    firstname: "John",
-    lastname: "Doe",
-    birsday: "1990-01-01",
-    email: "ezample@sute.jp",
-    emailConfirmed: false,
-    phoneNamber: "123-4567-8901",
-    phoneNamberConfirmed: false,
-    password_hash: "password",
-    IsDeleted: false,
-};
-
+import { validateUserRegisterData } from "@/app/utils/Validation/validateUserRegisterData";
 
 export async function POST(request: NextRequest) {
     console.log('▶︎Call POST');
     try {
-        console.log('Request Body:', await request.json());
+        const body = await request.json();
+        const { isValid, errors } = validateUserRegisterData(body);
+        if (!isValid) {
+            return NextResponse.json({ message: "リクエストボディのバリデーションチェックに失敗しました。", errors }, { status: 400 });
+        }
         await connectDB();
-        await UserRegisterModel.create(mockUser);
+        await UserRegisterModel.create(body);
         return NextResponse.json({ message: "Success: connected to MongoDB" });
     } catch {
         return NextResponse.json({ message: "Failure: unconnected to MongoDB" });

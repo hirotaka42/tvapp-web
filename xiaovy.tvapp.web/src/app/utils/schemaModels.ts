@@ -1,7 +1,13 @@
 import mongoose from "mongoose";
+import { v4 as uuidv4 } from 'uuid';
 
 const Schema = mongoose.Schema;
 const UserRegisterSchema = new Schema({
+    uuid : {
+        type: String,
+        unique: true,
+        default: uuidv4
+    },
     firstname: {
         type: String,
         required: true
@@ -10,7 +16,7 @@ const UserRegisterSchema = new Schema({
         type: String,
         required: true
     },
-    birsday: {
+    birthday: {
         type: String
     },
     email: {
@@ -19,10 +25,10 @@ const UserRegisterSchema = new Schema({
         unique: true
     },
     emailConfirmed: Boolean,
-    phoneNamber: {
+    phoneNumber: {
         type: String
     },
-    phoneNamberConfirmed: Boolean,
+    phoneNumberConfirmed: Boolean,
     password_hash: {
         type: String,
         required: true
@@ -37,4 +43,4 @@ const UserRegisterSchema = new Schema({
     },
 });
 
-export const UserRegisterModel = mongoose.models.UserRegister || mongoose.model('UserRegister', UserRegisterSchema);
+export const UserRegisterModel = mongoose.models.User || mongoose.model('User', UserRegisterSchema);
