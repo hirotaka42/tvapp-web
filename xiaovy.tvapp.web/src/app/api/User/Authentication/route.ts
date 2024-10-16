@@ -13,11 +13,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: "リクエストボディのバリデーションチェックに失敗しました。", errors }, { status: 400 });
         }
         await connectDB();
-        const user = await UserRegisterModel.findOne({ email: body.email });
-        if (!user) {
+        const savedUserData = await UserRegisterModel.findOne({ email: body.email });
+        if (!savedUserData) {
             return NextResponse.json({ message: "ユーザーが見つかりません。" }, { status: 404 });
         }
-        const isPasswordValid = await bcrypt.compare(body.password, user.password_hash);
+        const isPasswordValid = await bcrypt.compare(body.password, savedUserData.password_hash);
         if (!isPasswordValid) {
             return NextResponse.json({ message: "パスワードが正しくありません。" }, { status: 401 });
         }
