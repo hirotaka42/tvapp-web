@@ -57,8 +57,7 @@ const Register: React.FC = () => {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + process.env.SAMPLE_IDTOKEN,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(dataToSend)
       });
