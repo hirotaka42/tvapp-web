@@ -6,6 +6,10 @@ export async function middleware(request: NextRequest) {
     // middleware でのconsole.logは、サーバーサイドでのみ出力される
     // フロントには出力されないので注意
     console.log('▶︎Call middleware')
+    if (request.nextUrl.pathname.startsWith('/api/User/Register') || 
+        request.nextUrl.pathname.startsWith('/api/User/Authentication')) {
+        return NextResponse.next();
+    }
     if (request.nextUrl.pathname === '/about') {
         return NextResponse.redirect(new URL('/redirected', request.url))
     }
@@ -34,5 +38,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/about/:path*', '/another/:path*', '/api/:path*'],
+    matcher: [
+        '/about/:path*',
+        '/another/:path*',
+        '/api/:path*',
+    ],
 }
