@@ -23,8 +23,11 @@ export async function POST(request: NextRequest) {
         if (!isPasswordValid) {
             return NextResponse.json({ message: "パスワードが正しくありません。" }, { status: 401 });
         }
-        const Idtoken = await createToken(savedUserData._id, savedUserData.Email, savedUserData.Uid);
-        return NextResponse.json({ message: "ログイン成功", Idtoken });
+        const IdToken = await createToken(savedUserData._id, savedUserData.Email, savedUserData.Uid);
+        if (!IdToken) {
+            return NextResponse.json({ message: "トークンの生成に失敗しました。" }, { status: 500 });
+        }
+        return NextResponse.json({ message: "ログイン成功", IdToken });
     } catch {
         return NextResponse.json({ message: "サーバーエラーが発生しました。" }, { status: 500 });
     }

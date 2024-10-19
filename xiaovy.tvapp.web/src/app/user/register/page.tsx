@@ -48,6 +48,7 @@ const Register: React.FC = () => {
 
     // 空文字列をnullに置き換える
     // これは、サーバー側で空文字列を受け付けない場合に必要
+    // Todo: 影響範囲がよくわかっていないので、調査する
     const dataToSend = Object.fromEntries(
       Object.entries(formData).map(([key, value]) => [key, value || null])
     );

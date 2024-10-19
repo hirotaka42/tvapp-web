@@ -13,6 +13,11 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const url = '/api/User/Authentication';
+  const TokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
+  if (!TokenName){
+    console.log(TokenName);
+    throw new Error("環境変数:IDTOKEN_NAMEが設定されていません。");
+  }
 
   const [formData, setFormData] = useState<FormData>({
     Email: '',
@@ -40,6 +45,7 @@ const Login: React.FC = () => {
     setLoading(true);
     // 空文字列をnullに置き換える
     // これは、サーバー側で空文字列を受け付けない場合に必要
+    // Todo: 影響範囲がよくわかっていないので、調査する
     const dataToSend = Object.fromEntries(
       Object.entries(formData).map(([key, value]) => [key, value || null])
     );
@@ -57,6 +63,7 @@ const Login: React.FC = () => {
         throw new Error('ネットワークエラーが発生しました');
       }
       const result = await response.json();
+      localStorage.setItem(TokenName, result.IdToken);
       console.log('ログイン成功:', result);
     } catch (error) {
       if (error instanceof Error) {
