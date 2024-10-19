@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import axios from 'axios';
 
-// /api/content/series/[seriesId]
+// GET /api/content/series/[seriesId]
 export async function GET(request: NextRequest, { params }: { params: { seriesId: string } }) {
     const { seriesId } = params;
 
@@ -10,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: { seriesId
     }
 
     try {
-        const response = await axios.get(`https://statics.tver.jp/content/series/${seriesId}.json`, {
+        const response = await fetch(`https://statics.tver.jp/content/series/${seriesId}.json`, {
             headers: {
                 'x-tver-platform-type': 'web',
                 'Origin': 'https://tver.jp',
@@ -18,11 +17,12 @@ export async function GET(request: NextRequest, { params }: { params: { seriesId
             }
         });
 
-        if (response.status !== 200) {
+        if (!response.ok) {
             return NextResponse.json({ error: 'Failed to retrieve content results' }, { status: response.status });
         }
 
-        return NextResponse.json({ data: response.data });
+        const data = await response.json();
+        return NextResponse.json({ data });
     } catch (error) {
         console.error("Error:", error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
