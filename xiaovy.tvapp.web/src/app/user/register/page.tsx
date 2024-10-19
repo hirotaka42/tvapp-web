@@ -45,6 +45,13 @@ const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // 空文字列をnullに置き換える
+    // これは、サーバー側で空文字列を受け付けない場合に必要
+    const dataToSend = Object.fromEntries(
+      Object.entries(formData).map(([key, value]) => [key, value || null])
+    );
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -52,7 +59,7 @@ const Register: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + process.env.SAMPLE_IDTOKEN,
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(dataToSend)
       });
       if (!response.ok) {
         throw new Error('ネットワークエラーが発生しました');
@@ -65,7 +72,7 @@ const Register: React.FC = () => {
         setError(error.message);
       } else {
         console.error('Unexpected error:', error);
-        setError('An unexpected error occurred');
+        setError('予期しないエラーが発生しました');
       }
     } finally {
       setLoading(false);
