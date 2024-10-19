@@ -1,101 +1,43 @@
-import Image from "next/image";
+import { ThemeSwitch } from "@/app/themeSwitch";
+import { Main } from "@/components/Pages/Main";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <main className="max-w-5xl mx-auto p-12 lg:p-24">
+      <h2 className="text-2xl font-bold">Light/Dark mode switch on Next.js</h2>
+      <div className="mt-4 h-10">
+        <ThemeSwitch />
+      </div>
+      <p className="mt-4">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam eu
+        porta risus. Donec finibus dapibus nibh non ultricies. Donec ultricies
+        nibh nec sem imperdiet malesuada. Fusce a sodales sem. Morbi eget
+        eleifend nisl. Integer consequat dolor nulla, sit amet dignissim dolor
+        fringilla sit amet. Donec nisl quam, luctus vitae felis id, suscipit
+        fringilla massa. Aliquam eget fringilla lacus, et vestibulum sem.
+        Pellentesque interdum velit in laoreet auctor. Integer vitae dui
+        sodales, mattis est a, mollis odio. Vivamus vel eros sed eros gravida
+        faucibus. In non facilisis neque, vel lacinia tellus. Integer in mattis
+        enim, sed molestie enim. Maecenas et ultricies massa, vel laoreet lorem.
+        Quisque ex sem, maximus fringilla ligula ut, bibendum facilisis massa.
+      </p>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      <p className="mt-4">
+        Aliquam in tortor id lorem varius tempus. Maecenas venenatis nulla eros,
+        eget malesuada ante viverra a. Vestibulum aliquet porta turpis, eu
+        ullamcorper magna volutpat dictum. Quisque sit amet ipsum eleifend,
+        laoreet ante a, feugiat tellus. Proin malesuada mi eu justo tempor
+        tincidunt. Phasellus nec eros auctor, finibus metus sed, accumsan est.
+        Proin laoreet nisl bibendum ligula consequat, at tempor risus placerat.
+        Aliquam dui mauris, posuere at erat vel, vestibulum sagittis magna.
+        Phasellus tristique odio quis nisi ullamcorper euismod. Donec convallis
+        dapibus diam vel faucibus. Vivamus mauris dui, scelerisque et ante a,
+        vehicula pharetra tortor. Sed sed odio dui. Integer aliquam fringilla
+        magna, sed imperdiet justo mollis vel. Duis ut ex velit. Sed non ante
+        imperdiet, placerat nunc sit amet, rutrum ante. Morbi lectus nisi,
+        ullamcorper eu luctus at, varius a eros.
+      </p>
+      <Main />
+    </main>
   );
 }

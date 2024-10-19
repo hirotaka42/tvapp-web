@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, ChangeEvent } from 'react';
-import InputField from '@/Components/InputField';
+import InputField from '@/components/InputField';
 
 interface FormData {
   FirstName: string;
