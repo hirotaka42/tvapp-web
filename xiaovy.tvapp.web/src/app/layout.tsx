@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import Script from "next/script";
+import { Footer } from "@/Components/shared/Footer";
+import { Header } from "@/Components/shared/Header";
+import { Layout } from "@/Components/shared/Layout";
+import { Main } from "@/Components/shared/Main";
+import { ColorModeProvider } from "@/Utiles/colorMode";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -24,11 +30,34 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html suppressHydrationWarning lang="ja">
+      <head>
+        {/*
+          TypeScript Playground: https://www.typescriptlang.org/play/?target=2#code/BQMwrgdgxgLglgewgAmASmQbwFDOVJAZxmQAcAnAUxEvMOQF5kB3OCAEwWYDoBbAQxhQAFgFlK7OP2AAiYBWq1CAWgIAbBOWWERlXpQBcydv3IBrNDLR9BuwrjzIA-MhknzMh3iMy1cAObCMDIA3A4EEMTIIOQIvADKMJr8-pSMyBpQ-GqJyancqTAAkjB6ssRsygBGGv6qCBpavAjslFZheBFR6pqiLYaufoHByAA+ru5mMoxeqDFxueQpaQyrroQAnsR606Pj8wlJS6mMTBBgamoYLgo0dMhGB4vLp0y+AUHTLu-D0z6ToQcrA4XG4nCgYH0EBgYIQEKhMAAomo9JRoWDBPxCJQYT1yH1Wuk8QTKGEAL5odAhIA
+          Terser REPL: https://try.terser.org/
+       */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `!function(){const e=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light",o=localStorage.getItem("stin-blog-color-mode"),t="system"===o||null==o?e:"light"===o?"light":"dark";window.document.documentElement.dataset.colorMode=t}();`,
+          }}
+        />
+        <Script
+          id="twitter-embed-script"
+          src="https://platform.twitter.com/widgets.js"
+          strategy="lazyOnload"
+          // Twitterの埋め込みツイートを表示するために必要
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ColorModeProvider>
+          <Layout>
+            <Header />
+            <Main>{children}</Main>
+            <Footer />
+          </Layout>
+        </ColorModeProvider>
       </body>
     </html>
   );
