@@ -1,6 +1,6 @@
 import { ThemeSwitch } from "@/app/themeSwitch";
 import { ThemeSelector } from "@/app/themeSelector";
-import { Main } from "@/components/Pages/Main";
+import { Main } from "@/components/Pages/Main"
 
 export default function Home() {
   return (

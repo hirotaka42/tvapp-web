@@ -3,7 +3,7 @@ import connectDB from "@/utils/database";
 import bcrypt from "bcrypt";
 import { UserRegisterModel } from "@/utils/schemaModels";
 import { validateUserRegisterData } from "@/utils/Validation/UserReq";
-import { RegisterReq } from "@/types_temp/api/request/user";
+import { RegisterReq } from "@/types/api/request/user";
 
 export async function POST(request: NextRequest) {
     console.log('▶︎Call POST');
