@@ -1,4 +1,4 @@
-import{ RegisterReq, LoginReq } from '@/types/api/request/user';
+import{ RegisterReq, LoginReq } from '@/types_temp/api/request/user';
 
 interface ValidationResult {
     isValid: boolean;
