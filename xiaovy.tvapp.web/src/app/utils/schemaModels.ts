@@ -17,18 +17,26 @@ const UserRegisterSchema = new Schema({
         required: true
     },
     BirthDay: {
-        type: String
+        type: String,
+        default: null
     },
     Email: {
         type: String,
         required: true,
         unique: true
     },
-    EmailConfirmed: Boolean,
-    PhoneNumber: {
-        type: String
+    EmailConfirmed: {
+        type: Boolean,
+        default: false
     },
-    PhoneNumberConfirmed: Boolean,
+    PhoneNumber: {
+        type: String,
+        default: null
+    },
+    PhoneNumberConfirmed: {
+        type: Boolean,
+        default: false
+    },
     Password_hash: {
         type: String,
         required: true

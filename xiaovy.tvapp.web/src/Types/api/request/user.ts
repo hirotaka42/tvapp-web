@@ -1,10 +1,10 @@
 export type RegisterReq = {
     FirstName: string;
     LastName: string;
-    BirthDay?: string;
+    BirthDay?: string | null;
     Email: string;
     EmailConfirmed?: boolean;
-    PhoneNumber?: string;
+    PhoneNumber?: string | null;
     PhoneNumberConfirmed?: boolean;
     Password: string;
     IsDeleted?: boolean;
