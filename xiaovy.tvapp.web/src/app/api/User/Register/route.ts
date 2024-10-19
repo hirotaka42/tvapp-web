@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import connectDB from "@/app/utils/database";
+import connectDB from "@/utils/database";
 import bcrypt from "bcrypt";
-import { UserRegisterModel } from "@/app/utils/schemaModels";
-import { validateUserRegisterData } from "@/app/utils/Validation/UserReq";
-import { RegisterReq } from "@/Types/api/request/user";
+import { UserRegisterModel } from "@/utils/schemaModels";
+import { validateUserRegisterData } from "@/utils/Validation/UserReq";
+import { RegisterReq } from "@/types/api/request/user";
 
 export async function POST(request: NextRequest) {
     console.log('▶︎Call POST');
