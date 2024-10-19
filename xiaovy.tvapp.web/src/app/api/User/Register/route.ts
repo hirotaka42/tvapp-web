@@ -2,23 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/app/utils/database";
 import bcrypt from "bcrypt";
 import { UserRegisterModel } from "@/app/utils/schemaModels";
-import { validateUserRegisterData } from "@/app/utils/Validation/validateUserRegisterData";
+import { validateUserRegisterData } from "@/app/utils/Validation/UserReq";
 
 export async function POST(request: NextRequest) {
     console.log('▶︎Call POST');
     try {
         const body = await request.json();
+        console.log('▶︎body:', body);
         const { isValid, errors } = validateUserRegisterData(body);
         if (!isValid) {
             return NextResponse.json({ message: "リクエストボディのバリデーションチェックに失敗しました。", errors }, { status: 400 });
         }
         const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(body.password, saltRounds);
+        const hashedPassword = await bcrypt.hash(body.Password, saltRounds);
 
         // オブジェクトのスプレッド構文を使用して、新しいオブジェクトを作成
         const userData = {
             ...body,
-            password_hash: hashedPassword
+            Password_hash: hashedPassword
         };
         await connectDB();
         await UserRegisterModel.create(userData);

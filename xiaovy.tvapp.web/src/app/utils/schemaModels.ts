@@ -3,37 +3,37 @@ import { v4 as uuidv4 } from 'uuid';
 
 const Schema = mongoose.Schema;
 const UserRegisterSchema = new Schema({
-    uuid : {
+    Uid : {
         type: String,
         unique: true,
         default: uuidv4
     },
-    firstname: {
+    FirstName: {
         type: String,
         required: true
     },
-    lastname: {
+    LastName: {
         type: String,
         required: true
     },
-    birthday: {
+    BirthDay: {
         type: String
     },
-    email: {
+    Email: {
         type: String,
         required: true,
         unique: true
     },
-    emailConfirmed: Boolean,
-    phoneNumber: {
+    EmailConfirmed: Boolean,
+    PhoneNumber: {
         type: String
     },
-    phoneNumberConfirmed: Boolean,
-    password_hash: {
+    PhoneNumberConfirmed: Boolean,
+    Password_hash: {
         type: String,
         required: true
     },
-    date: {
+    Date: {
         type: Date,
         default: Date.now
     },
