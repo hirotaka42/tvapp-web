@@ -1,7 +1,7 @@
 "use client";
 import { FC } from "react";
 import { Home } from "@/components/Pages/Home";
-import Example from "@/components/atomicDesign/molecules/ItemLists"
+import Example from "@/components/atomicDesign/molecules/ContentLists"
 
 export const Main: FC = () => {
     return (

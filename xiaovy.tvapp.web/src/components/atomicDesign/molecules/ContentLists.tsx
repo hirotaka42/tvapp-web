@@ -1,5 +1,64 @@
 import Image from 'next/image'
 
+// // 入力予想
+// { "label": "ドラマランキング",
+//   "contents": [
+//       {
+//           "type": "episode",
+//           "content": {
+//               "id": "epzjmzse1d",
+//               "version": 9,
+//               "title": "第1話 保健室にはなるべく来ないでもらいたい",
+//               "seriesID": "srbzu3axsx",
+//               "endAt": 1735387140,
+//               "broadcastDateLabel": "10月12日(土)放送分",
+//               "isNHKContent": false,
+//               "isSubtitle": true,
+//               "ribbonID": 0,
+//               "seriesTitle": "放課後カルテ",
+//               "isAvailable": true,
+//               "broadcasterName": "日テレ",
+//               "productionProviderName": "日テレ"
+//           },
+//           "rank": 1
+//       },
+
+// // 最低限必要な形式にコンバートする
+// { 
+//   "label": "ドラマランキング",
+//   "contents": [
+//       { 
+//         content: {
+//           id: "epzjmzse1d",
+//           title: '第1話 保健室にはなるべく来ないでもらいたい',
+//           seriesID: "srbzu3axsx",
+//           endAt: 1735387140,
+//           seriesTitle: '放課後カルテ',
+//           broadcasterName: '日テレ',
+//           productionProviderName: '日テレ',
+//           broadcastDateLabel: '10月12日(土)放送分',
+//           rank: 1,
+//         },
+//       },
+//       // More products...
+//   ]
+// }
+
+const contents = [
+  {
+    id: "epzjmzse1d",
+    title: '第1話 保健室にはなるべく来ないでもらいたい',
+    seriesID: "srbzu3axsx",
+    endAt: 1735387140,
+    seriesTitle: '放課後カルテ',
+    broadcasterName: '日テレ',
+    productionProviderName: '日テレ',
+    broadcastDateLabel: '10月12日(土)放送分',
+    rank: 1,
+  },
+  // More products...
+]
+
 const products = [
   {
     id: 1,
@@ -42,9 +101,11 @@ const products = [
 
 export default function Example() {
   return (
-    <div className="bg-white">
+    <div 
+      className="min-h-screen dark:bg-black dark:text-white"
+    >
       <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
-        <h2 className="text-2xl font-bold tracking-tight text-gray-900">Customers also purchased</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Customers also purchased</h2>
 
         <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
           {products.map((product) => (
@@ -60,15 +121,15 @@ export default function Example() {
               </div>
               <div className="mt-4 flex justify-between">
                 <div>
-                  <h3 className="text-sm text-gray-700">
+                  <h3 className="text-sm text-gray-700 dark:text-gray-300">
                     <a href={product.href}>
                       <span aria-hidden="true" className="absolute inset-0" />
                       {product.name}
                     </a>
                   </h3>
-                  <p className="mt-1 text-sm text-gray-500">{product.color}</p>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{product.color}</p>
                 </div>
-                <p className="text-sm font-medium text-gray-900">{product.price}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{product.price}</p>
               </div>
             </div>
           ))}
