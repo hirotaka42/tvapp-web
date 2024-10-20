@@ -7,6 +7,7 @@ import { useTvHomeService } from '@/hooks/useTvHome';
 import { useEpisodeService } from '@/hooks/useEpisode';
 import { useStreamService } from '@/hooks/useStream';
 import { getContentsByLabel, getLabelContentCounts } from '@/utils/Convert/ranking/home/responseParser';
+import { convertEpisodeRankingResponse } from '@/utils/Convert/ranking/genreDetail/responseParser';
 
 export const Main: FC = () => {
     const session = useSessionService();
