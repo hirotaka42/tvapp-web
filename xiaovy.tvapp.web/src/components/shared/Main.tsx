@@ -9,6 +9,7 @@ import { useStreamService } from '@/hooks/useStream';
 import { useRankingService } from '@/hooks/useRanking';
 import { getContentsByLabel, getLabelContentCounts } from '@/utils/Convert/ranking/home/responseParser';
 import { convertEpisodeRankingResponse } from '@/utils/Convert/ranking/genreDetail/responseParser';
+import { convertRankingToCardData } from "@/utils/Convert/ranking/convertRankingToCardData";
 
 export const Main: FC = () => {
     const session = useSessionService();
@@ -24,10 +25,13 @@ export const Main: FC = () => {
             console.log('ドラマ情報', dramaContents);
             console.log('コンテンツ数', contensCount);
             console.log('コメディドラマ', comedyContents);
+            console.log('ドラマ情報to', convertRankingToCardData(dramaContents));
+            console.log('コメディドラマto', convertRankingToCardData(comedyContents));
         }
         if (ranking) {
             const rankingData = convertEpisodeRankingResponse(ranking);
             console.log('rankingData', rankingData);
+            console.log('rankingData to', convertRankingToCardData(rankingData));
         }
     }, [tvHomeData, ranking]);
 

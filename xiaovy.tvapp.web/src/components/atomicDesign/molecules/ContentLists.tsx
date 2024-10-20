@@ -54,6 +54,10 @@ import Image from 'next/image'
 //     broadcasterName: '日テレ',
 //     productionProviderName: '日テレ',
 //     broadcastDateLabel: '10月12日(土)放送分',
+//     thumbnail: {
+//        small: 'https://statics.tver.jp/images/content/thumbnail/episode/small/epzjmzse1d.jpg',
+//        xlarge: 'https://statics.tver.jp/images/content/thumbnail/episode/xlarge/epzjmzse1d.jpg',
+//     },
 //     rank: 1,
 //   },
 //   // More products...
