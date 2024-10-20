@@ -20,13 +20,13 @@ export function useTvHomeService(session: sessionToken | null) {
       try {
         const result = await tvHomeService.callHome(session.platformUid, session.platformToken);
         setData(result);
+        console.log('TVホームデータが取得されました');
       } catch (error) {
         console.error("Error fetching TV home data:", error);
       }
     };
 
     fetchData();
-  }, [session, tvHomeService]); // tvHomeService を依存配列に追加することで、tvHomeServiceのインスタンス が変更された場合に再度データを取得する
-
+  }, [session]);
   return data;
 }

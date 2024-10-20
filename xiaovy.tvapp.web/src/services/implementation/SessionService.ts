@@ -15,7 +15,6 @@ export class SessionService implements ISessionService {
       }
   
       const data: sessionToken = await response.json();
-      console.log(data);
       return data;
     }
 }

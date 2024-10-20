@@ -10,7 +10,8 @@ export async function middleware(request: NextRequest) {
         request.nextUrl.pathname.startsWith('/api/User/Authentication') ||
         request.nextUrl.pathname.startsWith('/api/service/session') ||
         request.nextUrl.pathname.startsWith('/api/service/call/home') ||
-        request.nextUrl.pathname.startsWith('/api/content/episode')) {
+        request.nextUrl.pathname.startsWith('/api/content/episode') ||
+        request.nextUrl.pathname.startsWith('/api/service/call/streaminglink')) {
         return NextResponse.next();
     }
     if (request.nextUrl.pathname === '/about') {

@@ -25,7 +25,7 @@ export function useEpisodeService(episodeId: string) {
     if (episodeId) {
       fetchEpisodeData();
     }
-  }, [episodeId, EpisodeService]); // EpisodeService を依存配列に追加することで、EpisodeService のインスタンスが変更された場合に再度データを取得する
+  }, [episodeId]);
 
   return episodeData;
 }
