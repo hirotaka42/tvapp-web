@@ -44,20 +44,20 @@ import Image from 'next/image'
 //   ]
 // }
 
-const contents = [
-  {
-    id: "epzjmzse1d",
-    title: '第1話 保健室にはなるべく来ないでもらいたい',
-    seriesID: "srbzu3axsx",
-    endAt: 1735387140,
-    seriesTitle: '放課後カルテ',
-    broadcasterName: '日テレ',
-    productionProviderName: '日テレ',
-    broadcastDateLabel: '10月12日(土)放送分',
-    rank: 1,
-  },
-  // More products...
-]
+// const contents = [
+//   {
+//     id: "epzjmzse1d",
+//     title: '第1話 保健室にはなるべく来ないでもらいたい',
+//     seriesID: "srbzu3axsx",
+//     endAt: 1735387140,
+//     seriesTitle: '放課後カルテ',
+//     broadcasterName: '日テレ',
+//     productionProviderName: '日テレ',
+//     broadcastDateLabel: '10月12日(土)放送分',
+//     rank: 1,
+//   },
+//   // More products...
+// ]
 
 const products = [
   {
