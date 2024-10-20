@@ -1,7 +1,7 @@
 "use client";
 import { FC, useEffect, useState } from "react";
 import { Home } from "@/components/Pages/Home";
-import Example from "@/components/atomicDesign/molecules/ContentLists";
+// import Example from "@/components/atomicDesign/molecules/ContentLists";
 import { useSessionService } from '@/hooks/useSession';
 import { useTvHomeService } from '@/hooks/useTvHome';
 import { useEpisodeService } from '@/hooks/useEpisode';
@@ -11,6 +11,7 @@ import { getContentsByLabel, getLabelContentCounts } from '@/utils/Convert/ranki
 import { convertEpisodeRankingResponse } from '@/utils/Convert/ranking/genreDetail/responseParser';
 import { convertRankingToCardData } from "@/utils/Convert/ranking/convertRankingToCardData";
 import { ConvertedContent } from '@/types/CardItem/RankingContent';
+import { RankingContentCardList } from '@/components/atomicDesign/molecules/RankingContentCardList';
 
 export const Main: FC = () => {
     const session = useSessionService();
@@ -49,7 +50,8 @@ export const Main: FC = () => {
     return (
         <>
             <h1>Main</h1>
-            <Example contents={rankingContents} />
+            {/* <Example contents={rankingContents} /> */}
+            <RankingContentCardList contents={rankingContents} />
             <Home />
         </>
     );
