@@ -7,7 +7,8 @@ export async function middleware(request: NextRequest) {
     // フロントには出力されないので注意
     console.log('▶︎Call middleware')
     if (request.nextUrl.pathname.startsWith('/api/User/Register') || 
-        request.nextUrl.pathname.startsWith('/api/User/Authentication')) {
+        request.nextUrl.pathname.startsWith('/api/User/Authentication') ||
+        request.nextUrl.pathname.startsWith('/api/service/session')) {
         return NextResponse.next();
     }
     if (request.nextUrl.pathname === '/about') {
