@@ -13,15 +13,15 @@ const Example: React.FC<ExampleProps> = ({ contents }) => {
       <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
         <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">ドラマランキング</h2>
 
-        <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+        <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
           {contents.map((content) => (
             <div key={content.id} className="group relative">
               <div className="aspect-h-9 aspect-w-16 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75">
                 <Image
                   alt={content.title}
                   src={content.thumbnail.small}
-                  width={250}
-                  height={140}
+                  width={480}
+                  height={270}
                   className="h-full w-full object-cover object-center lg:h-full lg:w-full"
                 />
               </div>
