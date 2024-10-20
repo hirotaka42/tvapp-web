@@ -9,7 +9,8 @@ export async function middleware(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith('/api/User/Register') || 
         request.nextUrl.pathname.startsWith('/api/User/Authentication') ||
         request.nextUrl.pathname.startsWith('/api/service/session') ||
-        request.nextUrl.pathname.startsWith('/api/service/call/home')) {
+        request.nextUrl.pathname.startsWith('/api/service/call/home') ||
+        request.nextUrl.pathname.startsWith('/api/content/episode')) {
         return NextResponse.next();
     }
     if (request.nextUrl.pathname === '/about') {
