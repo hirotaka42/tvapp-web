@@ -1,9 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     images: {
-        domains: ['tailwindui.com','statics.tver.jp'],
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: 'tailwindui.com',
+                pathname: '/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'statics.tver.jp',
+                pathname: '/**',
+            },
+        ],
     },
-    reactStrictMode: true, // StrictModeを一時的に無効(false)にする
+    reactStrictMode: true,
 };
 
 export default nextConfig;
