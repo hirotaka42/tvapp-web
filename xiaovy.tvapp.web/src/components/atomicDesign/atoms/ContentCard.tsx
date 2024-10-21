@@ -38,7 +38,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ id, title, thumbnail, broadca
         >
           {broadcastDateLabel}
         </p>
-        {rank && (
+        {(rank !== undefined && rank !== 0) && (
           <p className="text-sm font-medium text-gray-900 dark:text-white">
             {rank}位
           </p>

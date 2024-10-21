@@ -2,7 +2,7 @@
 import React, { FC, useEffect, useState } from "react";
 import { useSessionService } from '@/hooks/useSession';
 import { useTvHomeService } from '@/hooks/useTvHome';
-import { getContentsByLabel, getAllLabels } from '@/utils/Convert/ranking/home/responseParser';
+import { getContentsByLabel} from '@/utils/Convert/ranking/home/responseParser';
 import { convertRankingToCardData } from "@/utils/Convert/ranking/convertRankingToCardData";
 import { ConvertedContent } from '@/types/CardItem/RankingContent';
 //import { RankingContentCardList } from '@/components/atomicDesign/molecules/RankingContentCardList';
@@ -12,20 +12,25 @@ import { Home } from "@/components/Pages/Home";
 export const Main: FC = () => {
     const session = useSessionService();
     const tvHomeData = useTvHomeService(session);
-    const [rankingContents, setRankingContents] = useState<ConvertedContent[]>([]);
-    const [selectedLabel, setSelectedLabel] = useState<string>('ドラマランキング');
-    const [allLabels, setAllLabels] = useState<string[]>([]);
+    const [rankingContents, setRankingContents] = useState<Record<string, ConvertedContent[]>>({});
+
+    const rankingLabels = [
+        'ドラマランキング', 'バラエティランキング', 'アニメ／ヒーローランキング',
+        '報道／ドキュメンタリーランキング', 'スポーツランキング',
+        '↓この放送回、すごく再生されています', '10月開始の新バラエティ番組',
+        '【音楽特集】人気番組を見逃し配信中！',
+        '今週のイチオシバラエティはこれ！', 'まもなく配信終了'
+    ];
 
     useEffect(() => {
         if (tvHomeData) {
-            setAllLabels(getAllLabels(tvHomeData));
-            if (selectedLabel) {
-                const selectedContents = convertRankingToCardData(getContentsByLabel(tvHomeData, selectedLabel));
-                setRankingContents(selectedContents);
-            }
+            const contents = rankingLabels.reduce((acc, label) => {
+                const labelContents = convertRankingToCardData(getContentsByLabel(tvHomeData, label));
+                return { ...acc, [label]: labelContents };
+            }, {});
+            setRankingContents(contents);
         }
-    }, [tvHomeData, selectedLabel]);
-
+    }, [tvHomeData]);
 
     if (!session || !tvHomeData) {
         return <div>Loading...</div>;
@@ -34,14 +39,12 @@ export const Main: FC = () => {
     return (
         <>
             <h1>Main</h1>
-            <select onChange={e => setSelectedLabel(e.target.value)} value={selectedLabel}>
-                <option value="">Select a label</option>
-                {allLabels.map(label => (
-                    <option key={label} value={label}>{label}</option>
-                ))}
-            </select>
-
-            <ContentCardList contents={rankingContents} />
+            {rankingLabels.map(label => (
+                <div key={label}>
+                    <h2>{label}</h2>
+                    <ContentCardList contents={rankingContents[label] || []} />
+                </div>
+            ))}
             <Home />
         </>
     );
