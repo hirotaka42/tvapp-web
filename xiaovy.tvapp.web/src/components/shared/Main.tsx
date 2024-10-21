@@ -5,7 +5,8 @@ import { useTvHomeService } from '@/hooks/useTvHome';
 import { getContentsByLabel, getAllLabels } from '@/utils/Convert/ranking/home/responseParser';
 import { convertRankingToCardData } from "@/utils/Convert/ranking/convertRankingToCardData";
 import { ConvertedContent } from '@/types/CardItem/RankingContent';
-import { RankingContentCardList } from '@/components/atomicDesign/molecules/RankingContentCardList';
+//import { RankingContentCardList } from '@/components/atomicDesign/molecules/RankingContentCardList';
+import { ContentCardList } from '@/components/atomicDesign/molecules/ContentCardList';
 import { Home } from "@/components/Pages/Home";
 
 export const Main: FC = () => {
@@ -40,7 +41,7 @@ export const Main: FC = () => {
                 ))}
             </select>
 
-            <RankingContentCardList contents={rankingContents} />
+            <ContentCardList contents={rankingContents} />
             <Home />
         </>
     );
