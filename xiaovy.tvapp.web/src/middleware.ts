@@ -7,7 +7,12 @@ export async function middleware(request: NextRequest) {
     // フロントには出力されないので注意
     console.log('▶︎Call middleware')
     if (request.nextUrl.pathname.startsWith('/api/User/Register') || 
-        request.nextUrl.pathname.startsWith('/api/User/Authentication')) {
+        request.nextUrl.pathname.startsWith('/api/User/Authentication') ||
+        request.nextUrl.pathname.startsWith('/api/service/session') ||
+        request.nextUrl.pathname.startsWith('/api/service/call/home') ||
+        request.nextUrl.pathname.startsWith('/api/content/episode') ||
+        request.nextUrl.pathname.startsWith('/api/service/call/streaminglink') ||
+        request.nextUrl.pathname.startsWith('/api/service/call/ranking/episode/detail')){
         return NextResponse.next();
     }
     if (request.nextUrl.pathname === '/about') {
