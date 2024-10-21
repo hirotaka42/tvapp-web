@@ -16,7 +16,7 @@ const RankingContentCard: React.FC<RankingContentCardProps> = ({ id, title, thum
       rel="noopener noreferrer"
       className="flex flex-row sm:flex-col items-center rounded-lg hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700 bg-white"
     >
-      <div className="w-1/3 sm:w-full flex-shrink-0 aspect-w-16 aspect-h-9 min-h-[72px] sm:min-h-0 min-w-[128px] sm:min-w-0">
+      <div className="w-1/3 sm:w-full flex-shrink-0 aspect-w-16 aspect-h-9 min-h-[72px] min-w-[128px] max-h-[146px] max-w-[260px]">
         <Image
           alt={title}
           src={thumbnail}
