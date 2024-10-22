@@ -16,7 +16,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ id, title, thumbnail, broadca
       rel="noopener noreferrer"
       className="flex flex-col items-center rounded-lg min-w-[164px] max-w-[260px] hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700 bg-white"
     >
-      <div className="w-1/3 sm:w-full flex-shrink-0 aspect-w-16 aspect-h-9 min-h-[92.25px] min-w-[164px] max-h-[146px] max-w-[260px]">
+      <div className="w-1/3 pt-7 sm:w-full flex-shrink-0 aspect-w-16 aspect-h-9 min-h-[92.25px] min-w-[164px] max-h-[146px] max-w-[260px]">
         <Image
           alt={title}
           src={thumbnail}
@@ -25,15 +25,15 @@ const ContentCard: React.FC<ContentCardProps> = ({ id, title, thumbnail, broadca
           className="object-cover rounded-lg sm:rounded-none sm:rounded-t-lg"
         />
       </div>
-      <div className="p-4 pt-0 pb-0 sm:pt-4 sm:pb-4 leading-normal w-2/3 sm:w-full min-h-[72px] sm:min-h-0">
+      <div className="p-0 leading-normal w-2/3 sm:w-full min-w-[164px] max-w-[260px]">
         <h5
-          className="mb-2 text-md font-bold tracking-tight text-gray-900 dark:text-white truncate"
+          className="text-md font-bold tracking-tight text-gray-900 dark:text-white truncate"
           style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
         >
           {title}
         </h5>
         <p
-          className="mb-1 font-normal text-gray-700 dark:text-gray-400 truncate"
+          className="font-normal text-gray-700 dark:text-gray-400 truncate"
           style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
         >
           {broadcastDateLabel}

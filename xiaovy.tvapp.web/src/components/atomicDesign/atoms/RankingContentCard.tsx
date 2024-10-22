@@ -14,7 +14,7 @@ const RankingContentCard: React.FC<RankingContentCardProps> = ({ id, title, thum
       href={`episode/${id}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex flex-row sm:flex-col items-center rounded-lg hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700 bg-white"
+      className="flex flex-row sm:flex-col items-center rounded-lg ml-3 mr-3 hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700 bg-white"
     >
       <div className="w-1/3 sm:w-full flex-shrink-0 aspect-w-16 aspect-h-9 min-h-[72px] min-w-[128px] max-h-[146px] max-w-[260px]">
         <Image
@@ -25,7 +25,7 @@ const RankingContentCard: React.FC<RankingContentCardProps> = ({ id, title, thum
           className="object-cover rounded-lg sm:rounded-none sm:rounded-t-lg"
         />
       </div>
-      <div className="p-4 pt-0 pb-0 sm:pt-4 sm:pb-4 leading-normal w-2/3 sm:w-full min-h-[72px] sm:min-h-0">
+      <div className="p-4 pt-0 pb-0 sm:pt-4 sm:pb-4 sm:mb-4 leading-normal w-2/3 sm:w-full min-h-[72px] sm:min-h-0">
         <h5
           className="mb-2 text-md font-bold tracking-tight text-gray-900 dark:text-white truncate"
           style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
