@@ -10,10 +10,16 @@ import { ConvertedContent } from '@/types/CardItem/RankingContent';
 import { ContentCardList } from '@/components/atomicDesign/molecules/ContentCardList';
 import { RankingContentCardList } from '@/components/atomicDesign/molecules/RankingContentCardList';
 import { Home } from "@/components/Pages/Home";
+import { TabsWithUnderline } from "@/components/atomicDesign/molecules/Navi/TabsWithUnderLine";
 
 const useGenreRanking = (selectedGenre: string | null) => {
     const ranking = useRankingService(selectedGenre);
     return ranking ? convertRankingToCardData(convertEpisodeRankingResponse(ranking)) : null;
+};
+
+type Tab = {
+    title: string;
+    query: string;
 };
 
 export const Main: FC = () => {
@@ -22,6 +28,25 @@ export const Main: FC = () => {
     const [rankingContents, setRankingContents] = useState<Record<string, ConvertedContent[]>>({});
     const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const sampleTabs: Tab[] = [
+        {
+          title: "アニメ",
+          query: "Anime",
+        },
+        {
+          title: "ドラマ",
+          query: "Drama",
+        },
+        {
+          title: "バラエティー",
+          query: "Veraety",
+        },
+        {
+          title: "ドキュメンタリー",
+          query: "Documentary",
+        },
+      ];
+    
 
     const rankingLabels = [
         'ドラマランキング', 'バラエティランキング', 'アニメ／ヒーローランキング',
@@ -73,6 +98,9 @@ export const Main: FC = () => {
                     <ContentCardList contents={rankingContents[label] || []} />
                 </div>
             ))}
+            <TabsWithUnderline
+                tabs={sampleTabs}
+            />
 
             <div>
                 <h2>ランキングジャンル</h2>
