@@ -2,16 +2,16 @@ FROM node:20
 WORKDIR /usr/src/app
 
 # アプリケーションの依存関係をインストールする
-COPY xiao.tvapp.web/package*.json ./xiao.tvapp.web/
-RUN cd xiao.tvapp.web && npm install --force
+COPY xiaovy.tvapp.web/package*.json ./xiaovy.tvapp.web/
+RUN cd xiaovy.tvapp.web && npm install
 
 # アプリケーションのソースをバンドルする
-COPY xiao.tvapp.web ./xiao.tvapp.web
+COPY xiaovy.tvapp.web ./xiaovy.tvapp.web
 
 # アプリケーションをビルドする
-RUN cd xiao.tvapp.web && npm run build
+RUN cd xiaovy.tvapp.web && npm run build
 
 # ポートを開放する
 EXPOSE 3000
 
-CMD [ "npm", "--prefix", "xiao.tvapp.web", "run", "start", "--", "-H", "0.0.0.0"]
+CMD [ "npm", "--prefix", "xiaovy.tvapp.web", "run", "start", "--", "-H", "0.0.0.0"]

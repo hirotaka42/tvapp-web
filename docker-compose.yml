@@ -1,6 +1,6 @@
 services:
-  tvapp-web-v2:
-    image: tvapp-web-v2
+  tvapp-web-v3:
+    image: tvapp-web-v3
     build:
       context: .
       dockerfile: Dockerfile.web
