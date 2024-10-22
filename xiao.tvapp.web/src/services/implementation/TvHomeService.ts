@@ -2,8 +2,7 @@ import axios from 'axios';
 
 export class TvHomeService {
   static async callHome(platformUid: string, platformToken: string) {
-    const host = process.env.NEXT_PUBLIC_IP;
-    const response = await axios.get(`http://${host}:5231/api/TVapp/service/callHome`, {
+    const response = await axios.get(`/api/service/call/home`, {
       params: {
         platformUid: platformUid,
         platformToken: platformToken
@@ -16,7 +15,6 @@ export class TvHomeService {
     if (!response) {
       throw new Error('Network response was not ok');
     }
-    console.log(response.data);
     return response.data;
   }
 }

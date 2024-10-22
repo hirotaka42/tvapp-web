@@ -1,6 +1,5 @@
-import { platformToken } from "../models/Token";
+import { sessionToken } from "@/types/SessionToken";
 
-// ISessionService.ts
 export interface ISessionService {
-  getSession: () => Promise<platformToken>;
+  getSession: () => Promise<sessionToken>;
 }

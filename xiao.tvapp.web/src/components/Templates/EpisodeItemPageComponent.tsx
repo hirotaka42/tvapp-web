@@ -1,8 +1,8 @@
 import React, { useState, useEffect} from 'react';
-import { useCallEpisodeService } from '../../hooks/CallEpisodeHook';
-import { SeriesPlayerLayoutBody } from '../Organisms/SeriesPlayerLayoutBody';
-import { StreamingServiceContext } from '../../contexts/StreamingContext';
-import { StreamingService } from '../../services/implementation/StreamingService';
+import { useCallEpisodeService } from '@/hooks/CallEpisodeHook';
+import { SeriesPlayerLayoutBody } from '@/components/Organisms/SeriesPlayerLayoutBody';
+import { StreamingServiceContext } from '@/contexts/StreamingContext';
+import { StreamingService } from '@/services/implementation/StreamingService';
 
 interface Video {
   videoRefID: string;
@@ -98,15 +98,14 @@ export const EpisodeItemPageComponent: React.FC<{ episodeId: string }> = ({ epis
       const fetchData = async () => {
         try {
           const response = await callEpisodeService.callEpisode(episodeId);
-          setEpisodeInfo(response);
-          console.log(response);
+          setEpisodeInfo(response.data);
         } catch (error) {
           console.error(error);
         }
       };
       fetchData();
   
-    }, []);
+    }, [episodeId]);
     // #endregion
   
   
@@ -119,7 +118,7 @@ export const EpisodeItemPageComponent: React.FC<{ episodeId: string }> = ({ epis
     return (
       <>
         <StreamingServiceContext.Provider value={StreamingService}>
-          <SeriesPlayerLayoutBody episodeInfo={episodeInfo} />
+          <SeriesPlayerLayoutBody episodeInfo={episodeInfo} episodeId={episodeId}/>
         </StreamingServiceContext.Provider>
       </>
     );

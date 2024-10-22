@@ -1,24 +1,11 @@
 import React, { useState } from 'react';
 import { Card, CardActionArea, Box } from '@mui/material';
-import EpisodeImg from '../../../../public/images/PC_img_episode_noimage_small.svg';
+import EpisodeImg from '@/../public/images/PC_img_episode_noimage_small.svg';
+import { ContentData } from '@/types/ContentData';
 
 interface Content {
   type: string;
-  content: {
-    id: string;
-    version: number;
-    title: string;
-    seriesID: string;
-    endAt: number;
-    broadcastDateLabel: string;
-    isNHKContent: boolean;
-    isSubtitle: boolean;
-    ribbonID: number;
-    seriesTitle: string;
-    isAvailable: boolean;
-    broadcasterName: string;
-    productionProviderName: string;
-  };
+  content: ContentData;
   rank: number;
 }
 

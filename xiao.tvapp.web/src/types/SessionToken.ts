@@ -1,5 +1,4 @@
-
-export interface platformToken {
+export interface sessionToken {
     platformUid: string;
     platformToken: string;
 }

@@ -1,26 +1,13 @@
 import React, { useState, useEffect} from 'react';
-import { platformToken } from '../../models/Token';
-import { useSessionService } from '../../hooks/SessionHook';
-import { useTvHomeService } from '../../hooks/TvHomeHook';
-import { RankingItemContainer } from '../Molecules/RankingItemContainer';
+import { sessionToken } from '@/types/SessionToken';
+import { useSessionService } from '@/hooks/SessionHook';
+import { useTvHomeService } from '@/hooks/TvHomeHook';
+import { RankingItemContainer } from '@/components/Molecules/RankingItemContainer';
+import { ContentData } from '@/types/ContentData';
 
 interface Content {
   type: string;
-  content: {
-    id: string;
-    version: number;
-    title: string;
-    seriesID: string;
-    endAt: number;
-    broadcastDateLabel: string;
-    isNHKContent: boolean;
-    isSubtitle: boolean;
-    ribbonID: number;
-    seriesTitle: string;
-    isAvailable: boolean;
-    broadcasterName: string;
-    productionProviderName: string;
-  };
+  content: ContentData;
   rank: number;
 }
 
@@ -36,7 +23,7 @@ export default function HomeComponent( ) {
   // #endregion
   
   // #region State -----------------------
-  const [token, setToken] = useState<platformToken>({
+  const [token, setToken] = useState<sessionToken>({
     platformUid: '',
     platformToken: '',
   });
@@ -47,7 +34,6 @@ export default function HomeComponent( ) {
   const sessionService = useSessionService();
   const tvHomeService = useTvHomeService();
   const thumbnailUrl = process.env.NEXT_PUBLIC_IMAG_THUMBNAIL;
-  const test = process.env.NEXT_PUBLIC_BFF_SERVER;
 
   
   // #endregion
@@ -56,6 +42,21 @@ export default function HomeComponent( ) {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const cachedData = localStorage.getItem('rankingData');
+        const currentTime = new Date().getTime();
+        
+        // 15分以内のキャッシュがある場合、キャッシュデータを使用
+        if (cachedData) {
+          const parsedData = JSON.parse(cachedData);
+          if (currentTime - parsedData.timestamp < 15 * 60 * 1000) {
+            setToken(parsedData.token);
+            setRankingDramaComponent(parsedData.rankingDramaComponent);
+            setRankingVarietyComponent(parsedData.rankingVarietyComponent);
+            setRankingAnimeComponent(parsedData.rankingAnimeComponent);
+            setRankingNewsComponent(parsedData.rankingNewsComponent);
+            return;
+          }
+        }
         const session = await sessionService.getSession();
         setToken(session);
 
@@ -65,13 +66,11 @@ export default function HomeComponent( ) {
           console.log(data); 
 
           // ランキングドラマのデータを取得
-          const rankingComponents = data.result.components.filter(
+          const rankingDramaComponents = data.result.components.filter(
             (component: ComponentType) => component.componentID === 'ranking-drama.' && component.type === 'episodeRanking'
           );
-          if (rankingComponents.length > 0) {
-            setRankingDramaComponent(rankingComponents[0]);
-            console.log("A: ");
-            console.log(rankingDramaComponent)
+          if (rankingDramaComponents.length > 0) {
+            setRankingDramaComponent(rankingDramaComponents[0]);
           }
           // ランキングバラエティのデータを取得
           const rankingVarietyComponents = data.result.components.filter(
@@ -79,8 +78,6 @@ export default function HomeComponent( ) {
           );
           if (rankingVarietyComponents.length > 0) {
             setRankingVarietyComponent(rankingVarietyComponents[0]);
-            console.log("B: ");
-            console.log(rankingVarietyComponent)
           }
 
           // ランキングアニメのデータを取得
@@ -89,8 +86,6 @@ export default function HomeComponent( ) {
           );
           if (rankingAnimeComponents.length > 0) {
             setRankingAnimeComponent(rankingAnimeComponents[0]);
-            console.log("C: ");
-            console.log(rankingAnimeComponent)
           }
 
           // ランキングニュースのデータを取得
@@ -99,9 +94,17 @@ export default function HomeComponent( ) {
           );
           if (rankingNewsComponents.length > 0) {
             setRankingNewsComponent(rankingNewsComponents[0]);
-            console.log("D: ");
-            console.log(rankingNewsComponent)
           }
+
+          // データをキャッシュに保存
+          localStorage.setItem('rankingData', JSON.stringify({
+            token: session,
+            rankingDramaComponent: rankingDramaComponents[0],
+            rankingVarietyComponent: rankingVarietyComponents[0],
+            rankingAnimeComponent: rankingAnimeComponents[0],
+            rankingNewsComponent: rankingNewsComponents[0],
+            timestamp: currentTime,
+          }));
 
         }
       } catch (error) {
@@ -110,8 +113,7 @@ export default function HomeComponent( ) {
       }
     }
     fetchData();
-
-  }, [sessionService, tvHomeService]);
+  }, []);
   // #endregion
 
 
@@ -123,15 +125,10 @@ export default function HomeComponent( ) {
 
   return (
     <>
-    <h1>Home</h1>
-    <div>env: {process.env.NEXT_PUBLIC_BFF_SERVER|| "IPを取得できませんでした"}</div>
-    <div>host: {test|| "IPを取得できませんでした"}</div>
-    <div>{thumbnailUrl|| "取得できませんでした"}</div>
     <RankingItemContainer rankingData={rankingDramaComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingVarietyComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingAnimeComponent}></RankingItemContainer>
     <RankingItemContainer rankingData={rankingNewsComponent}></RankingItemContainer>
-
     </>
   );
 }

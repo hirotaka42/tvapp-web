@@ -1,11 +1,10 @@
 
-import { ISessionService } from '../ISessionService';
-import { platformToken } from '../../models/Token';
+import { ISessionService } from '@/services/ISessionService';
+import { sessionToken } from '@/types/SessionToken';
 
 export class SessionService implements ISessionService {
-    async getSession(): Promise<platformToken> {
-      const host = process.env.NEXT_PUBLIC_IP;
-      const response = await fetch(`http://${host}:5231/api/TVapp/session`, {
+    async getSession(): Promise<sessionToken> {
+      const response = await fetch(`/api/session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -16,7 +15,7 @@ export class SessionService implements ISessionService {
         throw new Error('Network response was not ok');
       }
   
-      const data: platformToken = await response.json();
+      const data: sessionToken = await response.json();
       console.log(data);
       return data;
     }

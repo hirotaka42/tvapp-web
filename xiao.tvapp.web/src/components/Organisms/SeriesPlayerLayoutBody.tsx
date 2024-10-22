@@ -1,6 +1,6 @@
 import React, { useState, useEffect} from 'react';
-import { VideoPlayer } from '../Atoms/Player/VideoPlayer';
-import { useStreamingService } from '../../hooks/StreamingHook';
+import { VideoPlayer } from '@/components/Atoms/Player/VideoPlayer';
+import { useStreamingService } from '@/hooks/StreamingHook';
 
 
 interface Video {
@@ -48,7 +48,7 @@ interface Video {
     svod: SVOD[];
   }
 
-export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse }> = ({ episodeInfo }) => {
+export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse, episodeId: string }> = ({ episodeInfo, episodeId }) => {
   // #region Variable -----------------------
   const streamingService = useStreamingService();
   // #endregion
@@ -61,13 +61,13 @@ export const SeriesPlayerLayoutBody: React.FC<{ episodeInfo: EpisodeResponse }> 
   // #region React Event -----------------------
   useEffect(() => {
     const fetchUrl = async () => {
-      if (episodeInfo && episodeInfo.id) {
-        const url = await streamingService.getVideoUrl(episodeInfo.id);
+      if (episodeId) {
+        const url = await streamingService.getVideoUrl(episodeId);
         setVideoUrl(url);
       }
     };
     fetchUrl();
-  }, [episodeInfo.id]);
+  }, [episodeId]);
   // #endregion
 
 
