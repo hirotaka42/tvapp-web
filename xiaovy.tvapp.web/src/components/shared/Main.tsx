@@ -65,7 +65,6 @@ export const Main: FC = () => {
 
     return (
         <>
-            <h1>Main</h1>
             {rankingLabels.map(label => (
                 <div key={label}>
                     <h2>{label}</h2>
