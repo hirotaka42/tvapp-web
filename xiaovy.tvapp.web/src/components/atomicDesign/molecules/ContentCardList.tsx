@@ -7,7 +7,7 @@ interface ContentCardListProps {
 
 export const ContentCardList: React.FC<ContentCardListProps> = ({ contents }) => {
   return (
-    <div className="flex flex-row ml-3 mt-2.5 mr-1.5 gap-x-4 overflow-x-auto">
+    <div className="flex flex-row ml-3 mt-2.5 mr-1.5 pl-1 gap-x-4 overflow-x-auto">
       {contents.map((content) => (
         <ContentCard
           key={content.id}
