@@ -65,9 +65,7 @@ export const Main: FC = () => {
                     <ContentCardList contents={rankingContents[label] || []} />
                 </div>
             ))}
-            <TabsWithUnderlineRanking
-                tabs={sampleGenres}
-            />
+            <TabsWithUnderlineRanking tabs={sampleGenres}/>
         </>
     );
 };
