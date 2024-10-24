@@ -8,7 +8,7 @@ interface RankingContentCardListProps {
 
 const RankingContentCardList: React.FC<RankingContentCardListProps> = React.memo(({ contents }) => {
   return (
-    <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+    <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-[repeat(auto-fit,_minmax(200px,_1fr))]">
       {contents.map((content) => (
         <RankingContentCard
           key={content.id}
