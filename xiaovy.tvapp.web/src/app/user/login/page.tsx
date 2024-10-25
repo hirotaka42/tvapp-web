@@ -1,6 +1,8 @@
 'use client'
 import React, { useState, ChangeEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import InputField from '@/components/InputField';
+import { useToast } from '@/contexts/ToastContext'
 
 interface FormData {
   Uid: string;
@@ -10,8 +12,8 @@ interface FormData {
 }
 
 const Login: React.FC = () => {
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
+  const router = useRouter();
   const url = '/api/User/Authentication';
   const TokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
   if (!TokenName){
@@ -26,12 +28,6 @@ const Login: React.FC = () => {
     PhoneNumber: ''
   });
 
-  const fields = [
-    { name: 'Email', placeholder: 'メールアドレス', type: 'email' },
-    { name: 'PhoneNumber', placeholder: '電話番号', type: 'tel' },
-    { name: 'Password', placeholder: 'パスワード', type: 'password' }
-  ];
-
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -42,7 +38,6 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     // 空文字列をnullに置き換える
     // これは、サーバー側で空文字列を受け付けない場合に必要
     // Todo: 影響範囲がよくわかっていないので、調査する
@@ -59,45 +54,107 @@ const Login: React.FC = () => {
         body: JSON.stringify(dataToSend)
       });
       if (!response.ok) {
+        showToast('ログインに失敗しました', 'error');
         throw new Error('ネットワークエラーが発生しました');
       }
       const result = await response.json();
       localStorage.setItem(TokenName, result.IdToken);
       console.log('ログイン成功:', result);
+      showToast('ログインしました', 'success');
+      router.push('/');
     } catch (error) {
       if (error instanceof Error) {
         console.error('エラー :', error.message);
-        setError(error.message);
       } else {
         console.error('Unexpected error:', error);
-        setError('予期しないエラーが発生しました');
+        throw new Error('予期しないエラーが発生しました');
       }
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error}</p>;
-
   return (
     <>
-      <h1>Loginページ</h1>
-      <form onSubmit={handleSubmit}>
-        {fields.map((field) => (
-          <InputField 
-            key={field.name}
-            name={field.name}
-            value={formData[field.name as keyof FormData]}
-            type={field.type}
-            onChange={handleChange}
-            placeholder={field.placeholder}
-          />
-        ))}
-        <br />
-        <button>Submit</button>
-      </form>
-    </>
+    {/*
+      This example requires updating your template:
+
+      ```
+      <html class="h-full bg-white">
+      <body class="h-full">
+      ```
+    */}
+    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+        <img
+          alt="Your Company"
+          src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600"
+          className="mx-auto h-10 w-auto"
+        />
+        <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900 dark:text-white">
+          Sign in to your account
+        </h2>
+      </div>
+
+      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        <form action="#" method="POST" className="space-y-6">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900 dark:text-white">
+              Email address
+            </label>
+            <div className="mt-2">
+              <InputField 
+                key="Email"
+                name="Email"
+                value={formData['Email']}
+                type="Email"
+                onChange={handleChange}
+                placeholder="Email"
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900 dark:text-white">
+                Password
+              </label>
+              <div className="text-sm">
+                <a href="#" className="font-semibold text-indigo-600 hover:text-indigo-500">
+                  Forgot password?
+                </a>
+              </div>
+            </div>
+            <div className="mt-2">
+              <InputField 
+                  key="Password"
+                  name="Password"
+                  value={formData['Password']}
+                  type="Password"
+                  onChange={handleChange}
+                  placeholder="Password"
+                />
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Sign in
+            </button>
+          </div>
+        </form>
+
+        <p className="mt-10 text-center text-sm text-gray-500 dark:text-slate-300">
+          Not a member?{' '}
+          <a href="/user/register" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
+            Sign up now
+          </a>
+        </p>
+      </div>
+    </div>
+  </>
   );
 };
 
