@@ -1,10 +1,9 @@
 'use client'
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import InputField from '@/components/InputField';
-import { useToast } from '@/contexts/ToastContext'
+import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/hooks/useAuth';
-import { BetaLoginButton } from '@/components/atomicDesign/atoms/BetaLoginButton';
+import SignInForms from '@/components/atomicDesign/molecules/Forms/sign-in-forms';
 
 interface FormData {
   Uid: string;
@@ -19,6 +18,7 @@ const Login: React.FC = () => {
   const router = useRouter();
   const url = '/api/User/Authentication';
   const TokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
+
   if (!TokenName){
     console.log(TokenName);
     throw new Error("環境変数:IDTOKEN_NAMEが設定されていません。");
@@ -41,9 +41,6 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 空文字列をnullに置き換える
-    // これは、サーバー側で空文字列を受け付けない場合に必要
-    // Todo: 影響範囲がよくわかっていないので、調査する
     const dataToSend = Object.fromEntries(
       Object.entries(formData).map(([key, value]) => [key, value || null])
     );
@@ -83,90 +80,14 @@ const Login: React.FC = () => {
 
   return (
     <>
-    {/*
-      This example requires updating your template:
-
-      ```
-      <html class="h-full bg-white">
-      <body class="h-full">
-      ```
-    */}
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <img
-          alt="Your Company"
-          src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600"
-          className="mx-auto h-10 w-auto"
-        />
-        <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900 dark:text-white">
-          Sign in to your account
-        </h2>
-      </div>
-
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form action="#" method="POST" className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900 dark:text-white">
-              Email address
-            </label>
-            <div className="mt-2">
-              <InputField 
-                key="Email"
-                name="Email"
-                value={formData['Email']}
-                type="Email"
-                onChange={handleChange}
-                placeholder="Email"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900 dark:text-white">
-                Password
-              </label>
-              <div className="text-sm">
-                <a href="#" className="font-semibold text-indigo-600 hover:text-indigo-500">
-                  Forgot password?
-                </a>
-              </div>
-            </div>
-            <div className="mt-2">
-              <InputField 
-                  key="Password"
-                  name="Password"
-                  value={formData['Password']}
-                  type="Password"
-                  onChange={handleChange}
-                  placeholder="Password"
-                />
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              onClick={handleSubmit}
-              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              Sign in
-            </button>
-          </div>
-        </form>
-        <BetaLoginButton router={router} />
-
-        <p className="mt-10 text-center text-sm text-gray-500 dark:text-slate-300">
-          Not a member?{' '}
-          <a href="/user/register" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
-            Sign up now
-          </a>
-        </p>
-      </div>
-    </div>
-  </>
+      <SignInForms
+        formData={{ Email: formData.Email, Password: formData.Password }}
+        handleChange={handleChange}
+        handleSubmit={handleSubmit}
+        router={router}
+      />
+    </>
   );
-
 };
 
 export default Login;
