@@ -36,6 +36,12 @@ const products = [
   { name: 'マツコの知らない世界', description: 'Build strategic funnels that will convert', href: '/series/srlblerhue', icon: ArrowPathIcon },
   { name: '名探偵コナン', description: 'Build strategic funnels that will convert', href: '/series/srtxft431v', icon: ArrowPathIcon },
   { name: 'ちいかわ', description: 'Build strategic funnels that will convert', href: '/series/sr3lsg7nv7', icon: ArrowPathIcon },
+  { name: 'ダンダダン', description: 'Build strategic funnels that will convert', href: '/series/sronql0hak', icon: ArrowPathIcon },
+  { name: 'シャングリラ・フロンティア 2nd Season', description: 'Build strategic funnels that will convert', href: '/series/srvctobsf4', icon: ArrowPathIcon },
+  { name: 'BLEACH 千年血戦篇-相剋譚-', description: 'Build strategic funnels that will convert', href: '/series/sr60uflhye', icon: ArrowPathIcon },
+  { name: '民王Ｒ', description: 'Build strategic funnels that will convert', href: '/series/srofzhfpu1', icon: ArrowPathIcon },
+  { name: '無能の鷹', description: 'Build strategic funnels that will convert', href: '/series/srv93dd2pr', icon: ArrowPathIcon },
+  { name: '離婚弁護士 スパイダー～慰謝料争奪編～', description: 'Build strategic funnels that will convert', href: '/series/srjxwn0yna', icon: ArrowPathIcon },
 ]
 const callsToAction = [
   { name: 'Watch demo', href: '#', icon: PlayCircleIcon },

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     try {
         const response = await fetch(
-            `https://platform-api.tver.jp/service/api/v1/callSeriesEpisodes/${seriesId}?platform_uid=${platformUid}&platform_token=${platformToken}`,
+            `https://platform-api.tver.jp/service/api/v1/callSeriesEpisodes/${seriesId}?platform_uid=${platformUid}&platform_token=${platformToken}&require_data=later%2Cgood%2Cresume`,
             {
                 headers: {
                     'x-tver-platform-type': 'web',

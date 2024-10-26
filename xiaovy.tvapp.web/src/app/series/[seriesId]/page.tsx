@@ -2,12 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { useSessionService } from '@/hooks/useSession';
 import { RankingContentCardList } from '@/components/atomicDesign/molecules/RankingContentCardList';
-import { convertCardContents } from '@/utils/Convert/episodesForSeries/responseParser'
 import { ConvertedCardViewContent } from '@/types/CardItem/ForGeneric';
+import { convertCardContentsBySeason } from '@/utils/Convert/episodesForSeries/responseParser';
+
+interface SeasonGroupedContents {
+    seasonTitle: string;
+    contents: ConvertedCardViewContent[];
+}
 
 function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
     const { seriesId } = params;
-    const [episodeData, setEpisodeData] = useState<ConvertedCardViewContent[] | null>(null);
+    const [episodeData, setEpisodeData] = useState<SeasonGroupedContents[] | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const session = useSessionService();
 
@@ -28,8 +33,7 @@ function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
                 }
 
                 const data = await response.json();
-                console.log("Episode data:", data);
-                const convertedData = convertCardContents(data);
+                const convertedData = convertCardContentsBySeason(data);
                 setEpisodeData(convertedData);
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -40,21 +44,19 @@ function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
         fetchEpisodeData();
     }, [seriesId, session]);
 
-    if (!seriesId) {
-        return <div>Series ID not provided</div>;
-    }
-
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
-    if (!episodeData) {
-        return <div>Error loading episode data</div>;
-    }
+    if (!seriesId)return <div>Series ID not provided</div>;
+    if (loading || !episodeData) return <div>Loading...</div>;
 
     return (
         <>
-        <RankingContentCardList contents={episodeData} />
+            {episodeData.map((season, index) => (
+                <div key={index}>
+                    <h2
+                        className="text-md font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
+                    >{season.seasonTitle}</h2>
+                    <RankingContentCardList contents={season.contents} />
+                </div>
+            ))}
         </>
     );
 }
