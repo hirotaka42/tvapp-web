@@ -24,7 +24,7 @@ import {
 import { ChevronDownIcon, PhoneIcon, PlayCircleIcon } from '@heroicons/react/20/solid'
 import { ThemeSelector } from "@/app/themeSelector";
 import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
-//import { useAuth } from '@/hooks/useAuth'
+import { usePathname } from 'next/navigation';
 
 const products = [
   { name: 'Analytics', description: 'Get a better understanding of your traffic', href: '#', icon: ChartPieIcon },
@@ -40,23 +40,18 @@ const callsToAction = [
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  //const loginUser = useAuth();
+  const pathname = usePathname();
 
   const handleLogout = () => {
     localStorage.removeItem('IdToken');
     window.location.href = '/user/login';
   }
-  // useAuth内のRouter処理で、ログインページへのリダイレクトが矯正されてしまうため、コメントアウト
-  // header非表示については対応を検討
-  // TODO //
-  // if (loginUser === null) {
-  //   // ロード中
-  //   return null;
-  // }
-  // if (!loginUser) {
-  //   // 未ログイン
-  //   return null;
-  // }
+  // useAuth内のRouter処理で、ログインページへのリダイレクトが矯正されてしまう
+  // そのため、Headerではアカウント確認を行わない(暫定対応)
+  // TODO // パスをカスタマイズした際にバグになるため、修正が必要
+  if (pathname === '/user/login' || pathname === '/user/register') {
+    return null;
+  }
 
   return (
     <>
