@@ -38,7 +38,12 @@ const callsToAction = [
 ]
 
 export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const handleLogout = () => {
+    localStorage.removeItem('IdToken');
+    window.location.href = '/user/login';
+  }
+
 
   return (
     <>
@@ -203,6 +208,12 @@ export default function Header() {
                 >
                   Log in
                 </a>
+                <button
+                  onClick={handleLogout}
+                  className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Log out
+                </button>
               </div>
             </div>
           </div>
