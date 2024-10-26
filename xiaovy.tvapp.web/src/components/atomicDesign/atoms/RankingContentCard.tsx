@@ -22,6 +22,7 @@ const RankingContentCard: React.FC<RankingContentCardProps> = ({ id, title, thum
           height={270}
           className="object-cover rounded-lg sm:rounded-none sm:rounded-t-lg"
         />
+        {(rank !== undefined && rank !== 0) && (
         <Image
           alt={`${rank}位`}
           src={`https://tver.jp/images/PC_img_ranking_${rank}.svg`}
@@ -29,6 +30,7 @@ const RankingContentCard: React.FC<RankingContentCardProps> = ({ id, title, thum
           height={48} // 適切なサイズに調整
           className="absolute -translate-x-1/5.3 -translate-y-1/5 min-h-12 max-h-12 min-w-12 max-w-12 left-0 top-0"
         />
+        )}
       </div>
       <div className="p-4 pt-0 pb-0 sm:pt-4 sm:pb-4 sm:mb-4 leading-normal w-2/3 sm:w-full min-h-[72px] sm:min-h-0">
         <h5
@@ -43,9 +45,11 @@ const RankingContentCard: React.FC<RankingContentCardProps> = ({ id, title, thum
         >
           {broadcastDateLabel}
         </p>
-        <p className="text-sm font-medium text-gray-900 dark:text-white">
-          {rank}位
-        </p>
+        {(rank !== undefined && rank !== 0) && (
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
+            {rank}位
+          </p>
+        )}
       </div>
     </a>
   );

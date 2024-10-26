@@ -14,7 +14,8 @@ export async function middleware(request: NextRequest) {
         request.nextUrl.pathname.startsWith('/api/service/call/streaminglink') ||
         request.nextUrl.pathname.startsWith('/api/service/call/ranking/episode/detail') ||
         request.nextUrl.pathname.startsWith('/api/utils/verify-token') ||
-        request.nextUrl.pathname.startsWith('/api/service/betaLoginToken')){
+        request.nextUrl.pathname.startsWith('/api/service/betaLoginToken') ||
+        request.nextUrl.pathname.startsWith('/api/service/call/seriesEpisodes')){
         return NextResponse.next();
     }
     if (request.nextUrl.pathname === '/about') {

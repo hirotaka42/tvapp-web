@@ -1,8 +1,8 @@
 import ContentCard from '@/components/atomicDesign/atoms/ContentCard';
-import { ConvertedContent } from '@/types/CardItem/RankingContent';
+import { ConvertedCardViewContent } from '@/types/CardItem/ForGeneric';
 
 interface ContentCardListProps {
-  contents: ConvertedContent[];
+  contents: ConvertedCardViewContent[];
 }
 
 export const ContentCardList: React.FC<ContentCardListProps> = ({ contents }) => {
