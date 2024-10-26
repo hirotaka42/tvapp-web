@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import InputField from '@/components/InputField';
 import { useToast } from '@/contexts/ToastContext'
 import { useAuth } from '@/hooks/useAuth';
+import { BetaLoginButton } from '@/components/atomicDesign/atoms/BetaLoginButton';
 
 interface FormData {
   Uid: string;
@@ -162,6 +163,7 @@ const Login: React.FC = () => {
         </p>
       </div>
     </div>
+    <BetaLoginButton />
   </>
   );
 
