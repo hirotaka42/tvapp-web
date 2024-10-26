@@ -30,6 +30,8 @@ const products = [
   { name: 'ダブルチート', description: 'Get a better understanding of your traffic', href: '/series/srv3fw5nhv', icon: ChartPieIcon },
   { name: 'カズレーザーと学ぶ。', description: 'Speak directly to your customers', href: '/series/srcmcqwlmq', icon: CursorArrowRaysIcon },
   { name: 'ホンマでっか！？TV', description: 'Your customers’ data will be safe and secure', href: '/series/srbcuxhq2k', icon: FingerPrintIcon },
+  { name: 'マツコ＆有吉 かりそめ天国', description: 'Your customers’ data will be safe and secure', href: '/series/srk5glyzmh', icon: FingerPrintIcon },
+  { name: '踊る！さんま御殿!!', description: 'Your customers’ data will be safe and secure', href: '/series/sr6elshzoq', icon: FingerPrintIcon },
   { name: '酒のツマミになる話', description: 'Connect with third-party tools', href: '/series/srvqbemjx1', icon: SquaresPlusIcon },
   { name: '水曜日のダウンタウン', description: 'Build strategic funnels that will convert', href: '/series/srf5mcrw4o', icon: ArrowPathIcon },
   { name: 'モニタリング', description: 'Build strategic funnels that will convert', href: '/series/srlbnqk9nv', icon: ArrowPathIcon },
