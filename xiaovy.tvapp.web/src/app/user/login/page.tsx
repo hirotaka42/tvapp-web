@@ -154,6 +154,7 @@ const Login: React.FC = () => {
             </button>
           </div>
         </form>
+        <BetaLoginButton router={router} />
 
         <p className="mt-10 text-center text-sm text-gray-500 dark:text-slate-300">
           Not a member?{' '}
@@ -163,7 +164,6 @@ const Login: React.FC = () => {
         </p>
       </div>
     </div>
-    <BetaLoginButton />
   </>
   );
 

@@ -1,11 +1,15 @@
 import React from 'react';
+import { useToast } from '@/contexts/ToastContext';
+import { useRouter } from 'next/navigation';
 
-export const BetaLoginButton: React.FC = () => {
+export const BetaLoginButton: React.FC<{ router: ReturnType<typeof useRouter> }> = ({ router }) => {
+    const { showToast } = useToast();
+
     const handleBetaLogin = async () => {
         const existingToken = localStorage.getItem('IdToken');
-        
+
         if (existingToken) {
-            alert('既にベータアカウントとしてログインされています。');
+            showToast('βアカウントとしてログインしているようです', 'warning');
             return;
         }
 
@@ -20,11 +24,11 @@ export const BetaLoginButton: React.FC = () => {
 
             const data = await response.json();
             localStorage.setItem('IdToken', data.IdToken);
-            alert('ベータアカウントとしてログインしました！');
-            
+            showToast('βアカウントとしてログインしました', 'success');
+            router.push('/');
         } catch (error) {
             console.error('Error fetching token:', error);
-            alert('ログインに失敗しました。');
+            showToast('ログインに失敗しました', 'error');
         }
     };
 
@@ -33,7 +37,7 @@ export const BetaLoginButton: React.FC = () => {
             onClick={handleBetaLogin}
             className="mt-5 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
-            ベータアカウントでログインする
+            βアカウントでログイン
         </button>
     );
 };
