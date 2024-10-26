@@ -17,8 +17,8 @@ const Login: React.FC = () => {
   const { showToast } = useToast();
   const router = useRouter();
   const url = '/api/User/Authentication';
+  // TODO: ↓この処理は共通化したい
   const TokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
-
   if (!TokenName){
     console.log(TokenName);
     throw new Error("環境変数:IDTOKEN_NAMEが設定されていません。");

@@ -14,7 +14,7 @@ const nextConfig = {
             },
         ],
     },
-    reactStrictMode: true,
+    reactStrictMode: true, // falseにすると2重動作が無効になる
 };
 
 export default nextConfig;

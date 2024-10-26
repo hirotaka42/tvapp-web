@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export function useAuth() {
-    const [loginUser, setLoginUser] = useState("");
+    const [loginUser, setLoginUser] = useState<string | null>(null);
     const router = useRouter();
 
     useEffect(() => {
