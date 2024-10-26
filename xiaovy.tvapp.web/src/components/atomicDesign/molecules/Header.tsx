@@ -27,11 +27,15 @@ import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
 import { usePathname } from 'next/navigation';
 
 const products = [
-  { name: 'Analytics', description: 'Get a better understanding of your traffic', href: '#', icon: ChartPieIcon },
-  { name: 'Engagement', description: 'Speak directly to your customers', href: '#', icon: CursorArrowRaysIcon },
-  { name: 'Security', description: 'Your customers’ data will be safe and secure', href: '#', icon: FingerPrintIcon },
-  { name: 'Integrations', description: 'Connect with third-party tools', href: '#', icon: SquaresPlusIcon },
-  { name: 'Automations', description: 'Build strategic funnels that will convert', href: '#', icon: ArrowPathIcon },
+  { name: 'ダブルチート', description: 'Get a better understanding of your traffic', href: '/series/srv3fw5nhv', icon: ChartPieIcon },
+  { name: 'カズレーザーと学ぶ。', description: 'Speak directly to your customers', href: '/series/srcmcqwlmq', icon: CursorArrowRaysIcon },
+  { name: 'ホンマでっか！？TV', description: 'Your customers’ data will be safe and secure', href: '/series/srbcuxhq2k', icon: FingerPrintIcon },
+  { name: '酒のツマミになる話', description: 'Connect with third-party tools', href: '/series/srvqbemjx1', icon: SquaresPlusIcon },
+  { name: '水曜日のダウンタウン', description: 'Build strategic funnels that will convert', href: '/series/srf5mcrw4o', icon: ArrowPathIcon },
+  { name: 'モニタリング', description: 'Build strategic funnels that will convert', href: '/series/srlbnqk9nv', icon: ArrowPathIcon },
+  { name: 'マツコの知らない世界', description: 'Build strategic funnels that will convert', href: '/series/srlblerhue', icon: ArrowPathIcon },
+  { name: '名探偵コナン', description: 'Build strategic funnels that will convert', href: '/series/srtxft431v', icon: ArrowPathIcon },
+  { name: 'ちいかわ', description: 'Build strategic funnels that will convert', href: '/series/sr3lsg7nv7', icon: ArrowPathIcon },
 ]
 const callsToAction = [
   { name: 'Watch demo', href: '#', icon: PlayCircleIcon },

@@ -11,7 +11,7 @@ interface ContentCardProps {
 const ContentCard: React.FC<ContentCardProps> = ({ id, title, thumbnail, broadcastDateLabel, rank }) => {
   return (
     <a
-      href={`episode/${id}`}
+      href={`/episode/${id}`}
       className="flex flex-col items-center rounded-lg min-w-[164px] max-w-[260px] hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700 bg-white"
     >
       <div className="relative w-1/3 pt-7 sm:w-full flex-shrink-0 aspect-w-16 aspect-h-9 min-h-[92.25px] min-w-[164px] max-h-[146px] max-w-[260px]">
