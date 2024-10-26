@@ -7,6 +7,7 @@ import { convertRankingToCardData } from "@/utils/Convert/ranking/convertRanking
 import { ConvertedContent } from '@/types/CardItem/RankingContent';
 import { ContentCardList } from '@/components/atomicDesign/molecules/ContentCardList';
 import { TabsWithUnderlineRanking } from "@/components/atomicDesign/molecules/Navi/TabsWithUnderLine-Ranking";
+import { useAuth } from '@/hooks/useAuth';
 
 type Tab = {
     title: string;
@@ -14,6 +15,7 @@ type Tab = {
 };
 
 export const Main: FC = () => {
+    const loginUser = useAuth();
     const session = useSessionService();
     const tvHomeData = useTvHomeService(session);
     const [rankingContents, setRankingContents] = useState<Record<string, ConvertedContent[]>>({});
@@ -42,7 +44,7 @@ export const Main: FC = () => {
     ];
 
     useEffect(() => {
-        if (tvHomeData) {
+        if (tvHomeData && loginUser) {
             const contents = rankingLabels.reduce((acc, label) => {
                 const labelContents = convertRankingToCardData(getContentsByLabel(tvHomeData, label));
                 return { ...acc, [label]: labelContents };
@@ -51,7 +53,7 @@ export const Main: FC = () => {
         }
     }, [tvHomeData]);
 
-    if (!session || !tvHomeData) {
+    if (!session || !tvHomeData || !loginUser) {
         return <div>Loading...</div>;
     }
 

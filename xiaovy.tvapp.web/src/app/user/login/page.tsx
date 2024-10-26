@@ -1,8 +1,9 @@
 'use client'
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import InputField from '@/components/InputField';
 import { useToast } from '@/contexts/ToastContext'
+import { useAuth } from '@/hooks/useAuth';
 
 interface FormData {
   Uid: string;
@@ -12,6 +13,7 @@ interface FormData {
 }
 
 const Login: React.FC = () => {
+  const loginUser = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
   const url = '/api/User/Authentication';
@@ -71,6 +73,12 @@ const Login: React.FC = () => {
       }
     }
   };
+
+  useEffect(() => {
+    if (loginUser) {
+      router.push('/');
+    }
+  }, [loginUser, router]);
 
   return (
     <>
@@ -156,6 +164,7 @@ const Login: React.FC = () => {
     </div>
   </>
   );
+
 };
 
 export default Login;

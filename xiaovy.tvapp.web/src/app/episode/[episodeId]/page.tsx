@@ -5,8 +5,10 @@ import { useStreamService } from '@/hooks/useStream';
 import { useEpisodeService } from '@/hooks/useEpisode';
 import { Main as StreamResponseType } from '@/types/StreamResponse';
 import { Main as EpisodeResponseType } from '@/types/EpisodeResponse';
+import { useAuth } from '@/hooks/useAuth';
 
 function EpisodePage({ params }: { params: { episodeId: string } }) {
+    const loginUser = useAuth();
     const { episodeId } = params;
     const [videoUrl, setVideoUrl] = useState<StreamResponseType | null>(null);
     const [episode, setEpisode] = useState<EpisodeResponseType | null>(null);
@@ -29,10 +31,10 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
         return <div>Episode not found</div>;
     }
 
-    if (!videoUrl|| !episode) {
+    if (!videoUrl|| !episode || !loginUser) {
         return <div>Loading...</div>;
     }
-
+    
     return (
         <>
             <div style={{ 

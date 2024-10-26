@@ -12,8 +12,6 @@ const RankingContentCard: React.FC<RankingContentCardProps> = ({ id, title, thum
   return (
     <a
       href={`episode/${id}`}
-      target="_blank"
-      rel="noopener noreferrer"
       className="flex flex-row sm:flex-col items-center rounded-lg ml-3 mr-3 hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700 bg-white"
     >
       <div className="relative w-1/3 sm:w-full flex-shrink-0 aspect-w-16 aspect-h-9 min-h-[72px] min-w-[128px] max-h-[146px] max-w-[260px]">
