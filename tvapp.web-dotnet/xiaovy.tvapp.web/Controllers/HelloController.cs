@@ -13,6 +13,8 @@ namespace xiaovy.tvapp.web.Controllers
         // GET: /<controller>/
         public IActionResult Index()
         {
+            // 文字列渡し
+            ViewData["Message"] = "サンプルメッセージ";
             return View();
         }
     }
