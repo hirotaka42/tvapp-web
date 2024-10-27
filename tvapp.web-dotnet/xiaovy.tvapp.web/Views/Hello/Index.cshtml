@@ -1,9 +1,21 @@
-﻿@{
+﻿@using xiaovy.tvapp.web.Models;
+
+@{
     ViewData["Title"] = "Hello Page";
+    var rankings = ViewData["Ranking"] as List<ContentModel.ContentItem>;
 }
 
 <div class="text-center">
     <p>Simple.</p>
     <p class="h5">@ViewData["Message"]</p>
+    <ul>
+        @foreach (var item in rankings)
+        {
+            <li>
+                <p>@item.Content.SeriesTitle: @item.Content.Title</p>
+                <p>Broadcast Date: @item.Content.BroadcastDateLabel</p>
+            </li>
+        }
+    </ul>
 </div>
 
