@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "xiaovy.tvapp.web/1.0.0": {
+        "runtime": {
+          "xiaovy.tvapp.web.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "xiaovy.tvapp.web/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
