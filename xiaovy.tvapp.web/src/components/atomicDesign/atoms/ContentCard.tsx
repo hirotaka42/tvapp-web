@@ -21,6 +21,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ id, title, thumbnail, broadca
           width={480}
           height={270}
           className="object-cover rounded-lg sm:rounded-none sm:rounded-t-lg"
+          unoptimized
         />
         {(rank !== undefined && rank !== 0) && (
         <Image
@@ -29,6 +30,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ id, title, thumbnail, broadca
           width={48}  // 適切なサイズに調整
           height={48} // 適切なサイズに調整
           className="absolute -translate-x-1/3 -translate-y-1/7 min-h-12 max-h-12 min-w-12 max-w-12 left-0 top-0"
+          unoptimized
         />
         )}
       </div>

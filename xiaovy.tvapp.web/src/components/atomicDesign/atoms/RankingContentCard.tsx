@@ -21,6 +21,7 @@ const RankingContentCard: React.FC<RankingContentCardProps> = ({ id, title, thum
           width={480}
           height={270}
           className="object-cover rounded-lg sm:rounded-none sm:rounded-t-lg"
+          unoptimized
         />
         {(rank !== undefined && rank !== 0) && (
         <Image
@@ -29,6 +30,7 @@ const RankingContentCard: React.FC<RankingContentCardProps> = ({ id, title, thum
           width={48}  // 適切なサイズに調整
           height={48} // 適切なサイズに調整
           className="absolute -translate-x-1/5.3 -translate-y-1/5 min-h-12 max-h-12 min-w-12 max-w-12 left-0 top-0"
+          unoptimized
         />
         )}
       </div>
