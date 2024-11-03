@@ -3,10 +3,13 @@ import { ITvHomeService } from '@/services/ITvHomeService';
 
 export class TvHomeService implements ITvHomeService {
   async callHome(platformUid: string, platformToken: string): Promise<HomeResponseType> {
+    const baseUrl = `/api/service/call/home`
+    const url = `${baseUrl}?platformUid=${platformUid}&platformToken=${platformToken}`;
     try {
-      const response = await fetch(`/api/service/call/home?platformUid=${platformUid}&platformToken=${platformToken}`, {
+      const response = await fetch(url, {
         headers: {
-          'accept': '*/*'
+          'accept': '*/*',
+          'Authorization': `Bearer ${localStorage.getItem('IdToken')}`,
         }
       });
 

@@ -9,7 +9,8 @@ export class RankingService implements IRankingService {
     try {
       const response = await fetch(url, {
         headers: {
-          'accept': '*/*'
+          'accept': '*/*',
+          'Authorization': `Bearer ${localStorage.getItem('IdToken')}`
         }
       });
 

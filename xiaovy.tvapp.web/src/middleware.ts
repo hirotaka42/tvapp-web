@@ -8,14 +8,8 @@ export async function middleware(request: NextRequest) {
     console.log('▶︎Call middleware')
     if (request.nextUrl.pathname.startsWith('/api/User/Register') || 
         request.nextUrl.pathname.startsWith('/api/User/Authentication') ||
-        request.nextUrl.pathname.startsWith('/api/service/session') ||
-        request.nextUrl.pathname.startsWith('/api/service/call/home') ||
-        request.nextUrl.pathname.startsWith('/api/content/episode') ||
-        request.nextUrl.pathname.startsWith('/api/service/call/streaminglink') ||
-        request.nextUrl.pathname.startsWith('/api/service/call/ranking/episode/detail') ||
         request.nextUrl.pathname.startsWith('/api/utils/verify-token') ||
-        request.nextUrl.pathname.startsWith('/api/service/betaLoginToken') ||
-        request.nextUrl.pathname.startsWith('/api/service/call/seriesEpisodes')){
+        request.nextUrl.pathname.startsWith('/api/service/betaLoginToken')){
         return NextResponse.next();
     }
     if (request.nextUrl.pathname === '/about') {

@@ -3,10 +3,13 @@ import { sessionToken } from '@/types/Token';
 
 export class SessionService implements ISessionService {
     async getSessionToken(): Promise<sessionToken> {
-      const response = await fetch(`/api/service/session`, {
+      const baseUrl = `/api/service/session`;
+      const url = `${baseUrl}`;
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('IdToken')}`
         },
       });
   

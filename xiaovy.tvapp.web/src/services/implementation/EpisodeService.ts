@@ -3,11 +3,13 @@ import { IEpisodeService } from '@/services/IEpisodeService';
 
 export class EpisodeService implements IEpisodeService {
     async callEpisodeInfo(episodeId: string): Promise<EpisodeResponseType> {
+        const baseUrl = `/api/content/episode`;
+        const url = `${baseUrl}/${episodeId}`;
         try {
-            const url = `/api/content/episode/${episodeId}`;
             const response = await fetch(url, {
                 headers: {
-                'accept': 'application/json'
+                'accept': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('IdToken')}`
                 }
             });
 
