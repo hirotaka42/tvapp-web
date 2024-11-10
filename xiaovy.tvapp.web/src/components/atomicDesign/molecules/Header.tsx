@@ -52,10 +52,6 @@ export default function Header() {
     } catch (error) {
       console.error("Failed to read favorite series:", error);
     }
-
-    // const convertFavoriteSeries = (favContents:seriesInfo[]) => {
-      
-    // }
   }, [mobileMenuOpen]);
 
   const handleLogout = () => {
