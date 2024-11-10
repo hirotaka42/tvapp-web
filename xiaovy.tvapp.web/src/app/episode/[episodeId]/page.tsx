@@ -53,7 +53,10 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
                 textAlign: 'left'
                 }
             }>
-                <p>{episode.data.share.text.replace('\n#TVer', '')}</p>
+                <a href={`/series/${episode.data.seriesID}`} className="block font-semibold text-gray-900 dark:text-gray-100">
+                    {episode.data.share.text.replace('\n#TVer', '')}
+                    <span className="absolute inset-0" />
+                </a>
                 <h3>{episode.data.title}</h3>
                 <p>
                     {episode.data.broadcastProviderLabel}<br></br>

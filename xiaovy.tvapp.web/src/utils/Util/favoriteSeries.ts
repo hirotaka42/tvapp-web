@@ -1,5 +1,7 @@
 import { seriesInfo } from '@/types/utils/favoriteSeries';
 
+const key = "FavoriteSeries";
+
 export const createFavoriteSeries = (seriesTitle: string, seriesId: string) => {
     // localstrigeに FavoriteSeries情報を保存
     const addInfo:seriesInfo = {
@@ -8,7 +10,6 @@ export const createFavoriteSeries = (seriesTitle: string, seriesId: string) => {
     };
 
     // FavoriteSeries のKeyでlocalStorageに保存されているか確認
-    const key = "FavoriteSeries";
     if (key) {
         // 保存されている場合は、localStorageから取得し、新しいFavoriteSeriesを追加
         const existingData = localStorage.getItem(key);
@@ -26,7 +27,6 @@ export const createFavoriteSeries = (seriesTitle: string, seriesId: string) => {
 
 export const readFavoriteSeries = () => {
     // localStorageからFavoriteSeriesを取得
-    const key = "FavoriteSeries";
     if (key) {
         const data = localStorage.getItem(key);
         if (data) {
@@ -39,7 +39,6 @@ export const readFavoriteSeries = () => {
 
 export const updateFavoriteSeries = (seriesTitle: string, seriesId: string) => {
     // シリーズタイトルにマッチするシリーズIDを更新
-    const key = "FavoriteSeries";
     if (key) {
         const existingData = localStorage.getItem(key);
         if (existingData) {
@@ -60,7 +59,6 @@ export const updateFavoriteSeries = (seriesTitle: string, seriesId: string) => {
 
 export const deleteFavoriteSeries = (deleteIndex: number) => {
     // シリーズIDではなく、配列の場所を引数で受け取り該当するアイテムを削除
-    const key = "FavoriteSeries";
     if (key) {
         const existingData = localStorage.getItem(key);
         if (existingData) {
