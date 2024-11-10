@@ -23,8 +23,8 @@ import { usePathname } from 'next/navigation';
 import { readFavoriteSeries } from '@/utils/Util/favoriteSeries';
 import { seriesInfo } from '@/types/utils/favoriteSeries';
 
-const callsToAction = [
-  { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srv3fw5nhv', icon: PlayCircleIcon },
+const defaultContents = [
+  { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srcmcqwlmq', icon: PlayCircleIcon },
   { seriesTitle: 'ホンマでっか！？TV', seriesId: 'srbcuxhq2k', icon: PlayCircleIcon },
   { seriesTitle: 'ダブルチート', seriesId: 'srv3fw5nhv', icon: PlayCircleIcon },
   { seriesTitle: 'マツコ＆有吉 かりそめ天国', seriesId: 'srk5glyzmh', icon: PlayCircleIcon },
@@ -97,12 +97,39 @@ export default function Header() {
         {/* ここまでPC表示 小のヘッダー */}
         {/* ここからPC表示 大のヘッダー hidden lg:flex */}
         <PopoverGroup className="hidden lg:flex lg:gap-x-12">
+
+          {/* ここから サンプルリスト*/}
           <Popover className="relative">
             <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-              Product
+              サンプル
               <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400" />
             </PopoverButton>
+            <PopoverPanel
+              transition
+              className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-lg ring-1 ring-gray-900/5 transition data-[closed]:translate-y-1 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in"
+            >
+              <div className="grid grid-cols-2 divide-x divide-gray-900/5 bg-gray-50 dark:bg-gray-700">
+                {defaultContents.map((item) => (
+                  <a
+                    key={item.seriesTitle}
+                    href={`/series/${item.seriesId}`}
+                    className="flex items-center justify-center gap-x-2.5 p-3 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  >
+                    <item.icon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400 dark:text-gray-300" />
+                    {item.seriesTitle}
+                  </a>
+                ))}
+              </div>
+            </PopoverPanel>
+          </Popover>
+          {/* ここまで サンプルリスト*/}
 
+          {/* ここから お気に入りリスト*/}
+          <Popover className="relative">
+          <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+              お気に入りリスト
+              <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400" />
+            </PopoverButton>
             <PopoverPanel
               transition
               className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-lg ring-1 ring-gray-900/5 transition data-[closed]:translate-y-1 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in"
@@ -122,24 +149,10 @@ export default function Header() {
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-2 divide-x divide-gray-900/5 bg-gray-50 dark:bg-gray-700">
-                {callsToAction.map((item) => (
-                  <a
-                    key={item.seriesTitle}
-                    href={`/series/${item.seriesId}`}
-                    className="flex items-center justify-center gap-x-2.5 p-3 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600"
-                  >
-                    <item.icon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400 dark:text-gray-300" />
-                    {item.seriesTitle}
-                  </a>
-                ))}
-              </div>
-            </PopoverPanel>
+            </PopoverPanel>  
           </Popover>
+          {/* ここまで お気に入りリスト*/}
 
-          <a href="#" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-            Features
-          </a>
           <a href="#" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
             Marketplace
           </a>
@@ -183,13 +196,15 @@ export default function Header() {
           <div className="mt-6 flow-root">
             <div className="-my-6 divide-y divide-gray-500/10">
               <div className="space-y-2 py-6">
+
+                {/* ここから サンプルリスト*/}
                 <Disclosure as="div" className="-mx-3">
                   <DisclosureButton className="group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700">
-                    Product
+                  サンプルリスト
                     <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none group-data-[open]:rotate-180" />
                   </DisclosureButton>
                   <DisclosurePanel className="mt-2 space-y-2">
-                    {[...favoriteSeries, ...callsToAction].map((item) => (
+                    {defaultContents.map((item) => (
                       <DisclosureButton
                         key={item.seriesTitle}
                         as="a"
@@ -201,6 +216,28 @@ export default function Header() {
                     ))}
                   </DisclosurePanel>
                 </Disclosure>
+                {/* ここまで サンプルリスト*/}
+
+                {/* ここから お気に入りリスト*/}
+                <Disclosure as="div" className="-mx-3">
+                  <DisclosureButton className="group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    お気に入りリスト
+                    <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none group-data-[open]:rotate-180" />
+                  </DisclosureButton>
+                  <DisclosurePanel className="mt-2 space-y-2">
+                    {favoriteSeries.map((item) => (
+                      <DisclosureButton
+                        key={item.seriesTitle}
+                        as="a"
+                        href={`/series/${item.seriesId}`}
+                        className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        {item.seriesTitle}
+                      </DisclosureButton>
+                    ))}
+                  </DisclosurePanel>
+                </Disclosure>
+                {/* ここまで お気に入りリスト*/}
                 <a
                   href="#"
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
