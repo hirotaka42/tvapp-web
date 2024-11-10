@@ -57,7 +57,7 @@ export const updateFavoriteSeries = (seriesTitle: string, seriesId: string) => {
     }
 };
 
-export const deleteFavoriteSeries = (deleteIndex: number) => {
+export const deleteFavoriteSeriesByIndex = (deleteIndex: number) => {
     // シリーズIDではなく、配列の場所を引数で受け取り該当するアイテムを削除
     const key = "FavoriteSeries";
     const existingData = localStorage.getItem(key);
@@ -66,4 +66,25 @@ export const deleteFavoriteSeries = (deleteIndex: number) => {
         const newData = parsedData.filter((_, index: number) => index !== deleteIndex);
         localStorage.setItem(key, JSON.stringify(newData));
     }
+};
+
+export const deleteFavoriteSeriesBySeriesId = (seriesIdToDelete: string) => {
+    // シリーズIDで該当するアイテムを削除
+    const key = "FavoriteSeries";
+    const existingData = localStorage.getItem(key);
+    if (existingData) {
+        const parsedData: { seriesTitle: string; seriesId: string }[] = JSON.parse(existingData);
+        const newData = parsedData.filter(item => item.seriesId !== seriesIdToDelete);
+        localStorage.setItem(key, JSON.stringify(newData));
+    }
+};
+
+export const isFavoriteSeriesExists = (seriesIdToCheck: string): boolean => {
+    const key = "FavoriteSeries";
+    const existingData = localStorage.getItem(key);
+    if (existingData) {
+        const parsedData: { seriesTitle: string; seriesId: string }[] = JSON.parse(existingData);
+        return parsedData.some(item => item.seriesId === seriesIdToCheck);
+    }
+    return false;
 };

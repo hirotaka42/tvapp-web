@@ -109,7 +109,12 @@ export default function Header() {
                   <a
                     key={item.seriesTitle}
                     href={`/series/${item.seriesId}`}
-                    className="flex items-center justify-center gap-x-2.5 p-3 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600"
+                    className="flex items-center justify-start gap-x-2.5 p-3 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600"
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
                   >
                     <item.icon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400 dark:text-gray-300" />
                     {item.seriesTitle}
@@ -149,9 +154,6 @@ export default function Header() {
           </Popover>
           {/* ここまで お気に入りリスト*/}
 
-          <a href="#" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-            Marketplace
-          </a>
           <a href="#" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
             Company
           </a>
@@ -234,18 +236,6 @@ export default function Header() {
                   </DisclosurePanel>
                 </Disclosure>
                 {/* ここまで お気に入りリスト*/}
-                <a
-                  href="#"
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Features
-                </a>
-                <a
-                  href="#"
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Marketplace
-                </a>
                 <a
                   href="#"
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
