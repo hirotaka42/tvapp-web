@@ -13,12 +13,7 @@ import {
   PopoverPanel,
 } from '@headlessui/react'
 import {
-  ArrowPathIcon,
   Bars3Icon,
-  ChartPieIcon,
-  CursorArrowRaysIcon,
-  FingerPrintIcon,
-  SquaresPlusIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon, PhoneIcon, PlayCircleIcon } from '@heroicons/react/20/solid'
@@ -26,45 +21,41 @@ import { ThemeSelector } from "@/app/themeSelector";
 import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
 import { usePathname } from 'next/navigation';
 import { readFavoriteSeries } from '@/utils/Util/favoriteSeries';
+import { seriesInfo } from '@/types/utils/favoriteSeries';
 
-const products = [
-  { name: 'ダブルチート', description: 'Get a better understanding of your traffic', href: '/series/srv3fw5nhv', icon: ChartPieIcon },
-  { name: 'カズレーザーと学ぶ。', description: 'Speak directly to your customers', href: '/series/srcmcqwlmq', icon: CursorArrowRaysIcon },
-  { name: 'ホンマでっか！？TV', description: 'Your customers’ data will be safe and secure', href: '/series/srbcuxhq2k', icon: FingerPrintIcon },
-  { name: 'マツコ＆有吉 かりそめ天国', description: 'Your customers’ data will be safe and secure', href: '/series/srk5glyzmh', icon: FingerPrintIcon },
-  { name: '踊る！さんま御殿!!', description: 'Your customers’ data will be safe and secure', href: '/series/sr6elshzoq', icon: FingerPrintIcon },
-  { name: '酒のツマミになる話', description: 'Connect with third-party tools', href: '/series/srvqbemjx1', icon: SquaresPlusIcon },
-  { name: '水曜日のダウンタウン', description: 'Build strategic funnels that will convert', href: '/series/srf5mcrw4o', icon: ArrowPathIcon },
-  { name: 'モニタリング', description: 'Build strategic funnels that will convert', href: '/series/srlbnqk9nv', icon: ArrowPathIcon },
-  { name: 'マツコの知らない世界', description: 'Build strategic funnels that will convert', href: '/series/srlblerhue', icon: ArrowPathIcon },
-  { name: '名探偵コナン', description: 'Build strategic funnels that will convert', href: '/series/srtxft431v', icon: ArrowPathIcon },
-  { name: 'ちいかわ', description: 'Build strategic funnels that will convert', href: '/series/sr3lsg7nv7', icon: ArrowPathIcon },
-  { name: 'ダンダダン', description: 'Build strategic funnels that will convert', href: '/series/sronql0hak', icon: ArrowPathIcon },
-  { name: 'シャングリラ・フロンティア 2nd Season', description: 'Build strategic funnels that will convert', href: '/series/srvctobsf4', icon: ArrowPathIcon },
-  { name: 'BLEACH 千年血戦篇-相剋譚-', description: 'Build strategic funnels that will convert', href: '/series/sr60uflhye', icon: ArrowPathIcon },
-  { name: '民王Ｒ', description: 'Build strategic funnels that will convert', href: '/series/srofzhfpu1', icon: ArrowPathIcon },
-  { name: '無能の鷹', description: 'Build strategic funnels that will convert', href: '/series/srv93dd2pr', icon: ArrowPathIcon },
-  { name: '離婚弁護士 スパイダー～慰謝料争奪編～', description: 'Build strategic funnels that will convert', href: '/series/srjxwn0yna', icon: ArrowPathIcon },
-]
 const callsToAction = [
-  { name: 'Watch demo', href: '#', icon: PlayCircleIcon },
-  { name: 'Contact sales', href: '#', icon: PhoneIcon },
+  { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srv3fw5nhv', icon: PlayCircleIcon },
+  { seriesTitle: 'ホンマでっか！？TV', seriesId: 'srbcuxhq2k', icon: PlayCircleIcon },
+  { seriesTitle: 'ダブルチート', seriesId: 'srv3fw5nhv', icon: PlayCircleIcon },
+  { seriesTitle: 'マツコ＆有吉 かりそめ天国', seriesId: 'srk5glyzmh', icon: PlayCircleIcon },
+  { seriesTitle: '踊る！さんま御殿!!', seriesId: 'sr6elshzoq', icon: PlayCircleIcon },
+  { seriesTitle: '酒のツマミになる話', seriesId: 'srvqbemjx1', icon: PlayCircleIcon },
+  { seriesTitle: '水曜日のダウンタウン', seriesId: 'srf5mcrw4o', icon: PlayCircleIcon },
+  { seriesTitle: 'モニタリング', seriesId: 'srlbnqk9nv', icon: PlayCircleIcon },
+  { seriesTitle: 'マツコの知らない世界', seriesId: 'srlblerhue', icon: PlayCircleIcon },
+  { seriesTitle: '住人十色～家の数だけある 家族のカタチ～', seriesId: 'srxbqmdpvs', icon: PlayCircleIcon },
+  { seriesTitle: '名探偵コナン', seriesId: 'srtxft431v', icon: PlayCircleIcon },
+  { seriesTitle: 'ちいかわ', seriesId: 'sr3lsg7nv7', icon: PlayCircleIcon },
 ]
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const [favoriteSeries, setFavoriteSeries] = useState([]);
+  const [favoriteSeries, setFavoriteSeries] = useState<seriesInfo[]>([]);
 
   useEffect(() => {
     try {
-      const favContents = readFavoriteSeries();
+      const favContents:seriesInfo[] = readFavoriteSeries();
       if (favContents) setFavoriteSeries(favContents);
       console.log(favContents);
       console.log(favoriteSeries);
     } catch (error) {
       console.error("Failed to read favorite series:", error);
     }
+
+    // const convertFavoriteSeries = (favContents:seriesInfo[]) => {
+      
+    // }
   }, []);
 
   const handleLogout = () => {
@@ -117,20 +108,16 @@ export default function Header() {
               className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-lg ring-1 ring-gray-900/5 transition data-[closed]:translate-y-1 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in"
             >
               <div className="p-4">
-                {products.map((item) => (
+                {favoriteSeries.map((item) => (
                   <div
-                    key={item.name}
+                    key={item.seriesId}
                     className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    <div className="flex h-11 w-11 flex-none items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800 group-hover:bg-white dark:group-hover:bg-gray-600">
-                      <item.icon aria-hidden="true" className="h-6 w-6 text-gray-600 group-hover:text-indigo-600 dark:text-gray-300" />
-                    </div>
                     <div className="flex-auto">
-                      <a href={item.href} className="block font-semibold text-gray-900 dark:text-gray-100">
-                        {item.name}
+                      <a href={`/series/${item.seriesId}`} className="block font-semibold text-gray-900 dark:text-gray-100">
+                        {item.seriesTitle}
                         <span className="absolute inset-0" />
                       </a>
-                      <p className="mt-1 text-gray-600 dark:text-gray-400">{item.description}</p>
                     </div>
                   </div>
                 ))}
@@ -138,12 +125,12 @@ export default function Header() {
               <div className="grid grid-cols-2 divide-x divide-gray-900/5 bg-gray-50 dark:bg-gray-700">
                 {callsToAction.map((item) => (
                   <a
-                    key={item.name}
-                    href={item.href}
+                    key={item.seriesTitle}
+                    href={`/series/${item.seriesId}`}
                     className="flex items-center justify-center gap-x-2.5 p-3 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600"
                   >
                     <item.icon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400 dark:text-gray-300" />
-                    {item.name}
+                    {item.seriesTitle}
                   </a>
                 ))}
               </div>
@@ -202,14 +189,14 @@ export default function Header() {
                     <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none group-data-[open]:rotate-180" />
                   </DisclosureButton>
                   <DisclosurePanel className="mt-2 space-y-2">
-                    {[...products, ...callsToAction].map((item) => (
+                    {[...favoriteSeries, ...callsToAction].map((item) => (
                       <DisclosureButton
-                        key={item.name}
+                        key={item.seriesTitle}
                         as="a"
-                        href={item.href}
+                        href={`/series/${item.seriesId}`}
                         className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
-                        {item.name}
+                        {item.seriesTitle}
                       </DisclosureButton>
                     ))}
                   </DisclosurePanel>
