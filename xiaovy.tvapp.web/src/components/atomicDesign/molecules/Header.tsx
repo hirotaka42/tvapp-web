@@ -56,7 +56,7 @@ export default function Header() {
     // const convertFavoriteSeries = (favContents:seriesInfo[]) => {
       
     // }
-  }, []);
+  }, [mobileMenuOpen]);
 
   const handleLogout = () => {
     localStorage.removeItem('IdToken');
