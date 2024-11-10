@@ -1,24 +1,21 @@
 import { seriesInfo } from '@/types/utils/favoriteSeries';
 
-const key = "FavoriteSeries";
-
 export const createFavoriteSeries = (seriesTitle: string, seriesId: string) => {
     // localstrigeに FavoriteSeries情報を保存
+    const key = "FavoriteSeries";
     const addInfo:seriesInfo = {
         seriesTitle,
         seriesId,
     };
 
     // FavoriteSeries のKeyでlocalStorageに保存されているか確認
-    if (key) {
-        // 保存されている場合は、localStorageから取得し、新しいFavoriteSeriesを追加
-        const existingData = localStorage.getItem(key);
-        if (existingData) {
-            const parsedData = JSON.parse(existingData);
-            const newData = [...parsedData, addInfo];
-            localStorage.setItem(key, JSON.stringify(newData));
-        }
-    } else {
+    // 保存されている場合は、localStorageから取得し、新しいFavoriteSeriesを追加
+    const existingData = localStorage.getItem(key);
+    if (existingData) {
+        const parsedData = JSON.parse(existingData);
+        const newData = [...parsedData, addInfo];
+        localStorage.setItem(key, JSON.stringify(newData));
+    }else {
         // 保存されていない場合は、新しいFavoriteSeriesを作成し、localStorageに保存
         localStorage.setItem(key, JSON.stringify([addInfo]));
     }
@@ -27,44 +24,46 @@ export const createFavoriteSeries = (seriesTitle: string, seriesId: string) => {
 
 export const readFavoriteSeries = () => {
     // localStorageからFavoriteSeriesを取得
-    if (key) {
-        const data = localStorage.getItem(key);
-        if (data) {
-            return JSON.parse(data);
-        }
+    const key = "FavoriteSeries";
+    const data = localStorage.getItem(key);
+    if (data) {
+        return JSON.parse(data);
     }
     return [];
 };
 
 
 export const updateFavoriteSeries = (seriesTitle: string, seriesId: string) => {
-    // シリーズタイトルにマッチするシリーズIDを更新
-    if (key) {
-        const existingData = localStorage.getItem(key);
-        if (existingData) {
-            const parsedData: { seriesTitle: string; seriesId: string }[] = JSON.parse(existingData);
-            const newData = parsedData.map((item) => {
-                if (item.seriesTitle === seriesTitle) {
-                    return {
-                        seriesTitle,
-                        seriesId,
-                    };
-                }
-                return item;
-            });
-            localStorage.setItem(key, JSON.stringify(newData));
-        }
+    const key = "FavoriteSeries";
+    const existingData = localStorage.getItem(key);
+    if (existingData) {
+        let found = false;
+        const parsedData: seriesInfo[] = JSON.parse(existingData);
+        const newData = parsedData.map(item => {
+            if (item.seriesTitle === seriesTitle) {
+                found = true;
+                return { seriesTitle, seriesId };
+            }
+            return item;
+        });
+
+        // シリーズが見つからない場合は、新しい情報を追加
+        if (!found) newData.push({ seriesTitle, seriesId });
+
+        localStorage.setItem(key, JSON.stringify(newData));
+    } else {
+        // 保存されていない場合は、新しいFavoriteSeriesを作成し、localStorageに保存
+        createFavoriteSeries(seriesTitle, seriesId);
     }
 };
 
 export const deleteFavoriteSeries = (deleteIndex: number) => {
     // シリーズIDではなく、配列の場所を引数で受け取り該当するアイテムを削除
-    if (key) {
-        const existingData = localStorage.getItem(key);
-        if (existingData) {
-            const parsedData: { seriesTitle: string; seriesId: string }[] = JSON.parse(existingData);
-            const newData = parsedData.filter((_, index: number) => index !== deleteIndex);
-            localStorage.setItem(key, JSON.stringify(newData));
-        }
+    const key = "FavoriteSeries";
+    const existingData = localStorage.getItem(key);
+    if (existingData) {
+        const parsedData: { seriesTitle: string; seriesId: string }[] = JSON.parse(existingData);
+        const newData = parsedData.filter((_, index: number) => index !== deleteIndex);
+        localStorage.setItem(key, JSON.stringify(newData));
     }
 };
