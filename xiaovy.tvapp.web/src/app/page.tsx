@@ -1,4 +1,4 @@
-import { Main } from "@/components/shared/Main"
+import { Main } from "@/components/atomicDesign/pages/Main"
 
 export default function Home() {
   return (

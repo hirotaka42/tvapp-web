@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogPanel,
@@ -25,6 +25,7 @@ import { ChevronDownIcon, PhoneIcon, PlayCircleIcon } from '@heroicons/react/20/
 import { ThemeSelector } from "@/app/themeSelector";
 import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
 import { usePathname } from 'next/navigation';
+import { readFavoriteSeries } from '@/utils/Util/favoriteSeries';
 
 const products = [
   { name: 'ダブルチート', description: 'Get a better understanding of your traffic', href: '/series/srv3fw5nhv', icon: ChartPieIcon },
@@ -53,6 +54,18 @@ const callsToAction = [
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const [favoriteSeries, setFavoriteSeries] = useState([]);
+
+  useEffect(() => {
+    try {
+      const favContents = readFavoriteSeries();
+      if (favContents) setFavoriteSeries(favContents);
+      console.log(favContents);
+      console.log(favoriteSeries);
+    } catch (error) {
+      console.error("Failed to read favorite series:", error);
+    }
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('IdToken');
