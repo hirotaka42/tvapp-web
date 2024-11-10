@@ -12,8 +12,11 @@ export const ContentCardList: React.FC<ContentCardListProps> = ({ contents }) =>
         <ContentCard
           key={content.id}
           id={content.id}
+          seriesTitle={content.seriesTitle}
           title={content.title}
           thumbnail={content.thumbnail.small}
+          endAt={content.endAt}
+          productionProviderName={content.productionProviderName}
           broadcastDateLabel={content.broadcastDateLabel}
           rank={content.rank}
         />

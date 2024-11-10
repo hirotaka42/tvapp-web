@@ -2,13 +2,17 @@ import Image from 'next/image';
 
 interface ContentCardProps {
   id: string;
+  seriesTitle?: string;
   title: string;
   thumbnail: string;
+  endAt: number;
+  productionProviderName: string;
   broadcastDateLabel: string;
   rank?: number;
 }
 
-const ContentCard: React.FC<ContentCardProps> = ({ id, title, thumbnail, broadcastDateLabel, rank }) => {
+const ContentCard: React.FC<ContentCardProps> = (props) => {
+  const { id, seriesTitle, title, thumbnail, productionProviderName, broadcastDateLabel, rank } = props;
   return (
     <a
       href={`/episode/${id}`}
@@ -39,19 +43,20 @@ const ContentCard: React.FC<ContentCardProps> = ({ id, title, thumbnail, broadca
           className="text-md font-bold tracking-tight text-gray-900 dark:text-white truncate"
           style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
         >
-          {title}
+          {seriesTitle}
         </h5>
         <p
           className="font-normal text-gray-700 dark:text-gray-400 truncate"
           style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
         >
-          {broadcastDateLabel}
+          {title}
         </p>
-        {(rank !== undefined && rank !== 0) && (
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {rank}位
-          </p>
-        )}
+        <p
+          className="font-normal text-gray-700 dark:text-gray-400 truncate"
+          style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+        >
+          {productionProviderName} {broadcastDateLabel}
+        </p>
       </div>
     </a>
   );

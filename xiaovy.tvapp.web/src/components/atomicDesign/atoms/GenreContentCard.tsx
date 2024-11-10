@@ -2,13 +2,17 @@ import Image from 'next/image';
 
 interface GenreContentCardProps {
   id: string;
+  seriesTitle?: string;
   title: string;
   thumbnail: string;
+  endAt: number;
+  productionProviderName: string;
   broadcastDateLabel: string;
-  rank: number;
+  rank?: number;
 }
 
-const GenreContentCard: React.FC<GenreContentCardProps> = ({ id, title, thumbnail, broadcastDateLabel, rank }) => {
+const GenreContentCard: React.FC<GenreContentCardProps> = (props) => {
+  const { id, seriesTitle, title, thumbnail, productionProviderName, broadcastDateLabel, rank } = props;
   return (
     <a
       href={`/episode/${id}`}
@@ -34,24 +38,25 @@ const GenreContentCard: React.FC<GenreContentCardProps> = ({ id, title, thumbnai
         />
         )}
       </div>
-      <div className="p-4 pt-0 pb-0 sm:pt-4 sm:pb-4 sm:mb-4 leading-normal w-2/3 sm:w-full min-h-[72px] sm:min-h-0">
+      <div className="p-4 pt-0 pb-0 sm:p-0 leading-normal w-2/3 sm:w-full min-h-[72px] sm:min-h-0">
         <h5
-          className="mb-2 text-md font-bold tracking-tight text-gray-900 dark:text-white truncate"
+          className="mt-1 sm:m-0 text-md font-bold tracking-tight text-gray-900 dark:text-white truncate"
+          style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+        >
+          {seriesTitle}
+        </h5>
+        <p
+          className="sm:m-0 font-normal text-gray-700 dark:text-gray-400 truncate"
           style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
         >
           {title}
-        </h5>
+        </p>
         <p
-          className="mb-1 font-normal text-gray-700 dark:text-gray-400 truncate"
+          className="mb-1 sm:m-0 font-normal text-gray-700 dark:text-gray-400 truncate"
           style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
         >
-          {broadcastDateLabel}
+          {productionProviderName} {broadcastDateLabel}
         </p>
-        {(rank !== undefined && rank !== 0) && (
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
-            {rank}位
-          </p>
-        )}
       </div>
     </a>
   );

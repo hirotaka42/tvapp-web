@@ -79,8 +79,8 @@ export default function Header() {
             />
           </a>
         </div>
+        {/* ここからPC表示 小のヘッダー lg:hidden */}
         <div className="flex lg:hidden">
-          <ThemeSelector />
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
@@ -90,6 +90,8 @@ export default function Header() {
             <Bars3Icon aria-hidden="true" className="h-6 w-6" />
           </button>
         </div>
+        {/* ここまでPC表示 小のヘッダー */}
+        {/* ここからPC表示 大のヘッダー hidden lg:flex */}
         <PopoverGroup className="hidden lg:flex lg:gap-x-12">
           <Popover className="relative">
             <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
@@ -153,7 +155,10 @@ export default function Header() {
             Log in <span aria-hidden="true">&rarr;</span>
           </a>
         </div>
+        {/* ここまでPC表示 大のヘッダー */}
       </nav>
+
+      {/* ここからサイドバー */}
       <Dialog open={mobileMenuOpen} onClose={setMobileMenuOpen} className="lg:hidden">
         <div className="fixed inset-0 z-50" />
         <DialogPanel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white dark:bg-gray-800 px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
