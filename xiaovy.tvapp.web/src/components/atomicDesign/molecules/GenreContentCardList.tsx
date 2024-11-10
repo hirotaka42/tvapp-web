@@ -1,16 +1,16 @@
 import React from 'react';
-import RankingContentCard from '@/components/atomicDesign/atoms/RankingContentCard';
+import GenreContentCard from '@/components/atomicDesign/atoms/GenreContentCard';
 import { ConvertedContent } from '@/types/CardItem/RankingContent';
 
-interface RankingContentCardListProps {
+interface GenreContentCardListProps {
   contents: ConvertedContent[];
 }
 
-const RankingContentCardList: React.FC<RankingContentCardListProps> = React.memo(({ contents }) => {
+const GenreContentCardList: React.FC<GenreContentCardListProps> = ({ contents }) => {
   return (
     <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-[repeat(auto-fit,_minmax(200px,_1fr))]">
       {contents.map((content) => (
-        <RankingContentCard
+        <GenreContentCard
           key={content.id}
           id={content.id}
           title={content.title}
@@ -21,9 +21,7 @@ const RankingContentCardList: React.FC<RankingContentCardListProps> = React.memo
       ))}
     </div>
   );
-});
+};
 
-RankingContentCardList.displayName = 'RankingContentCardList';
-
-export { RankingContentCardList };
-export default RankingContentCardList;
+export { GenreContentCardList };
+export default GenreContentCardList;

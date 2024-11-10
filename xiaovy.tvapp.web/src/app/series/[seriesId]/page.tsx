@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useSessionService } from '@/hooks/useSession';
-import { RankingContentCardList } from '@/components/atomicDesign/molecules/RankingContentCardList';
+import { GenreContentCardList } from '@/components/atomicDesign/molecules/GenreContentCardList';
 import { ConvertedCardViewContent } from '@/types/CardItem/ForGeneric';
 import { convertCardContentsBySeason } from '@/utils/Convert/episodesForSeries/responseParser';
 
@@ -54,7 +54,7 @@ function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
                     <h2
                         className="text-md font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
                     >{season.seasonTitle}</h2>
-                    <RankingContentCardList contents={season.contents} />
+                    <GenreContentCardList contents={season.contents} />
                 </div>
             ))}
         </>

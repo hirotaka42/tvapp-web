@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-interface RankingContentCardProps {
+interface GenreContentCardProps {
   id: string;
   title: string;
   thumbnail: string;
@@ -8,7 +8,7 @@ interface RankingContentCardProps {
   rank: number;
 }
 
-const RankingContentCard: React.FC<RankingContentCardProps> = ({ id, title, thumbnail, broadcastDateLabel, rank }) => {
+const GenreContentCard: React.FC<GenreContentCardProps> = ({ id, title, thumbnail, broadcastDateLabel, rank }) => {
   return (
     <a
       href={`/episode/${id}`}
@@ -57,4 +57,4 @@ const RankingContentCard: React.FC<RankingContentCardProps> = ({ id, title, thum
   );
 };
 
-export default RankingContentCard;
+export default GenreContentCard;

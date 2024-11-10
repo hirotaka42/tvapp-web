@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRankingService } from '@/hooks/useRanking';
 import { convertEpisodeRankingResponse } from '@/utils/Convert/ranking/genreDetail/responseParser';
 import { convertRankingToCardData } from "@/utils/Convert/ranking/convertRankingToCardData";
-import { RankingContentCardList } from '@/components/atomicDesign/molecules/RankingContentCardList';
+import { GenreContentCardList } from '@/components/atomicDesign/molecules/GenreContentCardList';
 import { ConvertedContent } from '@/types/CardItem/RankingContent';
 
 type Tab = {
@@ -55,7 +55,7 @@ export const TabsWithUnderlineRanking: React.FC<TabProps> = ({ tabs }) => {
             className={`tabcontent ${activeTab === index ? '' : 'hidden'}`}
           >
             {activeTab === index && (
-              <RankingContentCardList contents={rankingData} />
+              <GenreContentCardList contents={rankingData} />
             )}
           </div>
         ))}

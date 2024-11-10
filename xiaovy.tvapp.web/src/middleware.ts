@@ -30,6 +30,8 @@ export async function middleware(request: NextRequest) {
     }
     try {
         console.log('token:', token);
+        // トークンの検証処理をここに実装する
+        // TODO
         return NextResponse.next()
     }catch {
         return NextResponse.json(
