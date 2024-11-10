@@ -13,8 +13,10 @@ import { StreamService } from "@/services/implementation/StreamService";
 import { StreamServiceContext } from "@/contexts/StreamContext";
 import { RankingService } from "@/services/implementation/RankingService";
 import { RankingServiceContext } from "@/contexts/RankingContext";
-import { Toast } from '@/components/atomicDesign/atoms/Toast'
-import { ToastContext } from '@/contexts/ToastContext'
+import { Toast } from '@/components/atomicDesign/atoms/Toast';
+import { ToastContext } from '@/contexts/ToastContext';
+import { SeriesService } from '@/services/implementation/SeriseService';
+import { SeriesServiceContext } from "@/contexts/SeriesContext";
 
 type ToastType = 'success' | 'warning' | 'error'
 
@@ -55,16 +57,18 @@ export const Providers: FC<PropsWithChildren> = ({ children }) => {
     <ThemeProvider attribute="class">
       <SessionServiceContext.Provider value={new SessionService()}>
         <TvHomeServiceContext.Provider value={new TvHomeService()}>
-          <EpisodeServiceContext.Provider value={new EpisodeService()}>
-            <RankingServiceContext.Provider value={new RankingService()}>
-              <StreamServiceContext.Provider value={new StreamService()}>
-                <ToastContext.Provider value={{ showToast, closeToast }}>
-                  {isShowToast && <Toast message={toastMessage} toastType={toastType} />}
-                  {children}
-                </ToastContext.Provider>
-              </StreamServiceContext.Provider>
-            </RankingServiceContext.Provider>
-          </EpisodeServiceContext.Provider>
+          <SeriesServiceContext.Provider value={new SeriesService()}>
+            <EpisodeServiceContext.Provider value={new EpisodeService()}>
+              <RankingServiceContext.Provider value={new RankingService()}>
+                <StreamServiceContext.Provider value={new StreamService()}>
+                  <ToastContext.Provider value={{ showToast, closeToast }}>
+                    {isShowToast && <Toast message={toastMessage} toastType={toastType} />}
+                    {children}
+                  </ToastContext.Provider>
+                </StreamServiceContext.Provider>
+              </RankingServiceContext.Provider>
+            </EpisodeServiceContext.Provider>
+          </SeriesServiceContext.Provider>
         </TvHomeServiceContext.Provider>
       </SessionServiceContext.Provider>
     </ThemeProvider>

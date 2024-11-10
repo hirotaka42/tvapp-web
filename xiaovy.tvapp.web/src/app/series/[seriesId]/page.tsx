@@ -4,6 +4,7 @@ import { useSessionService } from '@/hooks/useSession';
 import { GenreContentCardList } from '@/components/atomicDesign/molecules/GenreContentCardList';
 import { ConvertedCardViewContent } from '@/types/CardItem/ForGeneric';
 import { convertCardContentsBySeason } from '@/utils/Convert/episodesForSeries/responseParser';
+import { useSeriesService } from '@/hooks/useSeries';
 
 interface SeasonGroupedContents {
     seasonTitle: string;
@@ -12,44 +13,39 @@ interface SeasonGroupedContents {
 
 function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
     const { seriesId } = params;
-    const [episodeData, setEpisodeData] = useState<SeasonGroupedContents[] | null>(null);
+    const [seriesContents, setSeriesContents] = useState<SeasonGroupedContents[] | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const session = useSessionService();
+    // TODO: 取得完了まで待ちたいが、プロアクティすがわからず、、
+    const seriesContent = useSeriesService(seriesId, session);
+    const [attempt, setAttempt] = useState<number>(0);
 
+    // TODO: 取得完了まで待ちたいが、プロアクティすがわからず、、ここでの処理で正解？
     useEffect(() => {
-        async function fetchEpisodeData() {
-            if (!session) {
-                console.error("Session is null or undefined");
+        const maxAttempts = 5;  // 最大トライ数
+        if (!seriesContent || !session) {
+            if (attempt < maxAttempts) {
+                const timer = setTimeout(() => {
+                    setAttempt((prevAttempt) => prevAttempt + 1);
+                }, 300);  // 300msごとに再試行
+                return () => clearTimeout(timer);  // クリーンアップ
+            } else {
                 setLoading(false);
-                return;
+                console.error("シリーズコンテンツ情報を取得できませんでした。");
             }
-            try {
-                const platformUid = session.platformUid;
-                const platformToken = session.platformToken;
-                const response = await fetch(`/api/service/call/seriesEpisodes/${seriesId}?platform_uid=${platformUid}&platform_token=${platformToken}`);
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch episode data');
-                }
-
-                const data = await response.json();
-                const convertedData = convertCardContentsBySeason(data);
-                setEpisodeData(convertedData);
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            } finally {
-                setLoading(false);
-            }
+            return;
         }
-        fetchEpisodeData();
-    }, [seriesId, session]);
+        const convertedData = convertCardContentsBySeason(seriesContent);
+        setSeriesContents(convertedData);
+        setLoading(false);
+    }, [seriesContent, session, attempt, seriesId]);
 
     if (!seriesId)return <div>Series ID not provided</div>;
-    if (loading || !episodeData) return <div>Loading...</div>;
+    if (loading || !seriesContents) return <div>Loading...</div>;
 
     return (
         <>
-            {episodeData.map((season, index) => (
+            {seriesContents.map((season, index) => (
                 <div key={index}>
                     <h2
                         className="text-md font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
