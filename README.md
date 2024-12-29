@@ -15,7 +15,6 @@
 
 - [Docker](https://www.docker.com/get-started)
 - [Docker Compose](https://docs.docker.com/compose/install/)
-- [tvapp-bff](https://github.com/hirotaka42/tvapp-bff/)
 
 
 ## インストール
@@ -24,17 +23,31 @@
 
 ```bash
 git clone https://github.com/hirotaka42/tvapp-web.git
-touch tvapp-web/xiao.tvapp.web/.env.local
-cd tvapp-web
-# bffのプロジェクトのクローンを作成します。
-git clone https://github.com/hirotaka42/tvapp-bff.git
+wget https://gist.github.com/hirotaka42/2555081d216876b71b55644f0873b0bf/raw/fa3e4953719b764a54996460cfc593a4221f769c/.env.local -O tvapp-web/xiao.tvapp.web/.env.local
 ```
 
 `.env.local`へ以下を追記
 ```
-NEXT_PUBLIC_IMAG_LOGO='URL'
-NEXT_PUBLIC_IMAG_THUMBNAIL='URL'
-NEXT_PUBLIC_IP='192.168.10.XX'
+BETA_IDTOKEN=""
+SAMPLE_IDTOKEN=""
+JWT_EXPIRATION_TIME=""
+JWT_SECRET_KEY=""
+NEXT_PUBLIC_IDTOKEN_NAME=""
+NEXT_PUBLIC_IMAG_THUMBNAIL=""
+NEXT_PUBLIC_IMAG_LOGO=""
+
+DB_CONNECTION_STRING=""
+DB_USERNAME=""
+DB_PASSWORD=""
+AZURE_FUNCTION_STREEAMING=""
+AZURE_FUNCTION_STREEAMING_CODE_KEY=""
+```
+
+デバッグ
+```
+cd tvapp-web/xiao.tvapp.web
+npm i
+npm run dev
 ```
 
 ## 使い方 (Docker-Compose)
@@ -67,6 +80,4 @@ APIの主要なエンドポイントを以下に示します。
 |`/api/TVapp/service/callEpisode/{episodeId}`|`{episodeId}`|`platformUid`<br>`platformToken`|エピソードIDにヒットする番組情報|GET|
 |`/api/TVapp/content/series/{seriesId}`|`{seriesId}`|-|シリーズIDにヒットするシリーズの概要情報|GET|
 |`/api/TVapp/streaming/{episodeId}`|`{episodeId}`|-|エピソードIDを元にしたm3u8形式のストリーミングURL|GET|
-
-
 
