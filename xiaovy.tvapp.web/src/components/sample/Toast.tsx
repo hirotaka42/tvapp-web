@@ -1,4 +1,4 @@
-import { useToast } from '@/contexts/ToastContext'
+import { useToast } from '@/components/sample/ToastContext'
 type ToastProps = {
   message: string
   toastType: 'success' | 'warning' | 'error'
