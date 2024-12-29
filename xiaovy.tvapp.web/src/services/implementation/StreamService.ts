@@ -10,7 +10,13 @@ export class StreamService implements IStreamService {
     const url = `${baseUrl}?${queryParams}`;
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('IdToken')}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error('インターネット接続がありません');

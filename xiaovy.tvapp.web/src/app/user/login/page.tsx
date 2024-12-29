@@ -1,6 +1,9 @@
 'use client'
-import React, { useState, ChangeEvent } from 'react';
-import InputField from '@/components/InputField';
+import React, { useState, useEffect, ChangeEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/contexts/ToastContext';
+import { useAuth } from '@/hooks/useAuth';
+import SignInForms from '@/components/atomicDesign/molecules/Forms/sign-in-forms';
 
 interface FormData {
   Uid: string;
@@ -10,9 +13,11 @@ interface FormData {
 }
 
 const Login: React.FC = () => {
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const loginUser = useAuth();
+  const { showToast } = useToast();
+  const router = useRouter();
   const url = '/api/User/Authentication';
+  // TODO: ↓この処理は共通化したい
   const TokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
   if (!TokenName){
     console.log(TokenName);
@@ -26,12 +31,6 @@ const Login: React.FC = () => {
     PhoneNumber: ''
   });
 
-  const fields = [
-    { name: 'Email', placeholder: 'メールアドレス', type: 'email' },
-    { name: 'PhoneNumber', placeholder: '電話番号', type: 'tel' },
-    { name: 'Password', placeholder: 'パスワード', type: 'password' }
-  ];
-
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -42,10 +41,6 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    // 空文字列をnullに置き換える
-    // これは、サーバー側で空文字列を受け付けない場合に必要
-    // Todo: 影響範囲がよくわかっていないので、調査する
     const dataToSend = Object.fromEntries(
       Object.entries(formData).map(([key, value]) => [key, value || null])
     );
@@ -59,44 +54,38 @@ const Login: React.FC = () => {
         body: JSON.stringify(dataToSend)
       });
       if (!response.ok) {
+        showToast('ログインに失敗しました', 'error');
         throw new Error('ネットワークエラーが発生しました');
       }
       const result = await response.json();
       localStorage.setItem(TokenName, result.IdToken);
       console.log('ログイン成功:', result);
+      showToast('ログインしました', 'success');
+      router.push('/');
     } catch (error) {
       if (error instanceof Error) {
         console.error('エラー :', error.message);
-        setError(error.message);
       } else {
         console.error('Unexpected error:', error);
-        setError('予期しないエラーが発生しました');
+        throw new Error('予期しないエラーが発生しました');
       }
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error}</p>;
+  useEffect(() => {
+    if (loginUser) {
+      router.push('/');
+    }
+  }, [loginUser, router]);
 
   return (
     <>
-      <h1>Loginページ</h1>
-      <form onSubmit={handleSubmit}>
-        {fields.map((field) => (
-          <InputField 
-            key={field.name}
-            name={field.name}
-            value={formData[field.name as keyof FormData]}
-            type={field.type}
-            onChange={handleChange}
-            placeholder={field.placeholder}
-          />
-        ))}
-        <br />
-        <button>Submit</button>
-      </form>
+      <SignInForms
+        formData={{ Email: formData.Email, Password: formData.Password }}
+        handleChange={handleChange}
+        handleSubmit={handleSubmit}
+        router={router}
+      />
     </>
   );
 };

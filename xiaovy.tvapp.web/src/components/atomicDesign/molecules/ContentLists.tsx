@@ -20,7 +20,7 @@ const Example: React.FC<ExampleProps> = ({ contents }) => {
               href={`episode/${content.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-row sm:flex-col items-center rounded-lg hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700 bg-white"
+              className="flex flex-row sm:flex-col items-center rounded-lg dark:bg-black bg-white"
             >
               <div className="w-1/3 sm:w-full flex-shrink-0">
                 <Image
