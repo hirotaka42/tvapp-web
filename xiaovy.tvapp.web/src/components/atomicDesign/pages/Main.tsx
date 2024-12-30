@@ -21,30 +21,25 @@ export const Main: FC = () => {
     const [rankingContents, setRankingContents] = useState<Record<string, ConvertedContent[]>>({});
     const sampleGenres: Tab[] = [
         {
-          title: "アニメ",
-          query: "anime",
+            title: "アニメ",
+            query: "anime",
         },
         {
-          title: "ドラマ",
-          query: "drama",
+            title: "ドラマ",
+            query: "drama",
         },
         {
-          title: "バラエティー",
-          query: "variety",
+            title: "バラエティー",
+            query: "variety",
         }
-      ];
+        ];
     
 
     const [rankingLabels] = useState<string[]>(
         [
-            '10月開始の新ドラマ【最新話】',
             'ドラマランキング', 'バラエティランキング', 'アニメ／ヒーローランキング',
             '報道／ドキュメンタリーランキング', 'スポーツランキング',
             '今週のイチオシバラエティはこれ！',
-            '今シーズンの人気ドラマを気軽にチェック！',
-            '人気ドラマ・バラエティの配信限定作品', 
-            '【厳選】トークバラエティ番組',
-            '【音楽特集】人気番組を見逃し配信中！',
             'まもなく配信終了','新着'
         ]
     );
@@ -77,7 +72,7 @@ export const Main: FC = () => {
                     <ContentCardList contents={rankingContents[label] || []} />
                 </div>
             ))}
-            <TabsWithUnderlineRanking tabs={sampleGenres}/>
+            {/* <TabsWithUnderlineRanking tabs={sampleGenres}/> */}
         </>
     );
 };
