@@ -72,7 +72,7 @@ export const Main: FC = () => {
             {rankingLabels.map(label => (
                 <div key={label}>
                     <h2
-                      className="text-md font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
+                        className="text-md font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
                     >{label}</h2>
                     <ContentCardList contents={rankingContents[label] || []} />
                 </div>

@@ -17,7 +17,6 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon, PlayCircleIcon } from '@heroicons/react/20/solid'
-import { ThemeSelector } from "@/app/themeSelector";
 import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
 import { usePathname } from 'next/navigation';
 import { readFavoriteSeries } from '@/utils/Util/favoriteSeries';
@@ -158,9 +157,6 @@ export default function Header() {
             Company
           </a>
         </PopoverGroup>
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <ThemeSelector />
-        </div>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
           <a href="/user/login" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
             Log in <span aria-hidden="true">&rarr;</span>
