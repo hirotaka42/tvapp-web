@@ -23,7 +23,7 @@
 
 ```bash
 git clone https://github.com/hirotaka42/tvapp-web.git
-wget https://gist.github.com/hirotaka42/2555081d216876b71b55644f0873b0bf/raw/fa3e4953719b764a54996460cfc593a4221f769c/.env.local -O tvapp-web/xiao.tvapp.web/.env.local
+wget https://gist.github.com/hirotaka42/2555081d216876b71b55644f0873b0bf/raw/fa3e4953719b764a54996460cfc593a4221f769c/.env.local -O tvapp-web/xiaovy.tvapp.web/.env.local
 ```
 
 `.env.local`へ以下を追記
