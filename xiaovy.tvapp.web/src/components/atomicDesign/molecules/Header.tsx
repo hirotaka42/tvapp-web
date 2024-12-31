@@ -61,6 +61,10 @@ export default function Header() {
     toast.success('ログアウトしました');
     router.push('/user/login');
   }
+
+  const handleComigSoon = () => {
+    toast('現在開発中です');
+  }
   // useAuth内のRouter処理で、ログインページへのリダイレクトが矯正されてしまう
   // そのため、Headerではアカウント確認を行わない(暫定対応)
   // TODO // パスをカスタマイズした際にバグになるため、修正が必要
@@ -158,7 +162,7 @@ export default function Header() {
           {/* ここまで お気に入りリスト*/}
 
           {/* ここから 50件ランキング*/}
-          <a href="#" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+          <a href="#" onClick={handleComigSoon} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
             ジャンル別ランキング
           </a>
           {/* ここまで 50件ランキング*/}
@@ -171,7 +175,7 @@ export default function Header() {
         {/* ユーザー管理機能 */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
           <a onClick={handleLogout} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-            ログアウト <span aria-hidden="true">&rarr;</span>
+            ログアウト
           </a>
         </div>
         {/* ユーザー管理機能ここまで */}
@@ -247,6 +251,7 @@ export default function Header() {
                 {/* ここまで お気に入りリスト*/}
                 <a
                   href="#"
+                  onClick={handleComigSoon}
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   ジャンル別ランキング(coming soon...)
@@ -266,10 +271,16 @@ export default function Header() {
               
               <div className="py-6">
                 <button
-                  // onClick={handleLogout}
+                  onClick={handleComigSoon}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   My アカウント(coming soon...)
+                </button>
+                <button
+                  onClick={handleComigSoon}
+                  className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  バックアップ(coming soon...)
                 </button>
                 <button
                   onClick={handleLogout}
