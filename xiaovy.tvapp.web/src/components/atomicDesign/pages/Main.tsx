@@ -6,34 +6,13 @@ import { getContentsByLabel, getAllLabels } from '@/utils/Convert/ranking/home/r
 import { convertRankingToCardData } from "@/utils/Convert/ranking/convertRankingToCardData";
 import { ConvertedContent } from '@/types/CardItem/RankingContent';
 import { ContentCardList } from '@/components/atomicDesign/molecules/ContentCardList';
-import { TabsWithUnderlineRanking } from "@/components/atomicDesign/molecules/Navi/TabsWithUnderLine-Ranking";
 import { useAuth } from '@/hooks/useAuth';
-
-type Tab = {
-    title: string;
-    query: string;
-};
 
 export const Main: FC = () => {
     const loginUser = useAuth();
     const session = useSessionService();
     const tvHomeData = useTvHomeService(session);
     const [rankingContents, setRankingContents] = useState<Record<string, ConvertedContent[]>>({});
-    const sampleGenres: Tab[] = [
-        {
-            title: "アニメ",
-            query: "anime",
-        },
-        {
-            title: "ドラマ",
-            query: "drama",
-        },
-        {
-            title: "バラエティー",
-            query: "variety",
-        }
-        ];
-    
 
     const [rankingLabels] = useState<string[]>(
         [
@@ -72,7 +51,6 @@ export const Main: FC = () => {
                     <ContentCardList contents={rankingContents[label] || []} />
                 </div>
             ))}
-            {/* <TabsWithUnderlineRanking tabs={sampleGenres}/> */}
         </>
     );
 };
