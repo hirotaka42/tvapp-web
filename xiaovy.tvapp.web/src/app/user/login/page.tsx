@@ -1,8 +1,8 @@
 'use client'
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/contexts/ToastContext';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'react-hot-toast';
 import SignInForms from '@/components/atomicDesign/molecules/Forms/sign-in-forms';
 
 interface FormData {
@@ -14,7 +14,6 @@ interface FormData {
 
 const Login: React.FC = () => {
   const loginUser = useAuth();
-  const { showToast } = useToast();
   const router = useRouter();
   const url = '/api/User/Authentication';
   // TODO: ↓この処理は共通化したい
@@ -54,13 +53,13 @@ const Login: React.FC = () => {
         body: JSON.stringify(dataToSend)
       });
       if (!response.ok) {
-        showToast('ログインに失敗しました', 'error');
+        toast.error('ログインに失敗しました');
         throw new Error('ネットワークエラーが発生しました');
       }
       const result = await response.json();
       localStorage.setItem(TokenName, result.IdToken);
       console.log('ログイン成功:', result);
-      showToast('ログインしました', 'success');
+      toast.success('ログインしました');
       router.push('/');
     } catch (error) {
       if (error instanceof Error) {

@@ -1,18 +1,17 @@
 import React from 'react';
-import { useToast } from '@/contexts/ToastContext';
+import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { removeIdToken } from '@/utils/Util/cleanToken';
 
 export const BetaLoginButton: React.FC<{ router: ReturnType<typeof useRouter> }> = ({ router }) => {
-    const { showToast } = useToast();
-
     const handleBetaLogin = async () => {
         // たまにβアカウントでログインしようとしているのに、すでにログインしている場合があるので、一度ログアウトする
         // TODO: この処理は共通化したい
         const TokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
         if (!TokenName) {
-            console.log(TokenName);
-            throw new Error("環境変数:IDTOKEN_NAMEが設定されていません。");
+            console.error("環境変数:IDTOKEN_NAMEが設定されていません。");
+            toast.error("環境変数:IDTOKEN_NAMEが設定されていません。");
+            return;
         }
         const existingToken = localStorage.getItem(TokenName);
         if (existingToken) removeIdToken();
@@ -28,15 +27,15 @@ export const BetaLoginButton: React.FC<{ router: ReturnType<typeof useRouter> }>
 
             const data = await response.json();
             localStorage.setItem('IdToken', data.IdToken);
-            showToast('βアカウントとしてログインしました', 'success');
+            toast.success('βアカウントとしてログインしました');
             router.push('/');
         } catch (error) {
             if (error instanceof Error) {
                 console.error('Error fetching token:', error.message);
-                showToast(`βアカウントとしてログインに失敗しました: ${error.message}`, 'error');
+                toast.error(`βアカウントとしてログインに失敗しました: ${error.message}`);
             } else {
                 console.error('Unknown error:', error);
-                showToast('βアカウントのログイン処理で不明なエラーが発生しました', 'error');
+                toast.error('βアカウントのログイン処理で不明なエラーが発生しました');
             }
         }
     };

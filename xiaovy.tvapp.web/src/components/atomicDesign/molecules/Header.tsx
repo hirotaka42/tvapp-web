@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogPanel,
@@ -17,7 +19,6 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon, PlayCircleIcon } from '@heroicons/react/20/solid'
-import { ThemeSelector } from "@/app/themeSelector";
 import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
 import { usePathname } from 'next/navigation';
 import { readFavoriteSeries } from '@/utils/Util/favoriteSeries';
@@ -42,6 +43,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const [favoriteSeries, setFavoriteSeries] = useState<seriesInfo[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     try {
@@ -56,7 +58,12 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem('IdToken');
-    window.location.href = '/user/login';
+    toast.success('ログアウトしました');
+    router.push('/user/login');
+  }
+
+  const handleComigSoon = () => {
+    toast('現在開発中です');
   }
   // useAuth内のRouter処理で、ログインページへのリダイレクトが矯正されてしまう
   // そのため、Headerではアカウント確認を行わない(暫定対応)
@@ -154,18 +161,24 @@ export default function Header() {
           </Popover>
           {/* ここまで お気に入りリスト*/}
 
+          {/* ここから 50件ランキング*/}
+          <a href="#" onClick={handleComigSoon} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            ジャンル別ランキング
+          </a>
+          {/* ここまで 50件ランキング*/}
+
           <a href="#" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
             Company
           </a>
         </PopoverGroup>
+
+        {/* ユーザー管理機能 */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <ThemeSelector />
-        </div>
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <a href="/user/login" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-            Log in <span aria-hidden="true">&rarr;</span>
+          <a onClick={handleLogout} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            ログアウト
           </a>
         </div>
+        {/* ユーザー管理機能ここまで */}
         {/* ここまでPC表示 大のヘッダー */}
       </nav>
 
@@ -238,6 +251,13 @@ export default function Header() {
                 {/* ここまで お気に入りリスト*/}
                 <a
                   href="#"
+                  onClick={handleComigSoon}
+                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  ジャンル別ランキング(coming soon...)
+                </a>
+                <a
+                  href="#"
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Company
@@ -250,17 +270,23 @@ export default function Header() {
               </div>
               
               <div className="py-6">
-                <a
-                  href="/user/login"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                <button
+                  onClick={handleComigSoon}
+                  className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Log in
-                </a>
+                  My アカウント(coming soon...)
+                </button>
+                <button
+                  onClick={handleComigSoon}
+                  className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  バックアップ(coming soon...)
+                </button>
                 <button
                   onClick={handleLogout}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Log out
+                  ログアウト
                 </button>
               </div>
             </div>

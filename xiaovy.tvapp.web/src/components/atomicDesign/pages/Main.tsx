@@ -6,45 +6,19 @@ import { getContentsByLabel, getAllLabels } from '@/utils/Convert/ranking/home/r
 import { convertRankingToCardData } from "@/utils/Convert/ranking/convertRankingToCardData";
 import { ConvertedContent } from '@/types/CardItem/RankingContent';
 import { ContentCardList } from '@/components/atomicDesign/molecules/ContentCardList';
-import { TabsWithUnderlineRanking } from "@/components/atomicDesign/molecules/Navi/TabsWithUnderLine-Ranking";
 import { useAuth } from '@/hooks/useAuth';
-
-type Tab = {
-    title: string;
-    query: string;
-};
 
 export const Main: FC = () => {
     const loginUser = useAuth();
     const session = useSessionService();
     const tvHomeData = useTvHomeService(session);
     const [rankingContents, setRankingContents] = useState<Record<string, ConvertedContent[]>>({});
-    const sampleGenres: Tab[] = [
-        {
-          title: "アニメ",
-          query: "anime",
-        },
-        {
-          title: "ドラマ",
-          query: "drama",
-        },
-        {
-          title: "バラエティー",
-          query: "variety",
-        }
-      ];
-    
 
     const [rankingLabels] = useState<string[]>(
         [
-            '10月開始の新ドラマ【最新話】',
             'ドラマランキング', 'バラエティランキング', 'アニメ／ヒーローランキング',
             '報道／ドキュメンタリーランキング', 'スポーツランキング',
             '今週のイチオシバラエティはこれ！',
-            '今シーズンの人気ドラマを気軽にチェック！',
-            '人気ドラマ・バラエティの配信限定作品', 
-            '【厳選】トークバラエティ番組',
-            '【音楽特集】人気番組を見逃し配信中！',
             'まもなく配信終了','新着'
         ]
     );
@@ -72,12 +46,11 @@ export const Main: FC = () => {
             {rankingLabels.map(label => (
                 <div key={label}>
                     <h2
-                      className="text-md font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
+                        className="text-md font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
                     >{label}</h2>
                     <ContentCardList contents={rankingContents[label] || []} />
                 </div>
             ))}
-            <TabsWithUnderlineRanking tabs={sampleGenres}/>
         </>
     );
 };
