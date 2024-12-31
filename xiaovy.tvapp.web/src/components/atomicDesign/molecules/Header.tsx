@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogPanel,
@@ -41,6 +43,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const [favoriteSeries, setFavoriteSeries] = useState<seriesInfo[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     try {
@@ -55,7 +58,8 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem('IdToken');
-    window.location.href = '/user/login';
+    toast.success('ログアウトしました');
+    router.push('/user/login');
   }
   // useAuth内のRouter処理で、ログインページへのリダイレクトが矯正されてしまう
   // そのため、Headerではアカウント確認を行わない(暫定対応)
@@ -153,15 +157,24 @@ export default function Header() {
           </Popover>
           {/* ここまで お気に入りリスト*/}
 
+          {/* ここから 50件ランキング*/}
+          <a href="#" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            ジャンル別ランキング
+          </a>
+          {/* ここまで 50件ランキング*/}
+
           <a href="#" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
             Company
           </a>
         </PopoverGroup>
+
+        {/* ユーザー管理機能 */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <a href="/user/login" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-            Log in <span aria-hidden="true">&rarr;</span>
+          <a onClick={handleLogout} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            ログアウト <span aria-hidden="true">&rarr;</span>
           </a>
         </div>
+        {/* ユーザー管理機能ここまで */}
         {/* ここまでPC表示 大のヘッダー */}
       </nav>
 
@@ -246,17 +259,11 @@ export default function Header() {
               </div>
               
               <div className="py-6">
-                <a
-                  href="/user/login"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Log in
-                </a>
                 <button
                   onClick={handleLogout}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Log out
+                  ログアウト
                 </button>
               </div>
             </div>
