@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     try {
         const response = await fetch(
-            `${functionHost}/api/http_trigger?code=${key}&url=https://tver.jp/episodes/${episodeId}`,
+            `${functionHost}/api/backend_stream_url_http?code=${key}&url=https://tver.jp/episodes/${episodeId}&service_id=1&res_type=6`,
             {
                 headers: {
                     'x-tver-platform-type': 'web',
@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
         }
 
         const data = await response.json();
-        return NextResponse.json(data);
+        const firstUrl = data?.manifest_dict?.urls?.[0];
+        return NextResponse.json({ video_url: firstUrl });
     } catch (error) {
         console.error("Error:", error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
