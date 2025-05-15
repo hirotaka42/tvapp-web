@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
@@ -15,7 +16,21 @@ interface Channel {
 const Stream = () => {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [selected, setSelected] = useState<Channel | null>(null);
+  const [isActivated, setIsActivated] = useState(false);
+  
   const streamM3uUrl = process.env.NEXT_PUBLIC_JP_STREAMING_M3U_URL || '';
+  const router = useRouter();
+  const correctPassword = process.env.NEXT_PUBLIC_STREAM_PASSWORD || '';
+
+  // パスワードが localStorage に正しく保存されているかチェック
+  useEffect(() => {
+    const stored = localStorage.getItem('streamPassword');
+    if (stored !== correctPassword) {
+      router.push('/user/activate');
+    }else {
+      setIsActivated(true);
+    }
+  }, [router, correctPassword]);
 
   useEffect(() => {
     fetch(streamM3uUrl)
@@ -59,6 +74,11 @@ const Stream = () => {
       })
       .catch(err => console.error('Error fetching m3u:', err));
   }, []);
+
+  // Activate検証が完了していなければ何も表示しない
+  if (!isActivated) {
+    return null;
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
