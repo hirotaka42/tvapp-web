@@ -170,8 +170,8 @@ export default function Header() {
           </a>
           {/* ここまで 50件ランキング*/}
 
-          <a href="#" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-            Company
+          <a href="/stream" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            JP_M3U Player (Test)
           </a>
         </PopoverGroup>
 
@@ -263,10 +263,10 @@ export default function Header() {
                   ジャンル別ランキング(coming soon...)
                 </a>
                 <a
-                  href="#"
+                  href="/stream"
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Company
+                  JP_M3U Player (Test)
                 </a>
                 <div
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
