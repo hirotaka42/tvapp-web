@@ -18,7 +18,7 @@ const Stream = () => {
   const [selected, setSelected] = useState<Channel | null>(null);
   const [isActivated, setIsActivated] = useState(false);
   
-  const streamM3uUrl = process.env.NEXT_PUBLIC_JP_STREAMING_M3U_URL || '';
+  const streamM3uUrl = '/api/service/stream/fetchM3u';
   const router = useRouter();
   const correctPassword = process.env.NEXT_PUBLIC_STREAM_PASSWORD || '';
 
@@ -33,7 +33,12 @@ const Stream = () => {
   }, [router, correctPassword]);
 
   useEffect(() => {
-    fetch(streamM3uUrl)
+    const token = localStorage.getItem('IdToken');
+    fetch(streamM3uUrl, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
       .then(res => res.text())
       .then(text => {
         const lines = text.split('\n');
