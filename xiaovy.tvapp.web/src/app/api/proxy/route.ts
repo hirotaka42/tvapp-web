@@ -12,14 +12,16 @@ export async function GET(request: Request) {
         const response = await fetch(url, {
             headers: token ? { 'authorization': `Bearer ${token}` } : {}
         });
-
+    
         if (!response.ok) {
             return new Response('Error fetching resource', { status: response.status });
         }
         const contentType = response.headers.get('content-type') || 'application/octet-stream';
-
+    
         // m3u8のようなテキスト形式（プレーンテキスト、UTF-8)の場合のみ書き換え
-        if (contentType.includes('application/vnd.apple.mpegurl') || contentType.includes('vnd.apple.mpegurl') || contentType.includes('text/plain')) {
+        if (contentType.includes('application/vnd.apple.mpegurl') ||
+            contentType.includes('vnd.apple.mpegurl') ||
+            contentType.includes('text/plain')) {
             const text = await response.text();
             const urlObj = new URL(url);
             const baseUrl = urlObj.href.substring(0, urlObj.href.lastIndexOf('/') + 1);
@@ -35,7 +37,7 @@ export async function GET(request: Request) {
                 } catch {
                     // 相対URLの場合は、baseUrlで展開してproxy経由のURLに置き換え
                     const absoluteUrl = new URL(line, baseUrl).href;
-                    const proxyUrl = `/api/proxy?url=${encodeURIComponent(absoluteUrl)}` + (token ? `&auth=${encodeURIComponent(token)}` : '');
+                    const proxyUrl = `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
                     return proxyUrl;
                 }
             }).join('\n');
@@ -43,12 +45,12 @@ export async function GET(request: Request) {
                 headers: { 'Content-Type': contentType }
             });
         }
-
+    
         // それ以外はストリームをそのまま返す
         return new Response(response.body, {
             headers: { 'Content-Type': contentType }
         });
-    } catch (error) {
+    } catch {
         return new Response(
             JSON.stringify({ error: 'Error fetching resource' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }
