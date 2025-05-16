@@ -91,7 +91,7 @@ const Stream = () => {
       <div style={{ padding: '0', flexShrink: 0 }}>
         {selected ? (
           <ReactPlayer 
-            url={selected.url} 
+            url={`/api/proxy?url=${encodeURIComponent(selected.url)}`} 
             controls 
             playing 
             width="100%" 

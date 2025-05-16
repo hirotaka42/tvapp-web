@@ -9,7 +9,8 @@ export async function middleware(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith('/api/User/Register') || 
         request.nextUrl.pathname.startsWith('/api/User/Authentication') ||
         request.nextUrl.pathname.startsWith('/api/utils/verify-token') ||
-        request.nextUrl.pathname.startsWith('/api/service/betaLoginToken')){
+        request.nextUrl.pathname.startsWith('/api/service/betaLoginToken') ||
+        request.nextUrl.pathname.startsWith('/api/proxy')) {
         return NextResponse.next();
     }
     if (request.nextUrl.pathname === '/about') {
