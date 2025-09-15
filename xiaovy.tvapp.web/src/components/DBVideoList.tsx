@@ -55,13 +55,44 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
   };
 
   const downloadVideo = (video: VideoDownload) => {
-    const link = document.createElement('a');
-    link.href = video.sas_url;
-    link.download = video.metadata.original_filename || `${video.video_info.title}.mp4`;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const userAgent = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    const isAndroid = /Android/.test(userAgent);
+    
+    if (isIOS) {
+      // iOSの場合：アプリストアの案内またはSafariでの直接ダウンロード
+      if (confirm('iOSでダウンロードするには以下の方法があります：\n\n1. Documents by Readdle (推奨)\n2. Safariで直接ダウンロード\n\n「OK」でアプリストアを開く、「キャンセル」で直接ダウンロード')) {
+        window.open('https://apps.apple.com/jp/app/documents-by-readdle/id364901807', '_blank');
+      } else {
+        window.open(video.sas_url, '_blank');
+      }
+    } else if (isAndroid) {
+      // Androidの場合：推奨アプリの案内
+      if (confirm('Androidでダウンロードするには以下のアプリがおすすめです：\n\n1. ADM (Advanced Download Manager)\n2. Chrome標準ダウンロード\n\n「OK」でPlay Storeを開く、「キャンセル」で直接ダウンロード')) {
+        window.open('https://play.google.com/store/apps/details?id=com.dv.adm', '_blank');
+      } else {
+        window.open(video.sas_url, '_blank');
+      }
+    } else {
+      // PC/その他の場合：従来通り
+      const link = document.createElement('a');
+      link.href = video.sas_url;
+      link.download = video.metadata.original_filename || `${video.video_info.title}.mp4`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const openInVLC = (video: VideoDownload) => {
+    const vlcUrl = `vlc://${video.sas_url}`;
+    window.open(vlcUrl, '_blank');
+  };
+
+  const openInInfuse = (video: VideoDownload) => {
+    const infuseUrl = `infuse://x-callback-url/play?url=${encodeURIComponent(video.sas_url)}`;
+    window.open(infuseUrl, '_blank');
   };
 
   if (loading) {
@@ -134,21 +165,38 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
               </h3>
               
               {/* アクションボタン */}
-              <div className="flex gap-2">
+              <div className="space-y-2">
+                {/* 第1行：再生ボタン */}
                 <button
                   onClick={() => playVideo(video)}
-                  className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                  className="w-full flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
                 >
                   <PlayIcon className="h-4 w-4" />
-                  再生
+                  ブラウザで再生
                 </button>
-                <button
-                  onClick={() => downloadVideo(video)}
-                  className="flex items-center justify-center gap-1 px-3 py-2 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors"
-                >
-                  <ArrowDownTrayIcon className="h-4 w-4" />
-                  DL
-                </button>
+                
+                {/* 第2行：外部アプリ再生 */}
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => openInVLC(video)}
+                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors"
+                  >
+                    VLC
+                  </button>
+                  <button
+                    onClick={() => openInInfuse(video)}
+                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                  >
+                    Infuse
+                  </button>
+                  <button
+                    onClick={() => downloadVideo(video)}
+                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors"
+                  >
+                    <ArrowDownTrayIcon className="h-4 w-4" />
+                    DL
+                  </button>
+                </div>
               </div>
             </div>
           </div>
