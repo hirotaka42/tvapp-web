@@ -76,6 +76,16 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
     return (
       <div className="p-4 text-center">
         <p className="text-red-600 dark:text-red-400">エラー: {error}</p>
+        <p className="text-xs text-gray-500 mt-2">データ件数: {videos.length}</p>
+      </div>
+    );
+  }
+
+  if (videos.length === 0) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-gray-600 dark:text-gray-300">データがありません</p>
+        <p className="text-xs text-gray-500 mt-2">API応答は正常ですが、表示するデータがありません</p>
       </div>
     );
   }

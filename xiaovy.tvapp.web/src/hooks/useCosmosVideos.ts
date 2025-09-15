@@ -11,8 +11,12 @@ export const useCosmosVideos = () => {
       setLoading(true);
       setError(null);
       
-      // 認証トークンを取得（環境変数から）
-      const token = process.env.NEXT_PUBLIC_BETA_IDTOKEN || 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjY3ZjEyMjg0ODEzOGRiZjQxMzZjZjM3NCIsImVtYWlsIjoiaHNzQGdtYWlsLmNvbSIsInV1aWQiOiIzNjY2NmRiMi01MWQzLTQ0Y2ItYTEwZC1hYTI2NjU2NzIxZDMiLCJleHAiOjE4MjE2MTYyODl9.O67sPAbzHLlEqp0buPob7F_VPJUdAXbCliML1inkLcc';
+      // ローカルストレージからトークンを取得
+      const token = localStorage.getItem('IdToken') || process.env.NEXT_PUBLIC_BETA_IDTOKEN;
+      
+      if (!token) {
+        throw new Error('認証トークンが見つかりません');
+      }
       
       const response = await fetch('/api/cosmosdb/videos', {
         headers: {
@@ -22,7 +26,8 @@ export const useCosmosVideos = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
       const data: VideoDownloadResponse = await response.json();
@@ -33,7 +38,8 @@ export const useCosmosVideos = () => {
         setError(data.error || 'Failed to fetch videos');
       }
     } catch (err) {
-      setError('Network error while fetching videos');
+      const errorMessage = err instanceof Error ? err.message : 'Network error while fetching videos';
+      setError(errorMessage);
       console.error('Error fetching videos:', err);
     } finally {
       setLoading(false);
