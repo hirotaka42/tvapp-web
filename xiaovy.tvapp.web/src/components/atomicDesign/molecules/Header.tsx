@@ -23,6 +23,7 @@ import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
 import { usePathname } from 'next/navigation';
 import { readFavoriteSeries } from '@/utils/Util/favoriteSeries';
 import { seriesInfo } from '@/types/utils/favoriteSeries';
+import { DBVideoList } from '@/components/DBVideoList';
 
 const defaultContents = [
   { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srcmcqwlmq', icon: PlayCircleIcon },
@@ -164,6 +165,23 @@ export default function Header() {
           </Popover>
           {/* ここまで お気に入りリスト*/}
 
+          {/* ここから DBリスト*/}
+          <Popover className="relative">
+            <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+              DBリスト
+              <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400" />
+            </PopoverButton>
+            <PopoverPanel
+              transition
+              className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-lg ring-1 ring-gray-900/5 transition data-[closed]:translate-y-1 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in"
+            >
+              <div className="max-h-96 overflow-y-auto">
+                <DBVideoList maxItems={15} />
+              </div>
+            </PopoverPanel>
+          </Popover>
+          {/* ここまで DBリスト*/}
+
           {/* ここから 50件ランキング*/}
           <a href="#" onClick={handleComigSoon} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
             ジャンル別ランキング
@@ -255,6 +273,20 @@ export default function Header() {
                   </DisclosurePanel>
                 </Disclosure>
                 {/* ここまで お気に入りリスト*/}
+
+                {/* ここから DBリスト*/}
+                <Disclosure as="div" className="-mx-3">
+                  <DisclosureButton className="group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    DBリスト
+                    <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none group-data-[open]:rotate-180" />
+                  </DisclosureButton>
+                  <DisclosurePanel className="mt-2 space-y-2">
+                    <div className="max-h-96 overflow-y-auto">
+                      <DBVideoList maxItems={15} />
+                    </div>
+                  </DisclosurePanel>
+                </Disclosure>
+                {/* ここまで DBリスト*/}
                 <a
                   href="#"
                   onClick={handleComigSoon}

@@ -19,7 +19,7 @@ export function useSessionService() {
     };
 
     fetchSessionToken();
-  }, []);
+  }, [sessionService]);
 
   return sessionToken;
 }
