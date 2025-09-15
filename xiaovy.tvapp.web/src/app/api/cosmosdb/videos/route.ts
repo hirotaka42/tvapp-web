@@ -39,13 +39,18 @@ export async function GET(request: NextRequest): Promise<NextResponse<VideoDownl
     const database = client.database(databaseName);
     const container = database.container(containerName);
 
-    // テスト用：service_id = "1" のデータのみ取得するクエリ（TVerフィルタなし）
+    // service_id = "1" でかつTVerのデータのみ取得するクエリ
+    // metadata.source_url にtver.jpが含まれるデータのみ取得
     const querySpec = {
-      query: 'SELECT * FROM c WHERE c.metadata.service_id = @serviceId ORDER BY c._ts DESC',
+      query: 'SELECT * FROM c WHERE c.metadata.service_id = @serviceId AND CONTAINS(LOWER(c.metadata.source_url), @sourcePattern) ORDER BY c._ts DESC',
       parameters: [
         {
           name: '@serviceId',
           value: '1'
+        },
+        {
+          name: '@sourcePattern',
+          value: 'tver.jp'
         }
       ]
     };

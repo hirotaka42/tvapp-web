@@ -176,7 +176,6 @@ export default function Header() {
               className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-lg ring-1 ring-gray-900/5 transition data-[closed]:translate-y-1 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in"
             >
               <div className="max-h-96 overflow-y-auto">
-                <div className="p-2 text-xs text-gray-500 border-b">デバッグ: DBVideoList (デスクトップ)</div>
                 <DBVideoList maxItems={15} />
               </div>
             </PopoverPanel>
@@ -283,7 +282,6 @@ export default function Header() {
                   </DisclosureButton>
                   <DisclosurePanel className="mt-2 space-y-2">
                     <div className="max-h-96 overflow-y-auto">
-                      <div className="p-2 text-xs text-gray-500 border-b">デバッグ: DBVideoList (モバイル)</div>
                       <DBVideoList maxItems={15} />
                     </div>
                   </DisclosurePanel>
