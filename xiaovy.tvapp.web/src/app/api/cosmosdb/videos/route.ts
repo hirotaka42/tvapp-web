@@ -42,11 +42,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<VideoDownl
     // service_id = "1" でかつTVerのデータのみ取得するクエリ
     // metadata.source_url にtver.jpが含まれるデータのみ取得
     const querySpec = {
-      query: 'SELECT * FROM c WHERE c.metadata.service_id = @serviceId ORDER BY c._ts DESC',
+      query: 'SELECT * FROM c WHERE c.metadata.service_id = @serviceId_1 OR c.metadata.service_id = @serviceId_2 ORDER BY c._ts DESC',
       parameters: [
         {
-          name: '@serviceId',
+          name: '@serviceId_1',
           value: '1'
+        },
+        {
+          name: '@serviceId_2',
+          value: '4'
         }
       ]
     };
