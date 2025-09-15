@@ -59,20 +59,53 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
     const isIOS = /iPad|iPhone|iPod/.test(userAgent);
     const isAndroid = /Android/.test(userAgent);
     
-    if (isIOS) {
-      // iOSの場合：アプリストアの案内またはSafariでの直接ダウンロード
-      if (confirm('iOSでダウンロードするには以下の方法があります：\n\n1. Documents by Readdle (推奨)\n2. Safariで直接ダウンロード\n\n「OK」でアプリストアを開く、「キャンセル」で直接ダウンロード')) {
-        window.open('https://apps.apple.com/jp/app/documents-by-readdle/id364901807', '_blank');
-      } else {
-        window.open(video.sas_url, '_blank');
-      }
-    } else if (isAndroid) {
-      // Androidの場合：推奨アプリの案内
-      if (confirm('Androidでダウンロードするには以下のアプリがおすすめです：\n\n1. ADM (Advanced Download Manager)\n2. Chrome標準ダウンロード\n\n「OK」でPlay Storeを開く、「キャンセル」で直接ダウンロード')) {
-        window.open('https://play.google.com/store/apps/details?id=com.dv.adm', '_blank');
-      } else {
-        window.open(video.sas_url, '_blank');
-      }
+    if (isIOS || isAndroid) {
+      // モバイルの場合：モーダルでリンクを表示
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      `;
+      
+      const content = document.createElement('div');
+      content.style.cssText = `
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        max-width: 90%;
+        text-align: center;
+      `;
+      
+      content.innerHTML = `
+        <p style="margin-bottom: 15px; color: black;">リンクを長押ししてダウンロードできます</p>
+        <a href="${video.sas_url}" 
+           download="${video.metadata.original_filename || `${video.video_info.title}.mp4`}"
+           style="color: blue; text-decoration: underline; word-break: break-all; display: block; margin-bottom: 15px;">
+          ${video.sas_url}
+        </a>
+        <button onclick="document.body.removeChild(this.closest('div[style*=\"position: fixed\"]'))" 
+                style="background: #666; color: white; border: none; padding: 8px 16px; border-radius: 5px;">
+          閉じる
+        </button>
+      `;
+      
+      modal.appendChild(content);
+      document.body.appendChild(modal);
+      
+      // 背景クリックで閉じる
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          document.body.removeChild(modal);
+        }
+      };
     } else {
       // PC/その他の場合：従来通り
       const link = document.createElement('a');
