@@ -15,7 +15,13 @@ export function getSasExpiryDate(video: VideoDownload): string | null {
 /**
  * 有効期限日時を日本語で分かりやすく表示する
  */
-export function formatExpiryDate(expiryDate: string): string {
+export function formatExpiryDate(video: VideoDownload): string {
+  const expiryDate = getSasExpiryDate(video);
+  
+  if (!expiryDate) {
+    return '期限情報なし';
+  }
+  
   try {
     const date = new Date(expiryDate);
     const now = new Date();

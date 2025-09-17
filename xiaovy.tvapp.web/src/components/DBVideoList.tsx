@@ -97,20 +97,28 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
         max-width: 90%;
         text-align: center;
       `;
-      
-      content.innerHTML = `
-        <p style="margin-bottom: 15px; color: black;">リンクを長押ししてダウンロードできます</p>
-        <a href="${sasUrl}" 
-           download="${video.metadata.original_filename || `${video.video_info.title}.mp4`}"
-           style="color: blue; text-decoration: underline; word-break: break-all; display: block; margin-bottom: 15px;">
-          ${sasUrl}
-        </a>
-        <button onclick="document.body.removeChild(this.closest('div[style*=\"position: fixed\"]'))" 
-                style="background: #666; color: white; border: none; padding: 8px 16px; border-radius: 5px;">
-          閉じる
-        </button>
-      `;
-      
+
+      // 要素を個別に作成
+      const message = document.createElement('p');
+      message.style.cssText = 'margin-bottom: 15px; color: black;';
+      message.textContent = 'リンクを長押ししてダウンロードできます';
+
+      const link = document.createElement('a');
+      link.href = sasUrl;
+      link.download = video.metadata.original_filename || `${video.video_info.title}.mp4`;
+      link.style.cssText = 'color: blue; text-decoration: underline; word-break: break-all; display: block; margin-bottom: 15px;';
+      link.textContent = sasUrl;
+
+      const closeButton = document.createElement('button');
+      closeButton.style.cssText = 'background: #666; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;';
+      closeButton.textContent = '閉じる';
+      closeButton.onclick = () => {
+        document.body.removeChild(modal);
+      };
+
+      content.appendChild(message);
+      content.appendChild(link);
+      content.appendChild(closeButton);
       modal.appendChild(content);
       document.body.appendChild(modal);
       
@@ -234,7 +242,7 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
                     <ClockIcon className="h-3 w-3" />
                   )}
                   <span className="font-medium">
-                    視聴期限: {formatExpiryDate(getSasExpiryDate(video)!)}
+                    視聴期限: {formatExpiryDate(video)}
                   </span>
                 </div>
               )}

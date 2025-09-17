@@ -45,6 +45,11 @@ export interface VideoDownload {
     processed_date: string;
     thumbnail?: string;
     description?: string;
+    series?: string;
+    season?: string;
+    season_number?: number;
+    episode_number?: number;
+    episode?: string;
   };
   video_info: {
     title: string;
