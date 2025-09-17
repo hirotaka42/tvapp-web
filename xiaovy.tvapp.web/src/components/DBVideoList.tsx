@@ -4,6 +4,7 @@ import { PlayIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { VideoDownload } from '@/types/VideoDownload';
 import { useCosmosVideos } from '@/hooks/useCosmosVideos';
 import { VideoPlayer } from '@/components/atomicDesign/atoms/VideoPlayer';
+import { getSasUrl } from '@/utils/getSasUrl';
 
 // モーダルコンポーネント
 const VideoModal: React.FC<{
@@ -28,7 +29,7 @@ const VideoModal: React.FC<{
           </button>
         </div>
         <div className="aspect-video">
-          <VideoPlayer url={video.sas_url} />
+          <VideoPlayer url={getSasUrl(video)} />
         </div>
       </div>
     </div>
@@ -58,6 +59,7 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
     const userAgent = navigator.userAgent;
     const isIOS = /iPad|iPhone|iPod/.test(userAgent);
     const isAndroid = /Android/.test(userAgent);
+    const sasUrl = getSasUrl(video);
     
     if (isIOS || isAndroid) {
       // モバイルの場合：モーダルでリンクを表示
@@ -86,10 +88,10 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
       
       content.innerHTML = `
         <p style="margin-bottom: 15px; color: black;">リンクを長押ししてダウンロードできます</p>
-        <a href="${video.sas_url}" 
+        <a href="${sasUrl}" 
            download="${video.metadata.original_filename || `${video.video_info.title}.mp4`}"
            style="color: blue; text-decoration: underline; word-break: break-all; display: block; margin-bottom: 15px;">
-          ${video.sas_url}
+          ${sasUrl}
         </a>
         <button onclick="document.body.removeChild(this.closest('div[style*=\"position: fixed\"]'))" 
                 style="background: #666; color: white; border: none; padding: 8px 16px; border-radius: 5px;">
@@ -109,7 +111,7 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
     } else {
       // PC/その他の場合：従来通り
       const link = document.createElement('a');
-      link.href = video.sas_url;
+      link.href = sasUrl;
       link.download = video.metadata.original_filename || `${video.video_info.title}.mp4`;
       link.target = '_blank';
       document.body.appendChild(link);
@@ -119,12 +121,12 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
   };
 
   const openInVLC = (video: VideoDownload) => {
-    const vlcUrl = `vlc://${video.sas_url}`;
+    const vlcUrl = `vlc://${getSasUrl(video)}`;
     window.open(vlcUrl, '_blank');
   };
 
   const openInInfuse = (video: VideoDownload) => {
-    const infuseUrl = `infuse://x-callback-url/play?url=${encodeURIComponent(video.sas_url)}`;
+    const infuseUrl = `infuse://x-callback-url/play?url=${encodeURIComponent(getSasUrl(video))}`;
     window.open(infuseUrl, '_blank');
   };
 
