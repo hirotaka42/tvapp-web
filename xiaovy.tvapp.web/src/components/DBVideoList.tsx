@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { PlayIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { PlayIcon, ArrowDownTrayIcon, ClockIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { VideoDownload } from '@/types/VideoDownload';
 import { useCosmosVideos } from '@/hooks/useCosmosVideos';
 import { VideoPlayer } from '@/components/atomicDesign/atoms/VideoPlayer';
 import { getSasUrl } from '@/utils/getSasUrl';
+import { getSasExpiryDate, formatExpiryDate, getExpiryStatus } from '@/utils/formatExpiryDate';
 
 // モーダルコンポーネント
 const VideoModal: React.FC<{
@@ -46,6 +47,12 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const playVideo = (video: VideoDownload) => {
+    // 期限切れの場合は再生しない
+    if (getExpiryStatus(video) === 'expired') {
+      alert('この動画の視聴期限が切れています。');
+      return;
+    }
+    
     setSelectedVideo(video);
     setIsModalOpen(true);
   };
@@ -56,6 +63,11 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
   };
 
   const downloadVideo = (video: VideoDownload) => {
+    if (getExpiryStatus(video) === 'expired') {
+      alert('この動画の視聴期限が切れています。');
+      return;
+    }
+    
     const userAgent = navigator.userAgent;
     const isIOS = /iPad|iPhone|iPod/.test(userAgent);
     const isAndroid = /Android/.test(userAgent);
@@ -121,11 +133,19 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
   };
 
   const openInVLC = (video: VideoDownload) => {
+    if (getExpiryStatus(video) === 'expired') {
+      alert('この動画の視聴期限が切れています。');
+      return;
+    }
     const vlcUrl = `vlc://${getSasUrl(video)}`;
     window.open(vlcUrl, '_blank');
   };
 
   const openInInfuse = (video: VideoDownload) => {
+    if (getExpiryStatus(video) === 'expired') {
+      alert('この動画の視聴期限が切れています。');
+      return;
+    }
     const infuseUrl = `infuse://x-callback-url/play?url=${encodeURIComponent(getSasUrl(video))}`;
     window.open(infuseUrl, '_blank');
   };
@@ -199,34 +219,74 @@ export const DBVideoList: React.FC<DBVideoListProps> = ({ maxItems }) => {
                 {video.video_info.title}
               </h3>
               
+              {/* 有効期限表示 */}
+              {getSasExpiryDate(video) && (
+                <div className={`flex items-center gap-1 mb-2 text-xs ${
+                  getExpiryStatus(video) === 'expired' 
+                    ? 'text-red-600 dark:text-red-400' 
+                    : getExpiryStatus(video) === 'warning'
+                    ? 'text-orange-600 dark:text-orange-400'
+                    : 'text-gray-600 dark:text-gray-400'
+                }`}>
+                  {getExpiryStatus(video) === 'expired' ? (
+                    <ExclamationTriangleIcon className="h-3 w-3" />
+                  ) : (
+                    <ClockIcon className="h-3 w-3" />
+                  )}
+                  <span className="font-medium">
+                    視聴期限: {formatExpiryDate(getSasExpiryDate(video)!)}
+                  </span>
+                </div>
+              )}
+              
               {/* アクションボタン */}
               <div className="space-y-2">
                 {/* 第1行：再生ボタン */}
                 <button
                   onClick={() => playVideo(video)}
-                  className="w-full flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                  disabled={getExpiryStatus(video) === 'expired'}
+                  className={`w-full flex items-center justify-center gap-1 px-3 py-2 text-white text-xs rounded transition-colors ${
+                    getExpiryStatus(video) === 'expired'
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
                 >
                   <PlayIcon className="h-4 w-4" />
-                  ブラウザで再生
+                  {getExpiryStatus(video) === 'expired' ? '期限切れ' : 'ブラウザで再生'}
                 </button>
                 
                 {/* 第2行：外部アプリ再生 */}
                 <div className="flex gap-1">
                   <button
                     onClick={() => openInVLC(video)}
-                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors"
+                    disabled={getExpiryStatus(video) === 'expired'}
+                    className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-white text-xs rounded transition-colors ${
+                      getExpiryStatus(video) === 'expired'
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-orange-600 hover:bg-orange-700'
+                    }`}
                   >
                     VLC
                   </button>
                   <button
                     onClick={() => openInInfuse(video)}
-                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                    disabled={getExpiryStatus(video) === 'expired'}
+                    className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-white text-xs rounded transition-colors ${
+                      getExpiryStatus(video) === 'expired'
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-purple-600 hover:bg-purple-700'
+                    }`}
                   >
                     Infuse
                   </button>
                   <button
                     onClick={() => downloadVideo(video)}
-                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition-colors"
+                    disabled={getExpiryStatus(video) === 'expired'}
+                    className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-white text-xs rounded transition-colors ${
+                      getExpiryStatus(video) === 'expired'
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-gray-600 hover:bg-gray-700'
+                    }`}
                   >
                     <ArrowDownTrayIcon className="h-4 w-4" />
                     DL
