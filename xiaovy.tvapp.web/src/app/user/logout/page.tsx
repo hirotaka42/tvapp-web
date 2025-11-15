@@ -1,28 +1,29 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useFirebaseAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { ConfirmationModal } from '@/components/atomicDesign/molecules/ConfirmationModal';
 
 const Logout = () => {
   const router = useRouter();
+  const { clearAllAuthState } = useFirebaseAuth();
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
-
-  const TokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
-  if (!TokenName){
-    console.log(TokenName);
-    throw new Error("環境変数:IDTOKEN_NAMEが設定されていません。");
-  }
 
   // ページ表示時に自動的にモーダルを表示
   useEffect(() => {
     setLogoutModalOpen(true);
   }, []);
 
-  const handleLogoutConfirm = () => {
-    localStorage.removeItem(TokenName);
-    toast.success('ログアウトしました');
-    router.push('/user/login');
+  const handleLogoutConfirm = async () => {
+    try {
+      await clearAllAuthState();
+      toast.success('ログアウトしました');
+      router.push('/user/login');
+    } catch (error) {
+      console.error('ログアウトエラー:', error);
+      toast.error('ログアウトに失敗しました');
+    }
   };
 
   const handleCancel = () => {
