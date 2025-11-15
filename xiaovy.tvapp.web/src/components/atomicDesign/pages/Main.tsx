@@ -13,28 +13,19 @@ export const Main: FC = () => {
     const session = useSessionService();
     const tvHomeData = useTvHomeService(session);
     const [rankingContents, setRankingContents] = useState<Record<string, ConvertedContent[]>>({});
-
-    const [rankingLabels] = useState<string[]>(
-        [
-            'ドラマランキング', 'バラエティランキング', 'アニメ／ヒーローランキング',
-            '報道／ドキュメンタリーランキング', 'スポーツランキング',
-            '今週のイチオシバラエティはこれ！',
-            'まもなく配信終了','新着'
-        ]
-    );
+    const [rankingLabels, setRankingLabels] = useState<string[]>([]);
 
     useEffect(() => {
         if (tvHomeData && loginUser) {
             const allLabels = getAllLabels(tvHomeData);
-            const contents = allLabels.reduce((acc, label) => {
+            const contents = allLabels.reduce<Record<string, ConvertedContent[]>>((acc, label) => {
                 const labelContents = convertRankingToCardData(getContentsByLabel(tvHomeData, label));
                 return { ...acc, [label]: labelContents };
             }, {});
             setRankingContents(contents);
-            // ラベルごとのアイテム構造が把握できていないため、コメントアウト
-            // setRankingLabels(allLabels);
+            setRankingLabels(allLabels);
         }
-    }, [tvHomeData]);
+    }, [tvHomeData, loginUser]);
 
     if (!session || !tvHomeData || !loginUser) {
         return <div>Loading...</div>;
@@ -42,7 +33,7 @@ export const Main: FC = () => {
 
     return (
         <>
-            { !rankingLabels.length && <div>Loading...</div> }
+            {!rankingLabels.length && <div>Loading...</div>}
             {rankingLabels.map(label => (
                 <div key={label}>
                     <h2
