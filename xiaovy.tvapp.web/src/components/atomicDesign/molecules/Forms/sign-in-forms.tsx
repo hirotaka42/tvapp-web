@@ -2,7 +2,7 @@ import { ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { PasswordInput } from '@/components/atomicDesign/atoms/PasswordInput';
 import { Button } from '@/components/atomicDesign/atoms/Button';
-import { BetaLoginButton } from '@/components/atomicDesign/atoms/BetaLoginButton';
+import { GuestLoginButton } from '@/components/atomicDesign/atoms/GuestLoginButton';
 
 interface SignInFormsProps {
   formData: {
@@ -116,7 +116,7 @@ const SignInForms: React.FC<SignInFormsProps> = ({
           </div>
         </div>
 
-        <BetaLoginButton router={router} />
+        <GuestLoginButton router={router} />
       </form>
 
       <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">

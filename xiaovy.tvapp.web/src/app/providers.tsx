@@ -15,30 +15,33 @@ import { RankingServiceContext } from "@/contexts/RankingContext";
 import { SeriesService } from '@/services/implementation/SeriseService';
 import { SeriesServiceContext } from "@/contexts/SeriesContext";
 import { Toaster } from "react-hot-toast";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const Providers: FC<PropsWithChildren> = ({ children }) => {
 
   return (
     <ThemeProvider attribute="class">
-      <SessionServiceContext.Provider value={new SessionService()}>
-        <TvHomeServiceContext.Provider value={new TvHomeService()}>
-          <SeriesServiceContext.Provider value={new SeriesService()}>
-            <EpisodeServiceContext.Provider value={new EpisodeService()}>
-              <RankingServiceContext.Provider value={new RankingService()}>
-                <StreamServiceContext.Provider value={new StreamService()}>
-                  <Toaster 
-                    position="bottom-right" 
-                    toastOptions={{
-                      duration: 4000,
-                    }}
-                  />
-                    {children}
-                </StreamServiceContext.Provider>
-              </RankingServiceContext.Provider>
-            </EpisodeServiceContext.Provider>
-          </SeriesServiceContext.Provider>
-        </TvHomeServiceContext.Provider>
-      </SessionServiceContext.Provider>
+      <AuthProvider>
+        <SessionServiceContext.Provider value={new SessionService()}>
+          <TvHomeServiceContext.Provider value={new TvHomeService()}>
+            <SeriesServiceContext.Provider value={new SeriesService()}>
+              <EpisodeServiceContext.Provider value={new EpisodeService()}>
+                <RankingServiceContext.Provider value={new RankingService()}>
+                  <StreamServiceContext.Provider value={new StreamService()}>
+                    <Toaster
+                      position="bottom-right"
+                      toastOptions={{
+                        duration: 4000,
+                      }}
+                    />
+                      {children}
+                  </StreamServiceContext.Provider>
+                </RankingServiceContext.Provider>
+              </EpisodeServiceContext.Provider>
+            </SeriesServiceContext.Provider>
+          </TvHomeServiceContext.Provider>
+        </SessionServiceContext.Provider>
+      </AuthProvider>
     </ThemeProvider>
   );
 };

@@ -25,6 +25,7 @@ import { readFavoriteSeries } from '@/utils/Util/favoriteSeries';
 import { seriesInfo } from '@/types/utils/favoriteSeries';
 import { GroupedDBVideoList } from '@/components/GroupedDBVideoList';
 import { ConfirmationModal } from '@/components/atomicDesign/molecules/ConfirmationModal';
+import { useFirebaseAuth } from '@/contexts/AuthContext';
 
 const defaultContents = [
   { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srcmcqwlmq', icon: PlayCircleIcon },
@@ -59,14 +60,21 @@ export default function Header() {
     }
   }, [mobileMenuOpen]);
 
+  const { clearAllAuthState } = useFirebaseAuth();
+
   const handleLogoutClick = () => {
     setLogoutModalOpen(true);
   };
 
-  const handleLogoutConfirm = () => {
-    localStorage.removeItem('IdToken');
-    toast.success('ログアウトしました');
-    router.push('/user/login');
+  const handleLogoutConfirm = async () => {
+    try {
+      await clearAllAuthState();
+      toast.success('ログアウトしました');
+      router.push('/user/login');
+    } catch (error) {
+      console.error('ログアウトエラー:', error);
+      toast.error('ログアウトに失敗しました');
+    }
   };
 
   const handleComigSoon = () => {
