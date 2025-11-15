@@ -27,6 +27,6 @@ export function useTvHomeService(session: sessionToken | null) {
     };
 
     fetchData();
-  }, [session]);
+  }, [session, tvHomeService]);
   return data;
 }

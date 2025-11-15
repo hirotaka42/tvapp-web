@@ -26,6 +26,6 @@ export function useRankingService(genre: string | null) {
     };
 
     fetchData();
-  }, [genre]);
+  }, [genre, RankingService]);
   return data;
 }

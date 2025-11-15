@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false });
 
@@ -123,7 +124,15 @@ const Stream = () => {
             }}
           >
             {channel.logo && (
-              <img src={channel.logo} alt={channel.title} style={{ width: '50px', marginRight: '10px' }} />
+              <div style={{ width: '50px', height: '50px', marginRight: '10px', position: 'relative' }}>
+                <Image 
+                  src={channel.logo} 
+                  alt={channel.title} 
+                  fill
+                  sizes="50px"
+                  style={{ objectFit: 'contain' }}
+                />
+              </div>
             )}
             <div>
               <div>{channel.title}</div>
