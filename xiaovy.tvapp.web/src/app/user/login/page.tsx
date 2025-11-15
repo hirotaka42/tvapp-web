@@ -4,18 +4,20 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'react-hot-toast';
 import SignInForms from '@/components/atomicDesign/molecules/Forms/sign-in-forms';
+import { BrandPanel } from '@/components/atomicDesign/molecules/BrandPanel';
 
 interface FormData {
-  Uid: string;
-  Password: string;
   Email: string;
-  PhoneNumber: string;
+  Password: string;
 }
 
 const Login: React.FC = () => {
   const loginUser = useAuth();
   const router = useRouter();
   const url = '/api/User/Authentication';
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
+
   // TODO: ↓この処理は共通化したい
   const TokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
   if (!TokenName){
@@ -25,9 +27,7 @@ const Login: React.FC = () => {
 
   const [formData, setFormData] = useState<FormData>({
     Email: '',
-    Password: '',
-    Uid: '',
-    PhoneNumber: ''
+    Password: ''
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -36,13 +36,24 @@ const Login: React.FC = () => {
       ...prevData,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (error) {
+      setError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const dataToSend = Object.fromEntries(
-      Object.entries(formData).map(([key, value]) => [key, value || null])
-    );
+    setLoading(true);
+    setError('');
+
+    // EmailをUidにも送信（後方互換性のため）
+    const dataToSend = {
+      Email: formData.Email,
+      Uid: formData.Email,
+      Password: formData.Password,
+      PhoneNumber: null
+    };
 
     try {
       const response = await fetch(url, {
@@ -53,8 +64,8 @@ const Login: React.FC = () => {
         body: JSON.stringify(dataToSend)
       });
       if (!response.ok) {
-        toast.error('ログインに失敗しました');
-        throw new Error('ネットワークエラーが発生しました');
+        setError('ログインIDまたはパスワードが正しくありません');
+        throw new Error('ログイン失敗');
       }
       const result = await response.json();
       localStorage.setItem(TokenName, result.IdToken);
@@ -66,8 +77,9 @@ const Login: React.FC = () => {
         console.error('エラー :', error.message);
       } else {
         console.error('Unexpected error:', error);
-        throw new Error('予期しないエラーが発生しました');
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,14 +90,19 @@ const Login: React.FC = () => {
   }, [loginUser, router]);
 
   return (
-    <>
-      <SignInForms
-        formData={{ Email: formData.Email, Password: formData.Password }}
-        handleChange={handleChange}
-        handleSubmit={handleSubmit}
-        router={router}
-      />
-    </>
+    <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900">
+      <BrandPanel />
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+        <SignInForms
+          formData={formData}
+          handleChange={handleChange}
+          handleSubmit={handleSubmit}
+          router={router}
+          loading={loading}
+          error={error}
+        />
+      </div>
+    </div>
   );
 };
 
