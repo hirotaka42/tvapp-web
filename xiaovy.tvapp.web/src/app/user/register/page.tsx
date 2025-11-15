@@ -6,22 +6,21 @@ import SignUpForms from '@/components/atomicDesign/molecules/Forms/sign-up-forms
 import { BrandPanel } from '@/components/atomicDesign/molecules/BrandPanel';
 
 interface FormData {
-  Uid: string;
-  Password: string;
   Email: string;
-  PhoneNumber: string;
+  Password: string;
+  ConfirmPassword: string;
 }
 
 const Register: React.FC = () => {
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
   const url = '/api/User/Register';
 
   const [formData, setFormData] = useState<FormData>({
-    Uid: '',
-    Password: '',
     Email: '',
-    PhoneNumber: ''
+    Password: '',
+    ConfirmPassword: ''
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -30,15 +29,31 @@ const Register: React.FC = () => {
       ...prevData,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (error) {
+      setError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
-    const dataToSend = Object.fromEntries(
-      Object.entries(formData).map(([key, value]) => [key, value || null])
-    );
+    // パスワード一致確認
+    if (formData.Password !== formData.ConfirmPassword) {
+      setError('パスワードが一致しません');
+      setLoading(false);
+      return;
+    }
+
+    // EmailをUidとしても送信（後方互換性のため）
+    const dataToSend = {
+      Email: formData.Email,
+      Uid: formData.Email,
+      Password: formData.Password,
+      PhoneNumber: null
+    };
 
     try {
       const response = await fetch(url, {
@@ -49,6 +64,7 @@ const Register: React.FC = () => {
         body: JSON.stringify(dataToSend)
       });
       if (!response.ok) {
+        setError('アカウントの作成に失敗しました');
         toast.error('アカウントの作成に失敗しました');
         throw new Error('ネットワークエラーが発生しました');
       }
@@ -77,6 +93,7 @@ const Register: React.FC = () => {
           handleChange={handleChange}
           handleSubmit={handleSubmit}
           loading={loading}
+          error={error}
         />
       </div>
     </div>

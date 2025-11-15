@@ -6,20 +6,27 @@ interface SignUpFormsProps {
   formData: {
     Email: string;
     Password: string;
-    Uid: string;
-    PhoneNumber: string;
+    ConfirmPassword: string;
   };
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: (e: React.FormEvent) => void;
   loading?: boolean;
+  error?: string;
 }
 
 const SignUpForms: React.FC<SignUpFormsProps> = ({
   formData,
   handleChange,
   handleSubmit,
-  loading = false
+  loading = false,
+  error
 }) => {
+  const isFormValid =
+    formData.Email.trim() !== '' &&
+    formData.Password.trim() !== '' &&
+    formData.ConfirmPassword.trim() !== '' &&
+    formData.Password === formData.ConfirmPassword;
+
   return (
     <div className="w-full max-w-md mx-auto p-8 lg:p-10 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl">
       <div className="mb-8 text-center">
@@ -40,21 +47,16 @@ const SignUpForms: React.FC<SignUpFormsProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label htmlFor="Uid" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            ユーザーID
-          </label>
-          <input
-            id="Uid"
-            name="Uid"
-            type="text"
-            value={formData.Uid}
-            onChange={handleChange}
-            placeholder="user_id"
-            required
-            className="w-full h-12 px-4 rounded-lg border border-gray-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:text-white transition-all duration-200"
-          />
-        </div>
+        {error && (
+          <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+            <p className="text-sm text-red-600 dark:text-red-400 flex items-center">
+              <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              {error}
+            </p>
+          </div>
+        )}
 
         <div>
           <label htmlFor="Email" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
@@ -73,22 +75,6 @@ const SignUpForms: React.FC<SignUpFormsProps> = ({
         </div>
 
         <div>
-          <label htmlFor="PhoneNumber" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            電話番号
-          </label>
-          <input
-            id="PhoneNumber"
-            name="PhoneNumber"
-            type="tel"
-            value={formData.PhoneNumber}
-            onChange={handleChange}
-            placeholder="080-1234-5678"
-            required
-            className="w-full h-12 px-4 rounded-lg border border-gray-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:text-white transition-all duration-200"
-          />
-        </div>
-
-        <div>
           <label htmlFor="Password" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
             パスワード
           </label>
@@ -98,6 +84,23 @@ const SignUpForms: React.FC<SignUpFormsProps> = ({
             onChange={handleChange}
             placeholder="8文字以上のパスワード"
           />
+        </div>
+
+        <div>
+          <label htmlFor="ConfirmPassword" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+            パスワード（確認用）
+          </label>
+          <PasswordInput
+            name="ConfirmPassword"
+            value={formData.ConfirmPassword}
+            onChange={handleChange}
+            placeholder="パスワードを再入力"
+          />
+          {formData.ConfirmPassword && formData.Password !== formData.ConfirmPassword && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              パスワードが一致しません
+            </p>
+          )}
         </div>
 
         <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -115,6 +118,7 @@ const SignUpForms: React.FC<SignUpFormsProps> = ({
             size="md"
             fullWidth
             loading={loading}
+            disabled={!isFormValid || loading}
           >
             アカウントを作成
           </Button>
