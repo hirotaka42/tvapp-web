@@ -26,6 +26,8 @@ import { seriesInfo } from '@/types/utils/favoriteSeries';
 import { GroupedDBVideoList } from '@/components/GroupedDBVideoList';
 import { ConfirmationModal } from '@/components/atomicDesign/molecules/ConfirmationModal';
 import { useFirebaseAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
+import { UserRoleBadge } from '@/components/UserRoleBadge';
 
 const defaultContents = [
   { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srcmcqwlmq', icon: PlayCircleIcon },
@@ -61,6 +63,7 @@ export default function Header() {
   }, [mobileMenuOpen]);
 
   const { clearAllAuthState } = useFirebaseAuth();
+  const { role } = useUserRole();
 
   const handleLogoutClick = () => {
     setLogoutModalOpen(true);
@@ -208,7 +211,7 @@ export default function Header() {
         </PopoverGroup>
 
         {/* ユーザー管理機能 */}
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
+        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
           <a onClick={handleLogoutClick} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 cursor-pointer">
             ログアウト
           </a>
@@ -322,12 +325,19 @@ export default function Header() {
               </div>
               
               <div className="py-6">
-                <button
-                  onClick={handleComigSoon}
+                {/* ロール表示 */}
+                {role !== null && (
+                  <div className="-mx-3 mb-4 px-3">
+                    <UserRoleBadge role={role} />
+                  </div>
+                )}
+
+                <a
+                  href="/user/profile"
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  My アカウント(coming soon...)
-                </button>
+                  プロファイル
+                </a>
                 <button
                   onClick={handleComigSoon}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"

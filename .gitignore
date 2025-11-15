@@ -87,14 +87,22 @@ Temporary Items
 # misc
 *.pem
 
+# Firebase Admin SDK
+xiao-service-firebase-adminsdk*.json
+firebase-adminsdk*.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local env files
+# env files
 .env*.local
+.env*.dev
+.env*.rc
+.env*.prod
+
 
 # vercel
 .vercel

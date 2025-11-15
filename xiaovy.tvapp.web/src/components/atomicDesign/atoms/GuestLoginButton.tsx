@@ -2,6 +2,7 @@ import React from 'react';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useFirebaseAuth } from '@/contexts/AuthContext';
+import { auth } from '@/lib/firebase';
 
 export const GuestLoginButton: React.FC<{ router: ReturnType<typeof useRouter> }> = ({ router }) => {
     const { signInAsGuest } = useFirebaseAuth();
@@ -10,6 +11,28 @@ export const GuestLoginButton: React.FC<{ router: ReturnType<typeof useRouter> }
         try {
             // Firebase匿名認証でゲストログイン
             await signInAsGuest();
+
+            // Firebase ID Token取得
+            if (!auth) {
+                throw new Error('Firebase auth is not initialized');
+            }
+            const user = auth.currentUser;
+            if (!user) {
+                throw new Error('User not found after sign in');
+            }
+            const firebaseIdToken = await user.getIdToken();
+
+            // Custom Claims設定（ゲストロール）
+            const setRoleResponse = await fetch('/api/User/setGuestRole', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${firebaseIdToken}`,
+                },
+            });
+
+            if (!setRoleResponse.ok) {
+                console.warn('Failed to set guest role, but continuing...');
+            }
 
             // TVer API用のIdTokenを取得してlocalStorageに保存
             const response = await fetch('/api/service/betaLoginToken', {
