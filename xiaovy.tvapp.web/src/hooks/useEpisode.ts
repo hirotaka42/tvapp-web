@@ -25,7 +25,7 @@ export function useEpisodeService(episodeId: string) {
     if (episodeId) {
       fetchEpisodeData();
     }
-  }, [episodeId]);
+  }, [episodeId, EpisodeService]);
 
   return episodeData;
 }

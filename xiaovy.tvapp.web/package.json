@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@azure/cosmos": "^4.5.1",
     "@headlessui/react": "^2.1.10",
     "@heroicons/react": "^2.1.5",
     "@radix-ui/react-dropdown-menu": "^2.1.2",

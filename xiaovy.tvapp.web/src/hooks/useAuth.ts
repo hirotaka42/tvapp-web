@@ -33,10 +33,14 @@ export function useAuth() {
                 if (data.valid) {
                     setLoginUser(data.payload.email);
                 } else {
+                    // トークンが無効な場合、localStorageから削除
+                    localStorage.removeItem(TokenName);
                     router.push('/user/login');
                 }
             } catch (error) {
                 console.error("トークン検証中にエラーが発生しました", error);
+                // エラー発生時も localStorageから削除する
+                localStorage.removeItem(TokenName);
                 router.push('/user/login');
             }
         };

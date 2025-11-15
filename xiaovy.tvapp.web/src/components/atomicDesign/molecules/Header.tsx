@@ -23,6 +23,7 @@ import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
 import { usePathname } from 'next/navigation';
 import { readFavoriteSeries } from '@/utils/Util/favoriteSeries';
 import { seriesInfo } from '@/types/utils/favoriteSeries';
+import { GroupedDBVideoList } from '@/components/GroupedDBVideoList';
 
 const defaultContents = [
   { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srcmcqwlmq', icon: PlayCircleIcon },
@@ -79,11 +80,14 @@ export default function Header() {
         <div className="flex lg:flex-1">
           <a href="/" className="-m-1.5 p-1.5">
             <span className="sr-only">Your Company</span>
-            <img
-            alt="ロゴデータ"
-            src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600"
-            className="h-8 w-auto"
-            />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 36 24"
+              fill="currentColor"
+              className="h-8 w-auto fill-sky-400"
+            >
+              <path d="M18.724 1.714c-4.538 0-7.376 2.286-8.51 6.857 1.702-2.285 3.687-3.143 5.957-2.57 1.296.325 2.22 1.271 3.245 2.318 1.668 1.706 3.6 3.681 7.819 3.681 4.539 0 7.376-2.286 8.51-6.857-1.701 2.286-3.687 3.143-5.957 2.571-1.294-.325-2.22-1.272-3.245-2.32-1.668-1.705-3.6-3.68-7.819-3.68zM10.214 12c-4.539 0-7.376 2.286-8.51 6.857 1.701-2.286 3.687-3.143 5.957-2.571 1.294.325 2.22 1.272 3.245 2.32 1.668 1.705 3.6 3.68 7.818 3.68 4.54 0 7.377-2.286 8.511-6.857-1.702 2.286-3.688 3.143-5.957 2.571-1.295-.326-2.22-1.272-3.245-2.32-1.669-1.705-3.6-3.68-7.82-3.68z"></path>
+            </svg>
           </a>
         </div>
         {/* ここからPC表示 小のヘッダー lg:hidden */}
@@ -161,14 +165,31 @@ export default function Header() {
           </Popover>
           {/* ここまで お気に入りリスト*/}
 
+          {/* ここから DBリスト*/}
+          <Popover className="relative">
+            <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+              DBリスト
+              <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400" />
+            </PopoverButton>
+            <PopoverPanel
+              transition
+              className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-lg ring-1 ring-gray-900/5 transition data-[closed]:translate-y-1 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in"
+            >
+              <div className="max-h-96 overflow-y-auto">
+                <GroupedDBVideoList />
+              </div>
+            </PopoverPanel>
+          </Popover>
+          {/* ここまで DBリスト*/}
+
           {/* ここから 50件ランキング*/}
           <a href="#" onClick={handleComigSoon} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
             ジャンル別ランキング
           </a>
           {/* ここまで 50件ランキング*/}
 
-          <a href="#" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-            Company
+          <a href="/stream" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            JP_M3U Player (Test)
           </a>
         </PopoverGroup>
 
@@ -189,11 +210,14 @@ export default function Header() {
           <div className="flex items-center justify-between">
             <a href="#" className="-m-1.5 p-1.5">
               <span className="sr-only">Your Company</span>
-              <img
-                alt=""
-                src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600"
-                className="h-8 w-auto"
-              />
+              <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 36 24"
+              fill="currentColor"
+              className="h-8 w-auto fill-sky-400"
+            >
+              <path d="M18.724 1.714c-4.538 0-7.376 2.286-8.51 6.857 1.702-2.285 3.687-3.143 5.957-2.57 1.296.325 2.22 1.271 3.245 2.318 1.668 1.706 3.6 3.681 7.819 3.681 4.539 0 7.376-2.286 8.51-6.857-1.701 2.286-3.687 3.143-5.957 2.571-1.294-.325-2.22-1.272-3.245-2.32-1.668-1.705-3.6-3.68-7.819-3.68zM10.214 12c-4.539 0-7.376 2.286-8.51 6.857 1.701-2.286 3.687-3.143 5.957-2.571 1.294.325 2.22 1.272 3.245 2.32 1.668 1.705 3.6 3.68 7.818 3.68 4.54 0 7.377-2.286 8.511-6.857-1.702 2.286-3.688 3.143-5.957 2.571-1.295-.326-2.22-1.272-3.245-2.32-1.669-1.705-3.6-3.68-7.82-3.68z"></path>
+            </svg>
             </a>
             <button
               type="button"
@@ -249,6 +273,20 @@ export default function Header() {
                   </DisclosurePanel>
                 </Disclosure>
                 {/* ここまで お気に入りリスト*/}
+
+                {/* ここから DBリスト*/}
+                <Disclosure as="div" className="-mx-3">
+                  <DisclosureButton className="group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    DBリスト
+                    <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none group-data-[open]:rotate-180" />
+                  </DisclosureButton>
+                  <DisclosurePanel className="mt-2 space-y-2">
+                    <div className="max-h-96 overflow-y-auto">
+                      <GroupedDBVideoList />
+                    </div>
+                  </DisclosurePanel>
+                </Disclosure>
+                {/* ここまで DBリスト*/}
                 <a
                   href="#"
                   onClick={handleComigSoon}
@@ -257,10 +295,10 @@ export default function Header() {
                   ジャンル別ランキング(coming soon...)
                 </a>
                 <a
-                  href="#"
+                  href="/stream"
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Company
+                  JP_M3U Player (Test)
                 </a>
                 <div
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"

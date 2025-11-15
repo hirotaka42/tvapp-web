@@ -27,6 +27,6 @@ export function useSeriesService(seriesId: string, session:sessionToken | null) 
     };
 
     fetchData();
-  }, [seriesId, session]);
+  }, [seriesId, session, SeriesService]);
   return data;
 }
