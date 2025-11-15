@@ -24,6 +24,7 @@ import { usePathname } from 'next/navigation';
 import { readFavoriteSeries } from '@/utils/Util/favoriteSeries';
 import { seriesInfo } from '@/types/utils/favoriteSeries';
 import { GroupedDBVideoList } from '@/components/GroupedDBVideoList';
+import { ConfirmationModal } from '@/components/atomicDesign/molecules/ConfirmationModal';
 
 const defaultContents = [
   { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srcmcqwlmq', icon: PlayCircleIcon },
@@ -42,6 +43,7 @@ const defaultContents = [
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const pathname = usePathname();
   const [favoriteSeries, setFavoriteSeries] = useState<seriesInfo[]>([]);
   const router = useRouter();
@@ -57,11 +59,15 @@ export default function Header() {
     }
   }, [mobileMenuOpen]);
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setLogoutModalOpen(true);
+  };
+
+  const handleLogoutConfirm = () => {
     localStorage.removeItem('IdToken');
     toast.success('ログアウトしました');
     router.push('/user/login');
-  }
+  };
 
   const handleComigSoon = () => {
     toast('現在開発中です');
@@ -195,7 +201,7 @@ export default function Header() {
 
         {/* ユーザー管理機能 */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <a onClick={handleLogout} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+          <a onClick={handleLogoutClick} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 cursor-pointer">
             ログアウト
           </a>
         </div>
@@ -321,7 +327,7 @@ export default function Header() {
                   バックアップ(coming soon...)
                 </button>
                 <button
-                  onClick={handleLogout}
+                  onClick={handleLogoutClick}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   ログアウト
@@ -331,6 +337,16 @@ export default function Header() {
           </div>
         </DialogPanel>
       </Dialog>
+
+      {/* Logout Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+        onConfirm={handleLogoutConfirm}
+        title="ログアウトしますか？"
+        confirmText="はい"
+        cancelText="いいえ"
+      />
     </header>
     </>
   )
