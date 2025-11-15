@@ -1,30 +1,31 @@
 import { ChangeEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import { PasswordInput } from '@/components/atomicDesign/atoms/PasswordInput';
 import { Button } from '@/components/atomicDesign/atoms/Button';
-import { BetaLoginButton } from '@/components/atomicDesign/atoms/BetaLoginButton';
 
-interface SignInFormsProps {
+interface SignUpFormsProps {
   formData: {
     Email: string;
     Password: string;
+    ConfirmPassword: string;
   };
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: (e: React.FormEvent) => void;
-  router: ReturnType<typeof useRouter>;
   loading?: boolean;
   error?: string;
 }
 
-const SignInForms: React.FC<SignInFormsProps> = ({
+const SignUpForms: React.FC<SignUpFormsProps> = ({
   formData,
   handleChange,
   handleSubmit,
-  router,
   loading = false,
   error
 }) => {
-  const isFormValid = formData.Email.trim() !== '' && formData.Password.trim() !== '';
+  const isFormValid =
+    formData.Email.trim() !== '' &&
+    formData.Password.trim() !== '' &&
+    formData.ConfirmPassword.trim() !== '' &&
+    formData.Password === formData.ConfirmPassword;
 
   return (
     <div className="w-full max-w-md mx-auto p-8 lg:p-10 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl">
@@ -38,8 +39,11 @@ const SignInForms: React.FC<SignInFormsProps> = ({
           <path d="M18.724 1.714c-4.538 0-7.376 2.286-8.51 6.857 1.702-2.285 3.687-3.143 5.957-2.57 1.296.325 2.22 1.271 3.245 2.318 1.668 1.706 3.6 3.681 7.819 3.681 4.539 0 7.376-2.286 8.51-6.857-1.701 2.286-3.687 3.143-5.957 2.571-1.294-.325-2.22-1.272-3.245-2.32-1.668-1.705-3.6-3.68-7.819-3.68zM10.214 12c-4.539 0-7.376 2.286-8.51 6.857 1.701-2.286 3.687-3.143 5.957-2.571 1.294.325 2.22 1.272 3.245 2.32 1.668 1.705 3.6 3.68 7.818 3.68 4.54 0 7.377-2.286 8.511-6.857-1.702 2.286-3.688 3.143-5.957 2.571-1.295-.326-2.22-1.272-3.245-2.32-1.669-1.705-3.6-3.68-7.82-3.68z"></path>
         </svg>
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          ログイン
+          アカウントを作成
         </h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          無料でアカウントを作成して視聴を開始
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -53,17 +57,18 @@ const SignInForms: React.FC<SignInFormsProps> = ({
             </p>
           </div>
         )}
+
         <div>
           <label htmlFor="Email" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            ログインID
+            メールアドレス
           </label>
           <input
             id="Email"
             name="Email"
-            type="text"
+            type="email"
             value={formData.Email}
             onChange={handleChange}
-            placeholder="ログインIDを入力"
+            placeholder="user@example.com"
             required
             className="w-full h-12 px-4 rounded-lg border border-gray-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:text-white transition-all duration-200"
           />
@@ -77,21 +82,33 @@ const SignInForms: React.FC<SignInFormsProps> = ({
             name="Password"
             value={formData.Password}
             onChange={handleChange}
-            placeholder="パスワードを入力"
+            placeholder="8文字以上のパスワード"
           />
         </div>
 
-        <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-2 text-gray-700 dark:text-gray-300">ログイン状態を保持</span>
+        <div>
+          <label htmlFor="ConfirmPassword" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+            パスワード（確認用）
           </label>
-          <a href="#" className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400">
-            パスワードをお忘れですか？
-          </a>
+          <PasswordInput
+            name="ConfirmPassword"
+            value={formData.ConfirmPassword}
+            onChange={handleChange}
+            placeholder="パスワードを再入力"
+          />
+          {formData.ConfirmPassword && formData.Password !== formData.ConfirmPassword && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              パスワードが一致しません
+            </p>
+          )}
+        </div>
+
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          <p>アカウントを作成することで、以下に同意したものとみなされます：</p>
+          <ul className="mt-2 space-y-1 list-disc list-inside">
+            <li>利用規約</li>
+            <li>プライバシーポリシー</li>
+          </ul>
         </div>
 
         <div className="pt-2">
@@ -103,30 +120,19 @@ const SignInForms: React.FC<SignInFormsProps> = ({
             loading={loading}
             disabled={!isFormValid || loading}
           >
-            ログイン
+            アカウントを作成
           </Button>
         </div>
-
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400">または</span>
-          </div>
-        </div>
-
-        <BetaLoginButton router={router} />
       </form>
 
       <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
-        アカウントをお持ちでない方？{' '}
-        <a href="/user/register" className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400">
-          今すぐ登録
+        すでにアカウントをお持ちですか？{' '}
+        <a href="/user/login" className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400">
+          ログイン
         </a>
       </p>
     </div>
   );
 };
 
-export default SignInForms;
+export default SignUpForms;
