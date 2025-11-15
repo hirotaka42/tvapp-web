@@ -13,15 +13,7 @@ export const Main: FC = () => {
     const session = useSessionService();
     const tvHomeData = useTvHomeService(session);
     const [rankingContents, setRankingContents] = useState<Record<string, ConvertedContent[]>>({});
-
-    const [rankingLabels] = useState<string[]>(
-        [
-            'ドラマランキング', 'バラエティランキング', 'アニメ／ヒーローランキング',
-            '報道／ドキュメンタリーランキング', 'スポーツランキング',
-            '今週のイチオシバラエティはこれ！',
-            'まもなく配信終了','新着'
-        ]
-    );
+    const [rankingLabels, setRankingLabels] = useState<string[]>([]);
 
     useEffect(() => {
         if (tvHomeData && loginUser) {
@@ -31,8 +23,7 @@ export const Main: FC = () => {
                 return { ...acc, [label]: labelContents };
             }, {});
             setRankingContents(contents);
-            // ラベルごとのアイテム構造が把握できていないため、コメントアウト
-            // setRankingLabels(allLabels);
+            setRankingLabels(allLabels);
         }
     }, [tvHomeData]);
 
