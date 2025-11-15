@@ -1,9 +1,11 @@
 'use client'
 import React, { useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useFirebaseAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import SignUpForms from '@/components/atomicDesign/molecules/Forms/sign-up-forms';
 import { BrandPanel } from '@/components/atomicDesign/molecules/BrandPanel';
+import { FirebaseError } from 'firebase/app';
 
 interface FormData {
   Email: string;
@@ -13,9 +15,9 @@ interface FormData {
 
 const Register: React.FC = () => {
   const router = useRouter();
+  const { signUp } = useFirebaseAuth();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-  const url = '/api/User/Register';
 
   const [formData, setFormData] = useState<FormData>({
     Email: '',
@@ -47,37 +49,34 @@ const Register: React.FC = () => {
       return;
     }
 
-    // EmailをUidとしても送信（後方互換性のため）
-    const dataToSend = {
-      Email: formData.Email,
-      Uid: formData.Email,
-      Password: formData.Password,
-      PhoneNumber: null
-    };
-
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dataToSend)
-      });
-      if (!response.ok) {
-        setError('アカウントの作成に失敗しました');
-        toast.error('アカウントの作成に失敗しました');
-        throw new Error('ネットワークエラーが発生しました');
-      }
-      const result = await response.json();
-      console.log('登録成功:', result);
+      await signUp(formData.Email, formData.Password);
+      console.log('登録成功');
       toast.success('アカウントを作成しました');
-      router.push('/user/login');
+      router.push('/');
     } catch (error) {
-      if (error instanceof Error) {
-        console.error('エラー :', error.message);
+      if (error instanceof FirebaseError) {
+        console.error('Firebase エラー:', error.code, error.message);
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            setError('このメールアドレスは既に使用されています');
+            break;
+          case 'auth/invalid-email':
+            setError('メールアドレスの形式が正しくありません');
+            break;
+          case 'auth/operation-not-allowed':
+            setError('メール/パスワード認証が有効になっていません');
+            break;
+          case 'auth/weak-password':
+            setError('パスワードは6文字以上である必要があります');
+            break;
+          default:
+            setError('アカウントの作成に失敗しました');
+        }
+        toast.error(error.message);
       } else {
         console.error('Unexpected error:', error);
-        throw new Error('予期しないエラーが発生しました');
+        setError('予期しないエラーが発生しました');
       }
     } finally {
       setLoading(false);

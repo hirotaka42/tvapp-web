@@ -1,51 +1,28 @@
 'use client'
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useFirebaseAuth } from '@/contexts/AuthContext';
 
+/**
+ * 認証状態を返すフック
+ * メール/パスワードユーザーの場合はemail、匿名ユーザーの場合はuidを返す
+ * 未認証の場合はnullを返す
+ */
 export function useAuth() {
-    const [loginUser, setLoginUser] = useState<string | null>(null);
-    const router = useRouter();
+    const { user } = useFirebaseAuth();
 
-    useEffect(() => {
-        const checkToken = async () => {
-            const TokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
-            if (!TokenName) {
-                throw new Error("環境変数:IDTOKEN_NAMEが設定されていません。");
-            }
-            const token = localStorage.getItem(TokenName);
-            if (!token) {
-                router.push('/user/login');
-                return;
-            }
+    if (!user) {
+        return null;
+    }
 
-            try {
-                console.log("トークン検証中...");
-                const response = await fetch('/api/utils/verify-token', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ token }),
-                });
+    // メール/パスワードユーザーの場合はemailを返す
+    if (user.email) {
+        return user.email;
+    }
 
-                const data = await response.json();
-                if (data.valid) {
-                    setLoginUser(data.payload.email);
-                } else {
-                    // トークンが無効な場合、localStorageから削除
-                    localStorage.removeItem(TokenName);
-                    router.push('/user/login');
-                }
-            } catch (error) {
-                console.error("トークン検証中にエラーが発生しました", error);
-                // エラー発生時も localStorageから削除する
-                localStorage.removeItem(TokenName);
-                router.push('/user/login');
-            }
-        };
-        checkToken();
-    }, [router]);
+    // 匿名ユーザーの場合はuidを返す
+    if (user.isAnonymous) {
+        return user.uid;
+    }
 
-    return loginUser;
+    return null;
 }

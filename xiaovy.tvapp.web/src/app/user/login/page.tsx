@@ -1,10 +1,11 @@
 'use client'
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useFirebaseAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import SignInForms from '@/components/atomicDesign/molecules/Forms/sign-in-forms';
 import { BrandPanel } from '@/components/atomicDesign/molecules/BrandPanel';
+import { FirebaseError } from 'firebase/app';
 
 interface FormData {
   Email: string;
@@ -12,18 +13,10 @@ interface FormData {
 }
 
 const Login: React.FC = () => {
-  const loginUser = useAuth();
+  const { user, signIn } = useFirebaseAuth();
   const router = useRouter();
-  const url = '/api/User/Authentication';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
-
-  // TODO: ↓この処理は共通化したい
-  const TokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
-  if (!TokenName){
-    console.log(TokenName);
-    throw new Error("環境変数:IDTOKEN_NAMEが設定されていません。");
-  }
 
   const [formData, setFormData] = useState<FormData>({
     Email: '',
@@ -47,36 +40,34 @@ const Login: React.FC = () => {
     setLoading(true);
     setError('');
 
-    // EmailをUidにも送信（後方互換性のため）
-    const dataToSend = {
-      Email: formData.Email,
-      Uid: formData.Email,
-      Password: formData.Password,
-      PhoneNumber: null
-    };
-
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dataToSend)
-      });
-      if (!response.ok) {
-        setError('ログインIDまたはパスワードが正しくありません');
-        throw new Error('ログイン失敗');
-      }
-      const result = await response.json();
-      localStorage.setItem(TokenName, result.IdToken);
-      console.log('ログイン成功:', result);
+      await signIn(formData.Email, formData.Password);
+      console.log('ログイン成功');
       toast.success('ログインしました');
       router.push('/');
     } catch (error) {
-      if (error instanceof Error) {
-        console.error('エラー :', error.message);
+      if (error instanceof FirebaseError) {
+        console.error('Firebase エラー:', error.code, error.message);
+        switch (error.code) {
+          case 'auth/invalid-email':
+            setError('メールアドレスの形式が正しくありません');
+            break;
+          case 'auth/user-disabled':
+            setError('このアカウントは無効化されています');
+            break;
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+            setError('メールアドレスまたはパスワードが正しくありません');
+            break;
+          case 'auth/invalid-credential':
+            setError('認証情報が無効です');
+            break;
+          default:
+            setError('ログインに失敗しました');
+        }
       } else {
         console.error('Unexpected error:', error);
+        setError('予期しないエラーが発生しました');
       }
     } finally {
       setLoading(false);
@@ -84,10 +75,10 @@ const Login: React.FC = () => {
   };
 
   useEffect(() => {
-    if (loginUser) {
+    if (user) {
       router.push('/');
     }
-  }, [loginUser, router]);
+  }, [user, router]);
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900">
