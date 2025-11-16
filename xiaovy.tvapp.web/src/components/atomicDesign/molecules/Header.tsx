@@ -31,6 +31,8 @@ import { ProfileServiceContext } from '@/contexts/ProfileContext';
 import { ProfileAvatar } from '@/components/atomicDesign/atoms/ProfileAvatar';
 import { UserProfile } from '@/types/User';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useWatchHistory } from '@/hooks/useWatchHistory';
+import { WatchHistoryResponse } from '@/types/WatchHistory';
 
 const defaultContents = [
   { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srcmcqwlmq', icon: PlayCircleIcon },
@@ -55,13 +57,15 @@ export default function Header() {
   const router = useRouter();
   const profileService = useContext(ProfileServiceContext);
   const { favorites, fetchFavorites, loading: favoritesLoading } = useFavorites();
+  const { histories: watchHistory, fetchHistories: fetchWatchHistory, loading: watchHistoryLoading } = useWatchHistory();
   const { user, clearAllAuthState } = useFirebaseAuth();
 
   useEffect(() => {
     if (user && !user.isAnonymous) {
       fetchFavorites();
+      fetchWatchHistory();
     }
-  }, [user, fetchFavorites]);
+  }, [user, fetchFavorites, fetchWatchHistory]);
 
   const { role } = useUserRole();
 
@@ -430,6 +434,57 @@ export default function Header() {
                   )}
                 </Disclosure>
                 {/* ここまで お気に入りリスト*/}
+
+                {/* ここから 視聴履歴*/}
+                <Disclosure as="div" className="-mx-3">
+                  <DisclosureButton
+                    onClick={() => {
+                      if (user?.isAnonymous) {
+                        toast.error('この機能はゲストユーザーは使用できません');
+                      }
+                    }}
+                    className={`group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 ${
+                      user?.isAnonymous
+                        ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-50'
+                        : 'text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                    disabled={user?.isAnonymous}
+                  >
+                    視聴履歴
+                    <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none group-data-[open]:rotate-180" />
+                  </DisclosureButton>
+                  {!user?.isAnonymous && (
+                    <DisclosurePanel className="mt-2 space-y-2">
+                      {watchHistoryLoading ? (
+                        <div className="text-sm text-gray-500 px-3 py-2">読み込み中...</div>
+                      ) : watchHistory.length > 0 ? (
+                        <>
+                          {watchHistory.map((item: WatchHistoryResponse) => (
+                            <DisclosureButton
+                              key={item.id}
+                              as="a"
+                              href={`/episode/${item.episodeId}`}
+                              className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                              {item.episodeTitle}
+                            </DisclosureButton>
+                          ))}
+                          <a
+                            href="/user/history"
+                            className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            すべての視聴履歴を見る
+                          </a>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-500 dark:text-gray-400 px-3 py-2">
+                          視聴履歴はまだありません
+                        </div>
+                      )}
+                    </DisclosurePanel>
+                  )}
+                </Disclosure>
+                {/* ここまで 視聴履歴*/}
 
                 {/* ここから DBリスト*/}
                 <Disclosure as="div" className="-mx-3">
