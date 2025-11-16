@@ -10,7 +10,6 @@ import { useFavorites } from '@/hooks/useFavorites';
 interface FavoriteButtonProps {
   seriesId: string;
   seriesTitle: string;
-  thumbnailUrl: string;
   isFavorite: boolean;
   onToggle: (isFavorite: boolean) => void;
 }
@@ -18,7 +17,6 @@ interface FavoriteButtonProps {
 export function FavoriteButton({
   seriesId,
   seriesTitle,
-  thumbnailUrl,
   isFavorite,
   onToggle
 }: FavoriteButtonProps) {
@@ -35,7 +33,7 @@ export function FavoriteButton({
         await removeFavorite(seriesId);
         onToggle(false);
       } else {
-        await addFavorite({ seriesId, seriesTitle, thumbnailUrl });
+        await addFavorite({ seriesId, seriesTitle });
         onToggle(true);
       }
     } catch (error) {

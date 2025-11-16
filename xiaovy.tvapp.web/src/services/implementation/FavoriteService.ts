@@ -6,6 +6,7 @@ import { auth } from '@/lib/firebase';
 
 export class FavoriteService implements IFavoriteService {
   private async getIdToken(): Promise<string> {
+    console.log('▶︎getIdToken: auth =', !!auth, 'currentUser =', !!auth?.currentUser);
     if (!auth) {
       throw new Error('Firebase認証が初期化されていません');
     }
@@ -13,27 +14,44 @@ export class FavoriteService implements IFavoriteService {
     if (!currentUser) {
       throw new Error('認証されていません');
     }
+    console.log('▶︎getIdToken: user email =', currentUser.email, 'isAnonymous =', currentUser.isAnonymous);
     return await currentUser.getIdToken();
   }
 
   async addFavorite(request: AddFavoriteRequest): Promise<FavoriteResponse> {
-    const idToken = await this.getIdToken();
-    const response = await fetch('/api/User/favorites', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`,
-      },
-      body: JSON.stringify(request),
-    });
+    console.log('▶︎addFavorite called with:', request);
+    try {
+      const idToken = await this.getIdToken();
+      console.log('▶︎Got idToken');
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'お気に入り追加に失敗しました');
+      const response = await fetch('/api/User/favorites', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(request),
+      });
+
+      console.log('▶︎API response status:', response.status);
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('▶︎API error:', error);
+        throw new Error(error.message || 'お気に入り追加に失敗しました');
+      }
+
+      const data = await response.json();
+      console.log('▶︎API response data:', data);
+
+      return {
+        seriesId: data.favorite.seriesId,
+        seriesTitle: data.favorite.seriesTitle,
+      };
+    } catch (error) {
+      console.error('▶︎addFavorite error:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.favorite;
   }
 
   async removeFavorite(seriesId: string): Promise<void> {
@@ -66,7 +84,11 @@ export class FavoriteService implements IFavoriteService {
       throw new Error('お気に入り取得に失敗しました');
     }
 
-    return await response.json();
+    const data = await response.json();
+    return {
+      favorites: data.favorites,
+      count: data.count,
+    };
   }
 
   async isFavorite(seriesId: string): Promise<boolean> {

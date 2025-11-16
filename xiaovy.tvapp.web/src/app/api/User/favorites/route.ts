@@ -3,7 +3,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { AddFavoriteRequest } from '@/types/Favorite';
-import { Timestamp } from 'firebase-admin/firestore';
 
 // お気に入り追加
 export async function POST(request: NextRequest) {
@@ -24,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // 2. リクエストボディをパース
     const body: AddFavoriteRequest = await request.json();
-    const { seriesId, seriesTitle, thumbnailUrl } = body;
+    const { seriesId, seriesTitle } = body;
 
     // 3. バリデーション
     if (!seriesId || seriesId.trim() === '') {
@@ -37,13 +36,6 @@ export async function POST(request: NextRequest) {
     if (!seriesTitle || seriesTitle.trim() === '') {
       return NextResponse.json(
         { message: 'seriesTitleを指定してください' },
-        { status: 400 }
-      );
-    }
-
-    if (!thumbnailUrl || thumbnailUrl.trim() === '') {
-      return NextResponse.json(
-        { message: 'thumbnailUrlを指定してください' },
         { status: 400 }
       );
     }
@@ -62,12 +54,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Firestoreに追加
-    const addedAt = Timestamp.now();
     const favoriteData = {
       seriesId: seriesId.trim(),
       seriesTitle: seriesTitle.trim(),
-      thumbnailUrl: thumbnailUrl.trim(),
-      addedAt,
     };
 
     await favoriteRef.set(favoriteData);
@@ -80,8 +69,6 @@ export async function POST(request: NextRequest) {
       favorite: {
         seriesId: favoriteData.seriesId,
         seriesTitle: favoriteData.seriesTitle,
-        thumbnailUrl: favoriteData.thumbnailUrl,
-        addedAt: addedAt.toDate().toISOString(),
       },
     }, { status: 201 });
 
@@ -135,7 +122,6 @@ export async function GET(request: NextRequest) {
       .collection('users')
       .doc(uid)
       .collection('favorites')
-      .orderBy('addedAt', 'desc')
       .limit(limit)
       .offset(offset);
 
@@ -146,8 +132,6 @@ export async function GET(request: NextRequest) {
       return {
         seriesId: data.seriesId,
         seriesTitle: data.seriesTitle,
-        thumbnailUrl: data.thumbnailUrl,
-        addedAt: data.addedAt.toDate().toISOString(),
       };
     });
 

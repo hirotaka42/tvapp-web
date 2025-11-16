@@ -25,14 +25,12 @@ export default function FavoritePage() {
 
   if (loading || authLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
         <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">お気に入り</h1>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {[...Array(12)].map((_, i) => (
+        <div className="space-y-2">
+          {[...Array(8)].map((_, i) => (
             <div key={i} className="animate-pulse">
-              <div className="aspect-video bg-gray-300 dark:bg-gray-700 rounded-lg"></div>
-              <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded mt-2"></div>
-              <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded mt-1 w-2/3"></div>
+              <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded"></div>
             </div>
           ))}
         </div>
@@ -66,9 +64,9 @@ export default function FavoritePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
       <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">お気に入り</h1>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="space-y-1 border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700">
         {favorites.map(favorite => (
           <FavoriteCard
             key={favorite.seriesId}

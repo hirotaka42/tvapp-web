@@ -21,8 +21,6 @@ import {
 import { ChevronDownIcon, PlayCircleIcon } from '@heroicons/react/20/solid'
 import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
 import { usePathname } from 'next/navigation';
-import { readFavoriteSeries } from '@/utils/Util/favoriteSeries';
-import { seriesInfo } from '@/types/utils/favoriteSeries';
 import { GroupedDBVideoList } from '@/components/GroupedDBVideoList';
 import { ConfirmationModal } from '@/components/atomicDesign/molecules/ConfirmationModal';
 import { useFirebaseAuth } from '@/contexts/AuthContext';
@@ -31,6 +29,7 @@ import { UserRoleBadge } from '@/components/UserRoleBadge';
 import { ProfileServiceContext } from '@/contexts/ProfileContext';
 import { ProfileAvatar } from '@/components/atomicDesign/atoms/ProfileAvatar';
 import { UserProfile } from '@/types/User';
+import { useFavorites } from '@/hooks/useFavorites';
 
 const defaultContents = [
   { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srcmcqwlmq', icon: PlayCircleIcon },
@@ -51,23 +50,18 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const pathname = usePathname();
-  const [favoriteSeries, setFavoriteSeries] = useState<seriesInfo[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const router = useRouter();
   const profileService = useContext(ProfileServiceContext);
+  const { favorites, fetchFavorites, loading: favoritesLoading } = useFavorites();
+  const { user, clearAllAuthState } = useFirebaseAuth();
 
   useEffect(() => {
-    try {
-      const favContents:seriesInfo[] = readFavoriteSeries();
-      if (favContents) setFavoriteSeries(favContents);
-      console.log(favContents);
-      console.log(favoriteSeries);
-    } catch (error) {
-      console.error("Failed to read favorite series:", error);
+    if (user && !user.isAnonymous) {
+      fetchFavorites();
     }
-  }, [mobileMenuOpen]);
+  }, [user, fetchFavorites]);
 
-  const { user, clearAllAuthState } = useFirebaseAuth();
   const { role } = useUserRole();
 
   // プロフィール情報取得
@@ -176,7 +170,7 @@ export default function Header() {
 
           {/* ここから お気に入りリスト*/}
           <Popover className="relative">
-          <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
               お気に入りリスト
               <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400" />
             </PopoverButton>
@@ -185,21 +179,36 @@ export default function Header() {
               className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-lg ring-1 ring-gray-900/5 transition data-[closed]:translate-y-1 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in"
             >
               <div className="p-4">
-                {favoriteSeries.map((item) => (
-                  <div
-                    key={item.seriesId}
-                    className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <div className="flex-auto">
-                      <a href={`/series/${item.seriesId}`} className="block font-semibold text-gray-900 dark:text-gray-100">
-                        {item.seriesTitle}
-                        <span className="absolute inset-0" />
-                      </a>
+                {favoritesLoading ? (
+                  <div className="text-center py-4 text-gray-500">読み込み中...</div>
+                ) : favorites.length > 0 ? (
+                  favorites.map((item) => (
+                    <div
+                      key={item.seriesId}
+                      className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <div className="flex-auto">
+                        <a href={`/series/${item.seriesId}`} className="block font-semibold text-gray-900 dark:text-gray-100">
+                          {item.seriesTitle}
+                          <span className="absolute inset-0" />
+                        </a>
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                    お気に入りはまだありません
                   </div>
-                ))}
+                )}
+                {favorites.length > 0 && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">
+                    <a href="/user/favorite" className="block text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-semibold">
+                      すべてのお気に入りを見る
+                    </a>
+                  </div>
+                )}
               </div>
-            </PopoverPanel>  
+            </PopoverPanel>
           </Popover>
           {/* ここまで お気に入りリスト*/}
 
@@ -250,12 +259,6 @@ export default function Header() {
               プロフィール
             </a>
           )}
-          <a href="/user/favorite" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-            お気に入り
-          </a>
-          <a href="/user/history" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-            視聴履歴
-          </a>
           <a onClick={handleLogoutClick} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 cursor-pointer">
             ログアウト
           </a>
@@ -321,16 +324,32 @@ export default function Header() {
                     <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none group-data-[open]:rotate-180" />
                   </DisclosureButton>
                   <DisclosurePanel className="mt-2 space-y-2">
-                    {favoriteSeries.map((item) => (
-                      <DisclosureButton
-                        key={item.seriesTitle}
-                        as="a"
-                        href={`/series/${item.seriesId}`}
-                        className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      >
-                        {item.seriesTitle}
-                      </DisclosureButton>
-                    ))}
+                    {favoritesLoading ? (
+                      <div className="text-sm text-gray-500 px-3 py-2">読み込み中...</div>
+                    ) : favorites.length > 0 ? (
+                      <>
+                        {favorites.map((item) => (
+                          <DisclosureButton
+                            key={item.seriesId}
+                            as="a"
+                            href={`/series/${item.seriesId}`}
+                            className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            {item.seriesTitle}
+                          </DisclosureButton>
+                        ))}
+                        <a
+                          href="/user/favorite"
+                          className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          すべてのお気に入りを見る
+                        </a>
+                      </>
+                    ) : (
+                      <div className="text-sm text-gray-500 dark:text-gray-400 px-3 py-2">
+                        お気に入りはまだありません
+                      </div>
+                    )}
                   </DisclosurePanel>
                 </Disclosure>
                 {/* ここまで お気に入りリスト*/}
@@ -420,18 +439,6 @@ export default function Header() {
                   </a>
                 )}
 
-                <a
-                  href="/user/favorite"
-                  className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  お気に入り
-                </a>
-                <a
-                  href="/user/history"
-                  className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  視聴履歴
-                </a>
                 <button
                   onClick={handleComigSoon}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"

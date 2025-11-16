@@ -5,13 +5,15 @@ import { useStreamService } from '@/hooks/useStream';
 import { useEpisodeService } from '@/hooks/useEpisode';
 import { Main as StreamResponseType } from '@/types/StreamResponse';
 import { Main as EpisodeResponseType } from '@/types/EpisodeResponse';
-import { useAuth } from '@/hooks/useAuth';
-import { updateFavoriteSeries, isFavoriteSeriesExists, deleteFavoriteSeriesBySeriesId } from '@/utils/Util/favoriteSeries';
+import { useFirebaseAuth } from '@/contexts/AuthContext';
 import { useSessionService } from '@/hooks/useSession';
 import { useSeriesService } from '@/hooks/useSeries';
 import { convertCardContentsBySeason } from '@/utils/Convert/episodesForSeries/responseParser';
 import { GenreContentCardList } from '@/components/atomicDesign/molecules/GenreContentCardList';
 import { ConvertedCardViewContent } from '@/types/CardItem/ForGeneric';
+import { FavoriteButton } from '@/components/atomicDesign/atoms/FavoriteButton';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useWatchHistory } from '@/hooks/useWatchHistory';
 
 interface SeasonGroupedContents {
     seasonTitle: string;
@@ -19,7 +21,7 @@ interface SeasonGroupedContents {
 }
 
 function EpisodePage({ params }: { params: { episodeId: string } }) {
-    const loginUser = useAuth();
+    const { user: loginUser } = useFirebaseAuth();
     const { episodeId } = params;
     const [videoUrl, setVideoUrl] = useState<StreamResponseType | null>(null);
     const [episode, setEpisode] = useState<EpisodeResponseType | null>(null);
@@ -30,6 +32,9 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
     const session = useSessionService();
     const [seriesEpisodes, setSeriesEpisodes] = useState<SeasonGroupedContents[] | null>(null);
     const seriesContent = useSeriesService(episode?.data.seriesID || '', session);
+    const { isFavorite: checkIsFavorite } = useFavorites();
+    const { recordHistory } = useWatchHistory();
+    const [historyRecorded, setHistoryRecorded] = useState<boolean>(false);
 
     useEffect(() => {
         if (streamUrl) {
@@ -46,11 +51,18 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
 
     // お気に入りの状態を確認するuseEffect
     useEffect(() => {
-        if (episodeInfo) {
-            const isFavorited = isFavoriteSeriesExists(episodeInfo.data.seriesID);
-            setIsFavorite(isFavorited);
-        }
-    }, [episodeInfo]);
+        const checkFavorite = async () => {
+            if (episodeInfo && loginUser && !loginUser.isAnonymous) {
+                try {
+                    const isFav = await checkIsFavorite(episodeInfo.data.seriesID);
+                    setIsFavorite(isFav);
+                } catch (error) {
+                    console.error('お気に入り状態の確認に失敗:', error);
+                }
+            }
+        };
+        checkFavorite();
+    }, [episodeInfo, loginUser, checkIsFavorite]);
 
     // シリーズエピソードリストを取得するuseEffect
     useEffect(() => {
@@ -60,6 +72,29 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
         }
     }, [seriesContent]);
 
+    // 視聴履歴を記録するuseEffect
+    useEffect(() => {
+        const recordWatchHistory = async () => {
+            if (episode && videoUrl && loginUser && !loginUser.isAnonymous && !historyRecorded) {
+                try {
+                    await recordHistory({
+                        episodeId: episode.data.id,
+                        episodeTitle: episode.data.title,
+                        seriesId: episode.data.seriesID,
+                        seriesTitle: seriesTitle || episode.data.share.text.replace('\n#TVer', ''),
+                        thumbnailUrl: episode.data.image?.standard || '',
+                        description: episode.data.description || '',
+                    });
+                    setHistoryRecorded(true);
+                    console.log('視聴履歴を記録しました');
+                } catch (error) {
+                    console.error('視聴履歴の記録に失敗:', error);
+                }
+            }
+        };
+        recordWatchHistory();
+    }, [episode, videoUrl, loginUser, historyRecorded, seriesTitle, recordHistory]);
+
     if (!episodeId) {
         return <div>Episode not found</div>;
     }
@@ -68,17 +103,8 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
         return <div>Loading...</div>;
     }
 
-    const handleFavoriteClick = (seriesTitle: string, seriesId: string) => {
-        // お気に入りの登録／解除の切り替え
-        if (isFavorite) {
-            deleteFavoriteSeriesBySeriesId(seriesId);
-            alert('お気に入りを解除しました');
-        } else {
-            updateFavoriteSeries(seriesTitle, seriesId);
-            alert('お気に入りに登録しました');
-        }
-        // 状態を反転させる
-        setIsFavorite(!isFavorite);
+    const handleFavoriteToggle = (newState: boolean) => {
+        setIsFavorite(newState);
     };
     
     return (
@@ -118,14 +144,14 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
                         >
                             {seriesTitle}
                         </a>
-                        <button
-                            onClick={() => handleFavoriteClick(seriesTitle, episode.data.seriesID)}
-                            className="text-2xl hover:scale-110 transition-transform"
-                            aria-label={isFavorite ? 'お気に入り解除' : 'お気に入り登録'}
-                            title={isFavorite ? 'お気に入り解除' : 'お気に入り登録'}
-                        >
-                            {isFavorite ? '★' : '☆'}
-                        </button>
+                        {!loginUser.isAnonymous && (
+                            <FavoriteButton
+                                seriesId={episode.data.seriesID}
+                                seriesTitle={seriesTitle}
+                                isFavorite={isFavorite}
+                                onToggle={handleFavoriteToggle}
+                            />
+                        )}
                     </div>
                     <h3>{episode.data.title}</h3>
                     <p>

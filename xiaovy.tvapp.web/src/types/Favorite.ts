@@ -1,15 +1,11 @@
 // src/types/Favorite.ts
 
-import { Timestamp } from 'firebase/firestore';
-
 /**
  * お気に入りデータ (Firestoreドキュメント)
  */
 export interface Favorite {
   seriesId: string;
   seriesTitle: string;
-  thumbnailUrl: string;
-  addedAt: Timestamp;
 }
 
 /**
@@ -18,7 +14,6 @@ export interface Favorite {
 export interface AddFavoriteRequest {
   seriesId: string;
   seriesTitle: string;
-  thumbnailUrl: string;
 }
 
 /**
@@ -27,8 +22,6 @@ export interface AddFavoriteRequest {
 export interface FavoriteResponse {
   seriesId: string;
   seriesTitle: string;
-  thumbnailUrl: string;
-  addedAt: Date;
 }
 
 /**

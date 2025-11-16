@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, PropsWithChildren } from "react";
+import { FC, PropsWithChildren, useMemo } from "react";
 import { ThemeProvider } from "next-themes";
 import { SessionServiceContext } from "@/contexts/SessionContext";
 import { SessionService } from '@/services/implementation/SessionService'
@@ -24,19 +24,29 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 export const Providers: FC<PropsWithChildren> = ({ children }) => {
+  // サービスインスタンスをメモ化して、不要な再生成を防ぐ
+  const sessionService = useMemo(() => new SessionService(), []);
+  const tvHomeService = useMemo(() => new TvHomeService(), []);
+  const seriesService = useMemo(() => new SeriesService(), []);
+  const episodeService = useMemo(() => new EpisodeService(), []);
+  const rankingService = useMemo(() => new RankingService(), []);
+  const streamService = useMemo(() => new StreamService(), []);
+  const profileService = useMemo(() => new ProfileService(), []);
+  const favoriteService = useMemo(() => new FavoriteService(), []);
+  const watchHistoryService = useMemo(() => new WatchHistoryService(), []);
 
   return (
     <ThemeProvider attribute="class">
       <AuthProvider>
-        <SessionServiceContext.Provider value={new SessionService()}>
-          <TvHomeServiceContext.Provider value={new TvHomeService()}>
-            <SeriesServiceContext.Provider value={new SeriesService()}>
-              <EpisodeServiceContext.Provider value={new EpisodeService()}>
-                <RankingServiceContext.Provider value={new RankingService()}>
-                  <StreamServiceContext.Provider value={new StreamService()}>
-                    <ProfileServiceContext.Provider value={new ProfileService()}>
-                      <FavoriteServiceContext.Provider value={new FavoriteService()}>
-                        <WatchHistoryServiceContext.Provider value={new WatchHistoryService()}>
+        <SessionServiceContext.Provider value={sessionService}>
+          <TvHomeServiceContext.Provider value={tvHomeService}>
+            <SeriesServiceContext.Provider value={seriesService}>
+              <EpisodeServiceContext.Provider value={episodeService}>
+                <RankingServiceContext.Provider value={rankingService}>
+                  <StreamServiceContext.Provider value={streamService}>
+                    <ProfileServiceContext.Provider value={profileService}>
+                      <FavoriteServiceContext.Provider value={favoriteService}>
+                        <WatchHistoryServiceContext.Provider value={watchHistoryService}>
                           <Toaster
                             position="bottom-right"
                             toastOptions={{
