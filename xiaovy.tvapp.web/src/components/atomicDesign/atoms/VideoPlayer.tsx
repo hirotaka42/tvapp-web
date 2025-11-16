@@ -31,6 +31,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, onPlay }) => {
           width='100%'
           height='100%'
           onPlay={handlePlay}
+          config={{
+            file: {
+              attributes: {
+                controlsList: 'nodownload',
+                playsInline: true,
+              },
+            },
+          }}
         />
       ) : (
         <div className="loading-placeholder">

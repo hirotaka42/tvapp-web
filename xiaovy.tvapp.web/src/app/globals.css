@@ -10,3 +10,18 @@
   line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+
+/* Video Player Styles */
+.player-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.react-player {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
