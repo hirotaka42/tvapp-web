@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // プロフィール画像
+    match /profile-images/{userId}/{imageId} {
+      // 認証済みユーザーが自分の画像のみアップロード・削除可能
+      allow read: if true; // 画像は誰でも閲覧可能
+      allow write, delete: if request.auth != null && request.auth.uid == userId;
+
+      // アップロード時のバリデーション
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.size < 5 * 1024 * 1024  // 5MB以下
+                    && request.resource.contentType.matches('image/.*');  // 画像ファイルのみ
+
+      // 更新・削除時のバリデーション
+      allow update, delete: if request.auth != null
+                            && request.auth.uid == userId;
+    }
+
+    // デフォルト: すべて拒否
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ユーザープロフィール
+    match /users/{userId} {
+      // 認証済みユーザーが自分のドキュメントのみ読み書き可能
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // お気に入り
+      match /favorites/{seriesId} {
+        // 認証済みユーザーが自分のお気に入りのみ読み書き可能
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        // バリデーション（書き込み時）
+        allow create: if request.auth != null
+                      && request.auth.uid == userId
+                      && request.resource.data.keys().hasAll(['seriesId', 'seriesTitle', 'thumbnailUrl', 'addedAt'])
+                      && request.resource.data.seriesId is string
+                      && request.resource.data.seriesTitle is string
+                      && request.resource.data.thumbnailUrl is string
+                      && request.resource.data.addedAt is timestamp;
+      }
+
+      // 視聴履歴
+      match /watchHistory/{historyId} {
+        // 認証済みユーザーが自分の視聴履歴のみ読み書き可能
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        // バリデーション（書き込み時）
+        allow create: if request.auth != null
+                      && request.auth.uid == userId
+                      && request.resource.data.keys().hasAll(['episodeId', 'episodeTitle', 'seriesId', 'seriesTitle', 'thumbnailUrl', 'description', 'watchedAt'])
+                      && request.resource.data.episodeId is string
+                      && request.resource.data.episodeTitle is string
+                      && request.resource.data.seriesId is string
+                      && request.resource.data.seriesTitle is string
+                      && request.resource.data.thumbnailUrl is string
+                      && request.resource.data.description is string
+                      && request.resource.data.watchedAt is timestamp;
+      }
+    }
+
+    // デフォルト: すべて拒否
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
