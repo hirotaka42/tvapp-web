@@ -3,15 +3,15 @@ import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { UpdateProfileRequest } from "@/types/ProfileEdit";
 
 // Firestore Timestampをシリアライズするヘルパー関数
-function serializeTimestamps(data: any) {
+function serializeTimestamps(data: Record<string, unknown>) {
   const result = { ...data };
 
   // createdAtとupdatedAtをISO文字列に変換
-  if (result.createdAt?.toDate) {
-    result.createdAt = result.createdAt.toDate().toISOString();
+  if (result.createdAt && typeof result.createdAt === 'object' && 'toDate' in result.createdAt) {
+    result.createdAt = (result.createdAt as { toDate: () => Date }).toDate().toISOString();
   }
-  if (result.updatedAt?.toDate) {
-    result.updatedAt = result.updatedAt.toDate().toISOString();
+  if (result.updatedAt && typeof result.updatedAt === 'object' && 'toDate' in result.updatedAt) {
+    result.updatedAt = (result.updatedAt as { toDate: () => Date }).toDate().toISOString();
   }
 
   return result;
@@ -83,8 +83,15 @@ export async function GET(request: NextRequest) {
 
     const userProfile = userDoc.data();
 
+    if (!userProfile) {
+      return NextResponse.json(
+        { message: "ユーザー情報が見つかりません" },
+        { status: 404 }
+      );
+    }
+
     // photoURLフィールドが存在しない場合は追加（既存ユーザー対応）
-    if (userProfile && !('photoURL' in userProfile)) {
+    if (!('photoURL' in userProfile)) {
       console.log('▶︎Adding photoURL field to existing user document');
       await userRef.update({ photoURL: null });
       userProfile.photoURL = null;
