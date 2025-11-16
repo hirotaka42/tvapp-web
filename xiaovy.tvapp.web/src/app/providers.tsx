@@ -18,6 +18,8 @@ import { ProfileService } from "@/services/implementation/ProfileService";
 import { ProfileServiceContext } from "@/contexts/ProfileContext";
 import { FavoriteService } from "@/services/implementation/FavoriteService";
 import { FavoriteServiceContext } from "@/contexts/FavoriteContext";
+import { WatchHistoryService } from "@/services/implementation/WatchHistoryService";
+import { WatchHistoryServiceContext } from "@/contexts/WatchHistoryContext";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -34,13 +36,15 @@ export const Providers: FC<PropsWithChildren> = ({ children }) => {
                   <StreamServiceContext.Provider value={new StreamService()}>
                     <ProfileServiceContext.Provider value={new ProfileService()}>
                       <FavoriteServiceContext.Provider value={new FavoriteService()}>
-                        <Toaster
-                          position="bottom-right"
-                          toastOptions={{
-                            duration: 4000,
-                          }}
-                        />
-                          {children}
+                        <WatchHistoryServiceContext.Provider value={new WatchHistoryService()}>
+                          <Toaster
+                            position="bottom-right"
+                            toastOptions={{
+                              duration: 4000,
+                            }}
+                          />
+                            {children}
+                        </WatchHistoryServiceContext.Provider>
                       </FavoriteServiceContext.Provider>
                     </ProfileServiceContext.Provider>
                   </StreamServiceContext.Provider>
