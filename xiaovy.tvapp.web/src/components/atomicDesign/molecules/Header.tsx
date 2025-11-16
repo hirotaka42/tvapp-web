@@ -17,6 +17,7 @@ import {
 import {
   Bars3Icon,
   XMarkIcon,
+  HeartIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon, PlayCircleIcon } from '@heroicons/react/20/solid'
 import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
@@ -243,16 +244,30 @@ export default function Header() {
         {/* ユーザー管理機能 */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
           {profile && (
-            <a href="/user/profile" className="flex items-center gap-x-2">
-              <ProfileAvatar
-                photoURL={profile.photoURL}
-                userName={profile.userName}
-                size="sm"
-              />
-              <span className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-                {profile.lastName} {profile.firstName}
-              </span>
-            </a>
+            <div className="flex items-center gap-x-2">
+              <a href="/user/profile" className="flex items-center gap-x-2">
+                <ProfileAvatar
+                  photoURL={profile.photoURL}
+                  userName={profile.userName}
+                  size="sm"
+                />
+                <span className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+                  {profile.lastName} {profile.firstName}
+                </span>
+              </a>
+              {user && !user.isAnonymous && (
+                <div className="flex items-center gap-x-1">
+                  {/* お気に入いボタン - 一般ユーザーのみ表示 */}
+                  <button
+                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={user.isAnonymous}
+                    title={user.isAnonymous ? "ログインしてお気に入りを使用できます" : "お気に入りに追加"}
+                  >
+                    <HeartIcon className="w-5 h-5 text-gray-400 hover:text-red-500 dark:hover:text-red-400" />
+                  </button>
+                </div>
+              )}
+            </div>
           )}
           {!profile && (
             <a href="/user/profile" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
