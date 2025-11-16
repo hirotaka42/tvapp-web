@@ -212,6 +212,9 @@ export default function Header() {
 
         {/* ユーザー管理機能 */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
+          <a href="/user/profile" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            プロフィール
+          </a>
           <a onClick={handleLogoutClick} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 cursor-pointer">
             ログアウト
           </a>
