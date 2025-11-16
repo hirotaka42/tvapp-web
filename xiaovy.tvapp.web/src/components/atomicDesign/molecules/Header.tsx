@@ -88,6 +88,7 @@ export default function Header() {
   const handleLogoutConfirm = async () => {
     try {
       await clearAllAuthState();
+      setMobileMenuOpen(false); // サイドバーを閉じる
       toast.success('ログアウトしました');
       router.push('/user/login');
     } catch (error) {
@@ -381,38 +382,52 @@ export default function Header() {
 
                 {/* ここから お気に入りリスト*/}
                 <Disclosure as="div" className="-mx-3">
-                  <DisclosureButton className="group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <DisclosureButton
+                    onClick={() => {
+                      if (user?.isAnonymous) {
+                        toast.error('この機能はゲストユーザーは使用できません');
+                      }
+                    }}
+                    className={`group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 ${
+                      user?.isAnonymous
+                        ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-50'
+                        : 'text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                    disabled={user?.isAnonymous}
+                  >
                     お気に入りリスト
                     <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none group-data-[open]:rotate-180" />
                   </DisclosureButton>
-                  <DisclosurePanel className="mt-2 space-y-2">
-                    {favoritesLoading ? (
-                      <div className="text-sm text-gray-500 px-3 py-2">読み込み中...</div>
-                    ) : favorites.length > 0 ? (
-                      <>
-                        {favorites.map((item) => (
-                          <DisclosureButton
-                            key={item.seriesId}
-                            as="a"
-                            href={`/series/${item.seriesId}`}
-                            className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  {!user?.isAnonymous && (
+                    <DisclosurePanel className="mt-2 space-y-2">
+                      {favoritesLoading ? (
+                        <div className="text-sm text-gray-500 px-3 py-2">読み込み中...</div>
+                      ) : favorites.length > 0 ? (
+                        <>
+                          {favorites.map((item) => (
+                            <DisclosureButton
+                              key={item.seriesId}
+                              as="a"
+                              href={`/series/${item.seriesId}`}
+                              className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                              {item.seriesTitle}
+                            </DisclosureButton>
+                          ))}
+                          <a
+                            href="/user/favorite"
+                            className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                           >
-                            {item.seriesTitle}
-                          </DisclosureButton>
-                        ))}
-                        <a
-                          href="/user/favorite"
-                          className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700"
-                        >
-                          すべてのお気に入りを見る
-                        </a>
-                      </>
-                    ) : (
-                      <div className="text-sm text-gray-500 dark:text-gray-400 px-3 py-2">
-                        お気に入りはまだありません
-                      </div>
-                    )}
-                  </DisclosurePanel>
+                            すべてのお気に入りを見る
+                          </a>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-500 dark:text-gray-400 px-3 py-2">
+                          お気に入りはまだありません
+                        </div>
+                      )}
+                    </DisclosurePanel>
+                  )}
                 </Disclosure>
                 {/* ここまで お気に入りリスト*/}
 
