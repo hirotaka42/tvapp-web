@@ -22,9 +22,9 @@ export async function POST(request: NextRequest) {
 
     console.log('▶︎Setting guest role for user:', uid);
 
-    // 3. Custom Claimsでロール設定
+    // 3. Custom Claimsでロール設定（ゲストユーザーはロール-1）
     await adminAuth.setCustomUserClaims(uid, {
-      role: UserRole.GENERAL  // 0
+      role: UserRole.GUEST
     });
 
     // 4. Firestoreにゲストプロファイル作成
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       emailVerified: false,
       phoneNumber: null,
       phoneNumberVerified: false,
-      role: UserRole.GENERAL,
+      role: UserRole.GUEST,
       photoURL: null,
       firstName: "ゲスト",
       lastName: "ユーザー",
@@ -47,12 +47,12 @@ export async function POST(request: NextRequest) {
 
     await adminDb.collection('users').doc(uid).set(guestProfile);
 
-    console.log('▶︎Guest profile saved to Firestore');
+    console.log('▶︎Guest profile saved to Firestore with role -1');
 
     return NextResponse.json({
       message: "ゲストユーザーのロールを設定しました",
       uid,
-      role: UserRole.GENERAL
+      role: UserRole.GUEST
     });
 
   } catch (error: unknown) {

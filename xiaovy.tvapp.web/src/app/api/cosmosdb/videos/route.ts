@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { CosmosClient } from '@azure/cosmos';
 import { VideoDownload, VideoDownloadResponse } from '@/types/VideoDownload';
+import { adminAuth } from '@/lib/firebase-admin';
 
 // 動的ルートとして強制
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,33 @@ export async function GET(request: NextRequest): Promise<NextResponse<VideoDownl
         error: 'Unauthorized: Missing or invalid authorization header'
       }, { status: 401 });
     }
+
+    // Authorizationヘッダーからトークンを抽出
+    const token = authHeader.substring(7); // 'Bearer ' の7文字を削除
+
+    // Firebaseトークンを検証して、ユーザー情報を取得
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(token);
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      return NextResponse.json({
+        success: false,
+        data: [],
+        error: 'Invalid or expired token'
+      }, { status: 401 });
+    }
+
+    // ゲストユーザー（匿名ユーザー）の場合はリクエストを弾く
+    if (decodedToken.firebase.sign_in_provider === 'anonymous') {
+      return NextResponse.json({
+        success: false,
+        data: [],
+        error: 'Guest users are not allowed to access this resource'
+      }, { status: 403 });
+    }
+
+    console.log('Authorized user:', decodedToken.uid);
 
     // 環境変数のデバッグ情報（セキュリティ上、一部のみ表示）
     console.log('CosmosDB Endpoint:', endpoint ? endpoint.substring(0, 30) + '...' : 'NOT SET');
