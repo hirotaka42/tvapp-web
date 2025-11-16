@@ -55,13 +55,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!thumbnailUrl || thumbnailUrl.trim() === '') {
-      return NextResponse.json(
-        { message: 'thumbnailUrlを指定してください' },
-        { status: 400 }
-      );
-    }
-
+    // thumbnailUrl はオプショナル（存在しない場合は空文字列を許容）
     console.log(`▶︎Recording watch history for user: ${uid}, episodeId: ${episodeId}`);
 
     // 4. Firestoreに追加
