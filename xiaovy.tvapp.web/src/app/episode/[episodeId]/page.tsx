@@ -32,7 +32,7 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
     const session = useSessionService();
     const [seriesEpisodes, setSeriesEpisodes] = useState<SeasonGroupedContents[] | null>(null);
     const seriesContent = useSeriesService(episode?.data.seriesID || '', session);
-    const { isFavorite: checkIsFavorite } = useFavorites();
+    const { isFavorite: checkIsFavorite, fetchFavorites } = useFavorites();
     const { recordHistory } = useWatchHistory();
     const [historyRecorded, setHistoryRecorded] = useState<boolean>(false);
 
@@ -95,16 +95,18 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
         recordWatchHistory();
     }, [episode, videoUrl, loginUser, historyRecorded, seriesTitle, recordHistory]);
 
-    if (!episodeId) {
-        return <div>Episode not found</div>;
+    if (!episodeId || !episode || !loginUser) {
+        return null;
     }
 
-    if (!loginUser || !episode) {
-        return <div>Loading...</div>;
-    }
-
-    const handleFavoriteToggle = (newState: boolean) => {
+    const handleFavoriteToggle = async (newState: boolean) => {
         setIsFavorite(newState);
+        // お気に入り変更時にサイドバーを更新
+        try {
+            await fetchFavorites();
+        } catch (error) {
+            console.error('Failed to refresh favorites:', error);
+        }
     };
     
     return (
