@@ -138,6 +138,9 @@ function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
                             seriesTitle={seriesTitle}
                             isFavorite={isFavorite}
                             onToggle={handleFavoriteToggle}
+                            onFavoritesUpdate={() => {
+                                // シリーズページではFetchはしないが、削除時のための処理
+                            }}
                         />
                     )}
                 </div>

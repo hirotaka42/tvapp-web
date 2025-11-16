@@ -15,6 +15,7 @@ import { FavoriteButton } from '@/components/atomicDesign/atoms/FavoriteButton';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useWatchHistory } from '@/hooks/useWatchHistory';
 import { ErrorState } from '@/components/atomicDesign/molecules/ErrorState';
+import { useWatchHistoryData } from '@/contexts/WatchHistoryDataContext';
 
 interface SeasonGroupedContents {
     seasonTitle: string;
@@ -35,6 +36,7 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
     const seriesContent = useSeriesService(episode?.data.seriesID || '', session);
     const { isFavorite: checkIsFavorite, fetchFavorites } = useFavorites();
     const { recordHistory } = useWatchHistory();
+    const { addHistoryToList } = useWatchHistoryData();
     const [historyRecorded, setHistoryRecorded] = useState<boolean>(false);
     const [loadingTimeout, setLoadingTimeout] = useState<boolean>(false);
 
@@ -95,7 +97,7 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
         const recordWatchHistory = async () => {
             if (episode && videoUrl && loginUser && !loginUser.isAnonymous && !historyRecorded) {
                 try {
-                    await recordHistory({
+                    const history = await recordHistory({
                         episodeId: episode.data.id,
                         episodeTitle: episode.data.title,
                         seriesId: episode.data.seriesID,
@@ -103,6 +105,10 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
                         thumbnailUrl: episode.data.image?.standard || '',
                         description: episode.data.description || '',
                     });
+                    // 共有Contextに履歴を追加
+                    if (history) {
+                        addHistoryToList(history);
+                    }
                     setHistoryRecorded(true);
                     console.log('視聴履歴を記録しました');
                 } catch (error) {
@@ -111,7 +117,7 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
             }
         };
         recordWatchHistory();
-    }, [episode, videoUrl, loginUser, historyRecorded, seriesTitle, recordHistory]);
+    }, [episode, videoUrl, loginUser, historyRecorded, seriesTitle, recordHistory, addHistoryToList]);
 
     // ロード中またはユーザー認証中
     if (!loginUser) {
@@ -203,6 +209,7 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
                                 seriesTitle={seriesTitle}
                                 isFavorite={isFavorite}
                                 onToggle={handleFavoriteToggle}
+                                onFavoritesUpdate={() => fetchFavorites()}
                             />
                         )}
                     </div>
