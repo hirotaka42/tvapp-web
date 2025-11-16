@@ -38,3 +38,4 @@ if (!admin.apps.length) {
 
 export const adminAuth = admin.apps.length > 0 ? admin.auth() : (null as unknown as ReturnType<typeof admin.auth>);
 export const adminDb = admin.apps.length > 0 ? admin.firestore() : (null as unknown as ReturnType<typeof admin.firestore>);
+export const adminStorage = admin.apps.length > 0 ? admin.storage() : (null as unknown as ReturnType<typeof admin.storage>);

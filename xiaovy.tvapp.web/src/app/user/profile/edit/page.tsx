@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebaseAuth } from '@/contexts/AuthContext';
-import { ProfileCard } from '@/components/atomicDesign/organisms/ProfileCard';
+import { ProfileImageUploader } from '@/components/atomicDesign/molecules/ProfileImageUploader';
+import { ProfileEditForm } from '@/components/atomicDesign/molecules/ProfileEditForm';
 import { LoadingSkeleton } from '@/components/atomicDesign/atoms/LoadingSkeleton';
 import { UserProfile } from '@/types/User';
 import toast from 'react-hot-toast';
 
-export default function ProfilePage() {
+export default function ProfileEditPage() {
   const { user, loading: authLoading } = useFirebaseAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -24,7 +25,7 @@ export default function ProfilePage() {
 
     // ゲストユーザーチェック
     if (user?.isAnonymous) {
-      toast.error('ゲストユーザーはプロフィールを閲覧できません');
+      toast.error('ゲストユーザーはプロフィールを編集できません');
       router.push('/');
       return;
     }
@@ -61,6 +62,18 @@ export default function ProfilePage() {
     }
   };
 
+  const handlePhotoUploadSuccess = (photoURL: string) => {
+    if (profile) {
+      setProfile({ ...profile, photoURL });
+    }
+  };
+
+  const handlePhotoDeleteSuccess = () => {
+    if (profile) {
+      setProfile({ ...profile, photoURL: null });
+    }
+  };
+
   if (authLoading || loading) {
     return <LoadingSkeleton />;
   }
@@ -81,11 +94,33 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">
-          マイプロフィール
+          プロフィール編集
         </h1>
-        <ProfileCard profile={profile} />
+
+        <div className="space-y-8">
+          {/* プロフィール画像編集セクション */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">
+              プロフィール画像
+            </h2>
+            <ProfileImageUploader
+              currentPhotoURL={profile.photoURL}
+              userName={profile.userName}
+              onUploadSuccess={handlePhotoUploadSuccess}
+              onDeleteSuccess={handlePhotoDeleteSuccess}
+            />
+          </div>
+
+          {/* プロフィール情報編集セクション */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">
+              基本情報
+            </h2>
+            <ProfileEditForm currentProfile={profile} />
+          </div>
+        </div>
       </div>
     </div>
   );

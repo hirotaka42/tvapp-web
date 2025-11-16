@@ -15,6 +15,7 @@ export interface UserProfile {
   phoneNumber: string | null;
   phoneNumberVerified: boolean;
   role: UserRole;
+  photoURL: string | null;
   firstName: string;
   lastName: string;
   birthday: string | null;
