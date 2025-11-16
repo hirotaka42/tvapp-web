@@ -14,6 +14,7 @@ import { ConvertedCardViewContent } from '@/types/CardItem/ForGeneric';
 import { FavoriteButton } from '@/components/atomicDesign/atoms/FavoriteButton';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useWatchHistory } from '@/hooks/useWatchHistory';
+import { ErrorState } from '@/components/atomicDesign/molecules/ErrorState';
 
 interface SeasonGroupedContents {
     seasonTitle: string;
@@ -35,6 +36,11 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
     const { isFavorite: checkIsFavorite, fetchFavorites } = useFavorites();
     const { recordHistory } = useWatchHistory();
     const [historyRecorded, setHistoryRecorded] = useState<boolean>(false);
+
+    const handleRetry = () => {
+        // ページを再度読み込む
+        window.location.reload();
+    };
 
     useEffect(() => {
         if (streamUrl) {
@@ -95,8 +101,36 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
         recordWatchHistory();
     }, [episode, videoUrl, loginUser, historyRecorded, seriesTitle, recordHistory]);
 
-    if (!episodeId || !episode || !loginUser) {
+    // ロード中またはユーザー認証中
+    if (!loginUser) {
         return null;
+    }
+
+    // エピソードが見つからない場合
+    if (!episodeId) {
+        return (
+            <ErrorState
+                title="エラー"
+                message="エピソードIDが指定されていません。正しいURLでアクセスしてください。"
+                icon="❌"
+                actionLabel="ホームに戻る"
+                actionHref="/"
+            />
+        );
+    }
+
+    // エピソード情報が取得できない場合
+    if (!episode) {
+        return (
+            <ErrorState
+                title="エピソードが見つかりません"
+                message="このエピソードは公開が終了しているか、削除されている可能性があります。データ取得に失敗した場合は再度読み込んでみてください。"
+                icon="📺"
+                actionLabel="ホームに戻る"
+                actionHref="/"
+                onRetry={handleRetry}
+            />
+        );
     }
 
     const handleFavoriteToggle = async (newState: boolean) => {

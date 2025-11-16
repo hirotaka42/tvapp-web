@@ -8,6 +8,7 @@ import { useSeriesService } from '@/hooks/useSeries';
 import { FavoriteButton } from '@/components/atomicDesign/atoms/FavoriteButton';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useFirebaseAuth } from '@/contexts/AuthContext';
+import { ErrorState } from '@/components/atomicDesign/molecules/ErrorState';
 
 interface SeasonGroupedContents {
     seasonTitle: string;
@@ -69,8 +70,43 @@ function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
         checkFavorite();
     }, [seriesId, loginUser, checkIsFavorite]);
 
-    if (!seriesId)return <div>Series ID not provided</div>;
-    if (loading || !seriesContents) return <div>Loading...</div>;
+    if (!seriesId) {
+        return (
+            <ErrorState
+                title="エラー"
+                message="シリーズIDが指定されていません。正しいURLでアクセスしてください。"
+                icon="❌"
+                actionLabel="ホームに戻る"
+                actionHref="/"
+            />
+        );
+    }
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+                <div className="text-center">
+                    <div className="inline-block">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mb-4"></div>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-400">シリーズを読み込み中...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!seriesContents || seriesContents.length === 0) {
+        return (
+            <ErrorState
+                title="シリーズが見つかりません"
+                message="このシリーズは公開が終了しているか、削除されている可能性があります。データ取得に失敗した場合は再度読み込んでみてください。"
+                icon="🎬"
+                actionLabel="ホームに戻る"
+                actionHref="/"
+                onRetry={() => setAttempt(0)}
+            />
+        );
+    }
 
     const handleFavoriteToggle = (newState: boolean) => {
         setIsFavorite(newState);
