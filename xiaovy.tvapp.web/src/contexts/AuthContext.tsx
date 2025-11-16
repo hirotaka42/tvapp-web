@@ -8,6 +8,7 @@ import {
   signInAnonymously,
   signOut,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   UserCredential
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -20,6 +21,7 @@ interface AuthContextType {
   signInAsGuest: () => Promise<UserCredential>;
   logout: () => Promise<void>;
   clearAllAuthState: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -88,6 +90,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /**
+   * パスワードリセットメールを送信
+   * @param email - パスワードをリセットするユーザーのメールアドレス
+   */
+  const resetPassword = async (email: string) => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
+    return sendPasswordResetEmail(auth, email, {
+      url: `${window.location.origin}/user/login?reset=true`,
+      handleCodeInApp: false,
+    });
+  };
+
   const value = {
     user,
     loading,
@@ -95,7 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signInAsGuest,
     logout,
-    clearAllAuthState
+    clearAllAuthState,
+    resetPassword
   };
 
   return (

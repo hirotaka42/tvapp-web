@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import SignUpForms from '@/components/atomicDesign/molecules/Forms/sign-up-forms';
 import { BrandPanel } from '@/components/atomicDesign/molecules/BrandPanel';
 import { FirebaseError } from 'firebase/app';
+import { sendEmailVerification } from 'firebase/auth';
 
 interface FormData {
   Email: string;
@@ -50,10 +51,44 @@ const Register: React.FC = () => {
     }
 
     try {
-      await signUp(formData.Email, formData.Password);
-      console.log('登録成功');
-      toast.success('アカウントを作成しました');
-      router.push('/');
+      // ユーザー登録
+      const userCredential = await signUp(formData.Email, formData.Password);
+      console.log('登録成功:', userCredential.user.uid);
+
+      // メールアドレス確認メールを送信
+      try {
+        console.log('[DEBUG] メール送信開始:', {
+          email: userCredential.user.email,
+          emailVerified: userCredential.user.emailVerified,
+          redirectUrl: `${window.location.origin}/user/login?verified=true`
+        });
+
+        await sendEmailVerification(userCredential.user, {
+          url: `${window.location.origin}/user/login?verified=true`,
+          handleCodeInApp: false,
+        });
+
+        console.log('[SUCCESS] 確認メールを送信しました');
+        toast.success('確認メールを送信しました。メールボックスをご確認ください。');
+        // メール確認待ちページへリダイレクト
+        router.push('/user/verify-email');
+      } catch (emailError) {
+        console.error('[ERROR] 確認メール送信エラー:', emailError);
+
+        if (emailError instanceof Error) {
+          console.error('[ERROR] エラー詳細:', {
+            name: emailError.name,
+            message: emailError.message,
+            stack: emailError.stack
+          });
+          toast.error(`確認メールの送信に失敗しました: ${emailError.message}`);
+        } else {
+          toast.error('確認メールの送信に失敗しました。後ほど再送信してください。');
+        }
+
+        // メール送信に失敗してもアカウント作成は成功しているので、確認ページへ
+        router.push('/user/verify-email');
+      }
     } catch (error) {
       if (error instanceof FirebaseError) {
         console.error('Firebase エラー:', error.code, error.message);
