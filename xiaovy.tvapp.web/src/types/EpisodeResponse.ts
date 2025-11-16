@@ -23,6 +23,11 @@ export interface Data {
     tags:                    Tags;
     isNHKContent:            boolean;
     svod:                    Svod[];
+    image?:                  ImageData;
+}
+
+export interface ImageData {
+    standard: string;
 }
 
 export interface Share {
