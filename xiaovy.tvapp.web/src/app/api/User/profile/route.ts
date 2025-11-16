@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { UpdateProfileRequest } from "@/types/ProfileEdit";
 
+// Firestore Timestampをシリアライズするヘルパー関数
+function serializeTimestamps(data: any) {
+  const result = { ...data };
+
+  // createdAtとupdatedAtをISO文字列に変換
+  if (result.createdAt?.toDate) {
+    result.createdAt = result.createdAt.toDate().toISOString();
+  }
+  if (result.updatedAt?.toDate) {
+    result.updatedAt = result.updatedAt.toDate().toISOString();
+  }
+
+  return result;
+}
+
 export async function GET(request: NextRequest) {
   console.log('▶︎Call GET /api/user/profile');
   try {
@@ -21,18 +36,61 @@ export async function GET(request: NextRequest) {
     console.log('▶︎Fetching profile for user:', uid);
 
     // 2. Firestoreからプロファイル取得
-    const userDoc = await adminDb.collection('users').doc(uid).get();
+    const userRef = adminDb.collection('users').doc(uid);
+    const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
-      return NextResponse.json(
-        { message: "ユーザーが見つかりません" },
-        { status: 404 }
-      );
+      // ドキュメントが存在しない場合、Firebase Authから情報を取得して作成
+      console.log('▶︎User document not found, creating from Firebase Auth...');
+
+      try {
+        const authUser = await adminAuth.getUser(uid);
+
+        // デフォルトのプロフィールを作成
+        const displayName = authUser.displayName || 'ユーザー';
+        const nameParts = displayName.split(' ');
+
+        const defaultProfile = {
+          uid: authUser.uid,
+          userName: authUser.email?.split('@')[0] || `user_${uid.substring(0, 8)}`,
+          email: authUser.email || '',
+          emailVerified: authUser.emailVerified,
+          phoneNumber: authUser.phoneNumber || null,
+          phoneNumberVerified: false,
+          role: 'user',
+          photoURL: null, // 重要: photoURLフィールドを追加
+          firstName: nameParts[nameParts.length - 1] || '名前',
+          lastName: nameParts.length > 1 ? nameParts[0] : '姓',
+          birthday: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          isAnonymous: false,
+        };
+
+        // Firestoreにドキュメントを作成
+        await userRef.set(defaultProfile);
+        console.log('▶︎User document created successfully');
+
+        return NextResponse.json(serializeTimestamps(defaultProfile));
+      } catch (authError) {
+        console.error('Failed to create user document:', authError);
+        return NextResponse.json(
+          { message: "ユーザー情報の取得に失敗しました" },
+          { status: 500 }
+        );
+      }
     }
 
     const userProfile = userDoc.data();
 
-    return NextResponse.json(userProfile);
+    // photoURLフィールドが存在しない場合は追加（既存ユーザー対応）
+    if (userProfile && !('photoURL' in userProfile)) {
+      console.log('▶︎Adding photoURL field to existing user document');
+      await userRef.update({ photoURL: null });
+      userProfile.photoURL = null;
+    }
+
+    return NextResponse.json(serializeTimestamps(userProfile));
 
   } catch (error: unknown) {
     console.error("getProfile error:", error);

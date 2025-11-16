@@ -32,7 +32,7 @@ export class ProfileService implements IProfileService {
 
   async updateProfile(request: UpdateProfileRequest): Promise<UserProfile> {
     const idToken = await this.getIdToken();
-    const response = await fetch('/api/user/profile', {
+    const response = await fetch('/api/User/profile', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ export class ProfileService implements IProfileService {
         reject(new Error('ネットワークエラーが発生しました'));
       });
 
-      xhr.open('POST', '/api/user/profile/upload-photo');
+      xhr.open('POST', '/api/User/profile/upload-photo');
       xhr.setRequestHeader('Authorization', `Bearer ${idToken}`);
       xhr.send(formData);
     });
@@ -92,7 +92,7 @@ export class ProfileService implements IProfileService {
 
   async deletePhoto(): Promise<void> {
     const idToken = await this.getIdToken();
-    const response = await fetch('/api/user/profile/photo', {
+    const response = await fetch('/api/User/profile/photo', {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${idToken}`,
