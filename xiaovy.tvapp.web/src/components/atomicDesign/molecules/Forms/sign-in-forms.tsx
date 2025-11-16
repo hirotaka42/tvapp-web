@@ -89,7 +89,7 @@ const SignInForms: React.FC<SignInFormsProps> = ({
             />
             <span className="ml-2 text-gray-700 dark:text-gray-300">ログイン状態を保持</span>
           </label>
-          <a href="#" className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400">
+          <a href="/user/reset-password" className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400">
             パスワードをお忘れですか？
           </a>
         </div>

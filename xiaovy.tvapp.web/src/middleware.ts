@@ -1,51 +1,48 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
 
-// midlewareの使い方は下記を参考
-// https://qiita.com/masakinihirota/items/30a5e06e3288031b9788
 export async function middleware(request: NextRequest) {
-    // middleware でのconsole.logは、サーバーサイドでのみ出力される
-    // フロントには出力されないので注意
-    console.log('▶︎Call middleware')
-    if (request.nextUrl.pathname.startsWith('/api/User/Register') || 
-        request.nextUrl.pathname.startsWith('/api/User/Authentication') ||
-        request.nextUrl.pathname.startsWith('/api/utils/verify-token') ||
-        request.nextUrl.pathname.startsWith('/api/service/betaLoginToken') ||
-        request.nextUrl.pathname.startsWith('/api/proxy')) {
-        return NextResponse.next();
-    }
-    if (request.nextUrl.pathname === '/about') {
-        return NextResponse.redirect(new URL('/redirected', request.url))
-    }
-    if (request.nextUrl.pathname === '/another') {
-        return NextResponse.rewrite(new URL('/rewrite', request.url))
-    }
+  console.log('▶︎Call middleware');
 
-    // 認可処理 (未完成) todo: 認可処理を実装する
-    // Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
-    const token = await request.headers.get('Authorization')?.split(' ')[1]
-    if (!token) {
-        return NextResponse.json(
-            { message: 'トークンがありません。' },
-            { status: 401 }
-        );
+  // 公開ルート（認証不要）
+  const publicPaths = [
+    '/api/User/Register',
+    '/api/User/Authentication',
+    '/api/service/betaLoginToken',
+    '/api/utils/verify-token',
+    '/api/health',
+  ];
+
+  if (publicPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
+    return NextResponse.next();
+  }
+
+  // レガシールート（リダイレクト・リライト）
+  if (request.nextUrl.pathname === '/about') {
+    return NextResponse.redirect(new URL('/redirected', request.url));
+  }
+  if (request.nextUrl.pathname === '/another') {
+    return NextResponse.rewrite(new URL('/rewrite', request.url));
+  }
+
+  // Authorizationヘッダーの存在チェック（詳細な検証は各APIで実施）
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    // /api/ パスのみ認証必須
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        { message: 'トークンがありません。' },
+        { status: 401 }
+      );
     }
-    try {
-        console.log('token:', token);
-        // トークンの検証処理をここに実装する
-        // TODO
-        return NextResponse.next()
-    }catch {
-        return NextResponse.json(
-            { message: 'トークンが正しくないので、再ログインしてください。' },
-            { status: 401 }
-        );
-    }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-    matcher: [
-        '/about/:path*',
-        '/another/:path*',
-        '/api/:path*',
-    ],
-}
+  matcher: [
+    '/about/:path*',
+    '/another/:path*',
+    '/api/:path*',
+  ],
+};
