@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { VideoPlayer } from '@/components/atomicDesign/atoms/VideoPlayer';
 import { useStreamService } from '@/hooks/useStream';
 import { useEpisodeService } from '@/hooks/useEpisode';
@@ -37,7 +37,6 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
     const { isFavorite: checkIsFavorite, fetchFavorites } = useFavorites();
     const { recordHistory } = useWatchHistory();
     const { addHistoryToList } = useWatchHistoryData();
-    const [historyRecorded, setHistoryRecorded] = useState<boolean>(false);
     const [loadingTimeout, setLoadingTimeout] = useState<boolean>(false);
 
     const handleRetry = () => {
@@ -92,32 +91,29 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
         }
     }, [seriesContent]);
 
-    // 視聴履歴を記録するuseEffect
-    useEffect(() => {
-        const recordWatchHistory = async () => {
-            if (episode && videoUrl && loginUser && !loginUser.isAnonymous && !historyRecorded) {
-                try {
-                    const history = await recordHistory({
-                        episodeId: episode.data.id,
-                        episodeTitle: episode.data.title,
-                        seriesId: episode.data.seriesID,
-                        seriesTitle: seriesTitle || episode.data.share.text.replace('\n#TVer', ''),
-                        thumbnailUrl: episode.data.image?.standard || '',
-                        description: episode.data.description || '',
-                    });
-                    // 共有Contextに履歴を追加
-                    if (history) {
-                        addHistoryToList(history);
-                    }
-                    setHistoryRecorded(true);
-                    console.log('視聴履歴を記録しました');
-                } catch (error) {
-                    console.error('視聴履歴の記録に失敗:', error);
+    // 動画再生検知時のコールバック
+    const handleVideoPlay = useCallback(async () => {
+        console.log('動画再生を検知しました');
+        if (episode && loginUser && !loginUser.isAnonymous) {
+            try {
+                const history = await recordHistory({
+                    episodeId: episode.data.id,
+                    episodeTitle: episode.data.title,
+                    seriesId: episode.data.seriesID,
+                    seriesTitle: seriesTitle || episode.data.share.text.replace('\n#TVer', ''),
+                    thumbnailUrl: episode.data.image?.standard || '',
+                    description: episode.data.description || '',
+                });
+                // 共有Contextに履歴を追加
+                if (history) {
+                    addHistoryToList(history);
                 }
+                console.log('視聴履歴を記録しました');
+            } catch (error) {
+                console.error('視聴履歴の記録に失敗:', error);
             }
-        };
-        recordWatchHistory();
-    }, [episode, videoUrl, loginUser, historyRecorded, seriesTitle, recordHistory, addHistoryToList]);
+        }
+    }, [episode, loginUser, seriesTitle, recordHistory, addHistoryToList]);
 
     // ロード中またはユーザー認証中
     if (!loginUser) {
@@ -176,7 +172,7 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
                 backgroundColor: '#000'
             }}>
                 {videoUrl ? (
-                    <VideoPlayer url={videoUrl.video_url} />
+                    <VideoPlayer url={videoUrl.video_url} onPlay={handleVideoPlay} />
                 ) : (
                     <div style={{
                         display: 'flex',
