@@ -31,6 +31,7 @@ import { ProfileServiceContext } from '@/contexts/ProfileContext';
 import { ProfileAvatar } from '@/components/atomicDesign/atoms/ProfileAvatar';
 import { UserProfile } from '@/types/User';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useFavoritesData } from '@/contexts/FavoritesDataContext';
 import { useWatchHistory } from '@/hooks/useWatchHistory';
 import { WatchHistoryResponse } from '@/types/WatchHistory';
 
@@ -56,7 +57,8 @@ export default function Header() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const router = useRouter();
   const profileService = useContext(ProfileServiceContext);
-  const { favorites, fetchFavorites, loading: favoritesLoading } = useFavorites();
+  const { fetchFavorites, loading: favoritesLoading } = useFavorites();
+  const { favorites: sharedFavorites, setFavorites: setSharedFavorites } = useFavoritesData();
   const { histories: watchHistory, fetchHistories: fetchWatchHistory, loading: watchHistoryLoading } = useWatchHistory();
   const { user, clearAllAuthState } = useFirebaseAuth();
 
@@ -66,6 +68,27 @@ export default function Header() {
       fetchWatchHistory();
     }
   }, [user, fetchFavorites, fetchWatchHistory]);
+
+  // fetchFavoritesから取得したお気に入りを共有Contextに同期
+  useEffect(() => {
+    if (user && !user.isAnonymous) {
+      (async () => {
+        try {
+          const response = await fetch('/api/User/favorites', {
+            headers: {
+              'Authorization': `Bearer ${await user.getIdToken()}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setSharedFavorites(data.favorites || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch favorites:', error);
+        }
+      })();
+    }
+  }, [user, setSharedFavorites]);
 
   const { role } = useUserRole();
 
@@ -187,8 +210,8 @@ export default function Header() {
               <div className="p-4">
                 {favoritesLoading ? (
                   <div className="text-center py-4 text-gray-500">読み込み中...</div>
-                ) : favorites.length > 0 ? (
-                  favorites.map((item) => (
+                ) : sharedFavorites.length > 0 ? (
+                  sharedFavorites.map((item) => (
                     <div
                       key={item.seriesId}
                       className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -206,7 +229,7 @@ export default function Header() {
                     お気に入りはまだありません
                   </div>
                 )}
-                {favorites.length > 0 && (
+                {sharedFavorites.length > 0 && (
                   <div className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">
                     <a href="/user/favorite" className="block text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-semibold">
                       すべてのお気に入りを見る
@@ -406,9 +429,9 @@ export default function Header() {
                     <DisclosurePanel className="mt-2 space-y-2">
                       {favoritesLoading ? (
                         <div className="text-sm text-gray-500 px-3 py-2">読み込み中...</div>
-                      ) : favorites.length > 0 ? (
+                      ) : sharedFavorites.length > 0 ? (
                         <>
-                          {favorites.map((item) => (
+                          {sharedFavorites.map((item) => (
                             <DisclosureButton
                               key={item.seriesId}
                               as="a"

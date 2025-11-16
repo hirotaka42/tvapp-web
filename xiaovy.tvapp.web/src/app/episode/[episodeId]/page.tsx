@@ -203,6 +203,7 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
                                 seriesTitle={seriesTitle}
                                 isFavorite={isFavorite}
                                 onToggle={handleFavoriteToggle}
+                                onFavoritesUpdate={() => fetchFavorites()}
                             />
                         )}
                     </div>

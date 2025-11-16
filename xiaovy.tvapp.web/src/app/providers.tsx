@@ -20,6 +20,7 @@ import { FavoriteService } from "@/services/implementation/FavoriteService";
 import { FavoriteServiceContext } from "@/contexts/FavoriteContext";
 import { WatchHistoryService } from "@/services/implementation/WatchHistoryService";
 import { WatchHistoryServiceContext } from "@/contexts/WatchHistoryContext";
+import { FavoritesDataProvider } from "@/contexts/FavoritesDataContext";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -38,31 +39,33 @@ export const Providers: FC<PropsWithChildren> = ({ children }) => {
   return (
     <ThemeProvider attribute="class">
       <AuthProvider>
-        <SessionServiceContext.Provider value={sessionService}>
-          <TvHomeServiceContext.Provider value={tvHomeService}>
-            <SeriesServiceContext.Provider value={seriesService}>
-              <EpisodeServiceContext.Provider value={episodeService}>
-                <RankingServiceContext.Provider value={rankingService}>
-                  <StreamServiceContext.Provider value={streamService}>
-                    <ProfileServiceContext.Provider value={profileService}>
-                      <FavoriteServiceContext.Provider value={favoriteService}>
-                        <WatchHistoryServiceContext.Provider value={watchHistoryService}>
-                          <Toaster
-                            position="bottom-right"
-                            toastOptions={{
-                              duration: 4000,
-                            }}
-                          />
-                            {children}
-                        </WatchHistoryServiceContext.Provider>
-                      </FavoriteServiceContext.Provider>
-                    </ProfileServiceContext.Provider>
-                  </StreamServiceContext.Provider>
-                </RankingServiceContext.Provider>
-              </EpisodeServiceContext.Provider>
-            </SeriesServiceContext.Provider>
-          </TvHomeServiceContext.Provider>
-        </SessionServiceContext.Provider>
+        <FavoritesDataProvider>
+          <SessionServiceContext.Provider value={sessionService}>
+            <TvHomeServiceContext.Provider value={tvHomeService}>
+              <SeriesServiceContext.Provider value={seriesService}>
+                <EpisodeServiceContext.Provider value={episodeService}>
+                  <RankingServiceContext.Provider value={rankingService}>
+                    <StreamServiceContext.Provider value={streamService}>
+                      <ProfileServiceContext.Provider value={profileService}>
+                        <FavoriteServiceContext.Provider value={favoriteService}>
+                          <WatchHistoryServiceContext.Provider value={watchHistoryService}>
+                            <Toaster
+                              position="bottom-right"
+                              toastOptions={{
+                                duration: 4000,
+                              }}
+                            />
+                              {children}
+                          </WatchHistoryServiceContext.Provider>
+                        </FavoriteServiceContext.Provider>
+                      </ProfileServiceContext.Provider>
+                    </StreamServiceContext.Provider>
+                  </RankingServiceContext.Provider>
+                </EpisodeServiceContext.Provider>
+              </SeriesServiceContext.Provider>
+            </TvHomeServiceContext.Provider>
+          </SessionServiceContext.Provider>
+        </FavoritesDataProvider>
       </AuthProvider>
     </ThemeProvider>
   );

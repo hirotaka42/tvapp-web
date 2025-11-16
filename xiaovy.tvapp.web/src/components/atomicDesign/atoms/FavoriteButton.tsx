@@ -7,12 +7,14 @@ import { toast } from 'react-hot-toast';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { HeartIcon as HeartIconOutline } from '@heroicons/react/24/outline';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useFavoritesData } from '@/contexts/FavoritesDataContext';
 
 interface FavoriteButtonProps {
   seriesId: string;
   seriesTitle: string;
   isFavorite: boolean;
   onToggle: (isFavorite: boolean) => void;
+  onFavoritesUpdate?: () => void;
   disabled?: boolean;
 }
 
@@ -21,9 +23,11 @@ export function FavoriteButton({
   seriesTitle,
   isFavorite,
   onToggle,
+  onFavoritesUpdate,
   disabled = false
 }: FavoriteButtonProps) {
   const { addFavorite, removeFavorite } = useFavorites();
+  const { addFavoriteToList, removeFavoriteFromList } = useFavoritesData();
   const [loading, setLoading] = useState(false);
 
   const handleClick = async (e: React.MouseEvent) => {
@@ -39,10 +43,16 @@ export function FavoriteButton({
     try {
       if (isFavorite) {
         await removeFavorite(seriesId);
+        removeFavoriteFromList(seriesId);
         onToggle(false);
       } else {
-        await addFavorite({ seriesId, seriesTitle });
+        const favorite = await addFavorite({ seriesId, seriesTitle });
+        addFavoriteToList(favorite);
         onToggle(true);
+      }
+      // 親コンポーネントに通知してお気に入りリストを更新
+      if (onFavoritesUpdate) {
+        onFavoritesUpdate();
       }
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
