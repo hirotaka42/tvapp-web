@@ -19,6 +19,7 @@ function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
     const { seriesId } = params;
     const [seriesContents, setSeriesContents] = useState<SeasonGroupedContents[] | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const [loadingTimeout, setLoadingTimeout] = useState<boolean>(false);
     const session = useSessionService();
     // TODO: 取得完了まで待ちたいが、プロアクティすがわからず、、
     const seriesContent = useSeriesService(seriesId, session);
@@ -70,6 +71,17 @@ function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
         checkFavorite();
     }, [seriesId, loginUser, checkIsFavorite]);
 
+    // 10秒以上読み込みに時間がかかったかを判定するuseEffect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (loading) {
+                setLoadingTimeout(true);
+            }
+        }, 10000); // 10秒
+
+        return () => clearTimeout(timer);
+    }, [loading]);
+
     if (!seriesId) {
         return (
             <ErrorState
@@ -82,7 +94,7 @@ function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
         );
     }
 
-    if (loading) {
+    if (loading && !loadingTimeout) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
                 <div className="text-center">

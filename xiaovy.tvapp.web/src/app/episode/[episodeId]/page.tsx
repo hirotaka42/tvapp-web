@@ -36,11 +36,23 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
     const { isFavorite: checkIsFavorite, fetchFavorites } = useFavorites();
     const { recordHistory } = useWatchHistory();
     const [historyRecorded, setHistoryRecorded] = useState<boolean>(false);
+    const [loadingTimeout, setLoadingTimeout] = useState<boolean>(false);
 
     const handleRetry = () => {
         // ページを再度読み込む
         window.location.reload();
     };
+
+    // 10秒以上読み込みに時間がかかったかを判定するuseEffect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (!episode) {
+                setLoadingTimeout(true);
+            }
+        }, 10000); // 10秒
+
+        return () => clearTimeout(timer);
+    }, [episode]);
 
     useEffect(() => {
         if (streamUrl) {
@@ -119,8 +131,8 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
         );
     }
 
-    // エピソード情報が取得できない場合
-    if (!episode) {
+    // エピソード情報が取得できない場合（10秒以上待った後）
+    if (!episode && loadingTimeout) {
         return (
             <ErrorState
                 title="エピソードが見つかりません"
@@ -142,7 +154,12 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
             console.error('Failed to refresh favorites:', error);
         }
     };
-    
+
+    // ロード中またはデータ取得中
+    if (!episode) {
+        return null;
+    }
+
     return (
         <>
             <div style={{
