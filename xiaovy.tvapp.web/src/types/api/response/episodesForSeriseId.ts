@@ -48,6 +48,7 @@ export interface FluffyContent {
     isAvailable:            boolean;
     broadcasterName:        string;
     productionProviderName: string;
+    thumbnailURL?:          string;
 }
 
 export interface Resume {

@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * 統一ログアウト処理
-   * Firebase認証とlocalStorageの両方をクリアします
+   * Firebase認証、localStorage、sessionStorage、キャッシュの全てをクリアします
    */
   const clearAllAuthState = async () => {
     try {
@@ -84,6 +84,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (TokenName) {
         localStorage.removeItem(TokenName);
       }
+
+      // sessionStorageをクリア
+      sessionStorage.clear();
+
+      // localStorageの全て（ユーザー関連データ）をクリア
+      const keysToRemove = [
+        'favorites',
+        'watchHistory',
+        'profile',
+        'userRole',
+      ];
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+      });
+
+      // ブラウザキャッシュをクリア（IndexedDB）
+      if ('indexedDB' in window && window.indexedDB.databases) {
+        try {
+          const dbs = await window.indexedDB.databases();
+          dbs.forEach(db => {
+            if (db.name) {
+              window.indexedDB.deleteDatabase(db.name);
+            }
+          });
+        } catch (err) {
+          console.warn('IndexedDB クリア処理でエラー:', err);
+        }
+      }
+
+      console.log('✓ ログアウト: 全ての認証状態とキャッシュをクリアしました');
     } catch (error) {
       console.error('ログアウト処理中にエラーが発生しました:', error);
       throw error;

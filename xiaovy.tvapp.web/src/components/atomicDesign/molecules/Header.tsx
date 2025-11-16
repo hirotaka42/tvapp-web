@@ -17,12 +17,11 @@ import {
 import {
   Bars3Icon,
   XMarkIcon,
+  HeartIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon, PlayCircleIcon } from '@heroicons/react/20/solid'
 import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
 import { usePathname } from 'next/navigation';
-import { readFavoriteSeries } from '@/utils/Util/favoriteSeries';
-import { seriesInfo } from '@/types/utils/favoriteSeries';
 import { GroupedDBVideoList } from '@/components/GroupedDBVideoList';
 import { ConfirmationModal } from '@/components/atomicDesign/molecules/ConfirmationModal';
 import { useFirebaseAuth } from '@/contexts/AuthContext';
@@ -31,6 +30,11 @@ import { UserRoleBadge } from '@/components/UserRoleBadge';
 import { ProfileServiceContext } from '@/contexts/ProfileContext';
 import { ProfileAvatar } from '@/components/atomicDesign/atoms/ProfileAvatar';
 import { UserProfile } from '@/types/User';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useFavoritesData } from '@/contexts/FavoritesDataContext';
+import { useWatchHistory } from '@/hooks/useWatchHistory';
+import { useWatchHistoryData } from '@/contexts/WatchHistoryDataContext';
+import { WatchHistoryResponse } from '@/types/WatchHistory';
 
 const defaultContents = [
   { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srcmcqwlmq', icon: PlayCircleIcon },
@@ -51,23 +55,64 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const pathname = usePathname();
-  const [favoriteSeries, setFavoriteSeries] = useState<seriesInfo[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const router = useRouter();
   const profileService = useContext(ProfileServiceContext);
+  const { fetchFavorites, loading: favoritesLoading } = useFavorites();
+  const { favorites: sharedFavorites, setFavorites: setSharedFavorites } = useFavoritesData();
+  const { fetchHistories: fetchWatchHistory, loading: watchHistoryLoading } = useWatchHistory();
+  const { histories: sharedHistories, setHistories: setSharedHistories } = useWatchHistoryData();
+  const { user, clearAllAuthState } = useFirebaseAuth();
 
   useEffect(() => {
-    try {
-      const favContents:seriesInfo[] = readFavoriteSeries();
-      if (favContents) setFavoriteSeries(favContents);
-      console.log(favContents);
-      console.log(favoriteSeries);
-    } catch (error) {
-      console.error("Failed to read favorite series:", error);
+    if (user && !user.isAnonymous) {
+      fetchFavorites();
+      fetchWatchHistory();
     }
-  }, [mobileMenuOpen]);
+  }, [user, fetchFavorites, fetchWatchHistory]);
 
-  const { user, clearAllAuthState } = useFirebaseAuth();
+  // fetchFavoritesから取得したお気に入りを共有Contextに同期
+  useEffect(() => {
+    if (user && !user.isAnonymous) {
+      (async () => {
+        try {
+          const response = await fetch('/api/User/favorites', {
+            headers: {
+              'Authorization': `Bearer ${await user.getIdToken()}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setSharedFavorites(data.favorites || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch favorites:', error);
+        }
+      })();
+    }
+  }, [user, setSharedFavorites]);
+
+  // 視聴履歴を共有Contextに同期
+  useEffect(() => {
+    if (user && !user.isAnonymous) {
+      (async () => {
+        try {
+          const response = await fetch('/api/User/watch-history?limit=20&offset=0', {
+            headers: {
+              'Authorization': `Bearer ${await user.getIdToken()}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setSharedHistories(data.histories || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch watch history:', error);
+        }
+      })();
+    }
+  }, [user, setSharedHistories]);
+
   const { role } = useUserRole();
 
   // プロフィール情報取得
@@ -93,6 +138,7 @@ export default function Header() {
   const handleLogoutConfirm = async () => {
     try {
       await clearAllAuthState();
+      setMobileMenuOpen(false); // サイドバーを閉じる
       toast.success('ログアウトしました');
       router.push('/user/login');
     } catch (error) {
@@ -176,7 +222,7 @@ export default function Header() {
 
           {/* ここから お気に入りリスト*/}
           <Popover className="relative">
-          <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
               お気に入りリスト
               <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400" />
             </PopoverButton>
@@ -185,21 +231,36 @@ export default function Header() {
               className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-lg ring-1 ring-gray-900/5 transition data-[closed]:translate-y-1 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in"
             >
               <div className="p-4">
-                {favoriteSeries.map((item) => (
-                  <div
-                    key={item.seriesId}
-                    className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <div className="flex-auto">
-                      <a href={`/series/${item.seriesId}`} className="block font-semibold text-gray-900 dark:text-gray-100">
-                        {item.seriesTitle}
-                        <span className="absolute inset-0" />
-                      </a>
+                {favoritesLoading ? (
+                  <div className="text-center py-4 text-gray-500">読み込み中...</div>
+                ) : sharedFavorites.length > 0 ? (
+                  sharedFavorites.map((item) => (
+                    <div
+                      key={item.seriesId}
+                      className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      <div className="flex-auto">
+                        <a href={`/series/${item.seriesId}`} className="block font-semibold text-gray-900 dark:text-gray-100">
+                          {item.seriesTitle}
+                          <span className="absolute inset-0" />
+                        </a>
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                    お気に入りはまだありません
                   </div>
-                ))}
+                )}
+                {sharedFavorites.length > 0 && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">
+                    <a href="/user/favorite" className="block text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-semibold">
+                      すべてのお気に入りを見る
+                    </a>
+                  </div>
+                )}
               </div>
-            </PopoverPanel>  
+            </PopoverPanel>
           </Popover>
           {/* ここまで お気に入りリスト*/}
 
@@ -234,16 +295,30 @@ export default function Header() {
         {/* ユーザー管理機能 */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
           {profile && (
-            <a href="/user/profile" className="flex items-center gap-x-2">
-              <ProfileAvatar
-                photoURL={profile.photoURL}
-                userName={profile.userName}
-                size="sm"
-              />
-              <span className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-                {profile.lastName} {profile.firstName}
-              </span>
-            </a>
+            <div className="flex items-center gap-x-2">
+              <a href="/user/profile" className="flex items-center gap-x-2">
+                <ProfileAvatar
+                  photoURL={profile.photoURL}
+                  userName={profile.userName}
+                  size="sm"
+                />
+                <span className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+                  {profile.lastName} {profile.firstName}
+                </span>
+              </a>
+              {user && !user.isAnonymous && (
+                <div className="flex items-center gap-x-1">
+                  {/* お気に入いボタン - 一般ユーザーのみ表示 */}
+                  <button
+                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={user.isAnonymous}
+                    title={user.isAnonymous ? "ログインしてお気に入りを使用できます" : "お気に入りに追加"}
+                  >
+                    <HeartIcon className="w-5 h-5 text-gray-400 hover:text-red-500 dark:hover:text-red-400" />
+                  </button>
+                </div>
+              )}
+            </div>
           )}
           {!profile && (
             <a href="/user/profile" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
@@ -285,9 +360,56 @@ export default function Header() {
           </div>
           <div className="mt-6 flow-root">
             <div className="-my-6 divide-y divide-gray-500/10">
+
+              {/* ========== ユーザー管理セクション（上部） ========== */}
+              <div className="py-6">
+                {/* 1. ユーザープロフィール */}
+                {profile && (
+                  <a
+                    href="/user/profile"
+                    className="flex items-center gap-x-3 rounded-lg px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <ProfileAvatar
+                      photoURL={profile.photoURL}
+                      userName={profile.userName}
+                      size="md"
+                    />
+                    <div>
+                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        {profile.lastName} {profile.firstName}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        @{profile.userName}
+                      </p>
+                    </div>
+                  </a>
+                )}
+
+                {/* 2. ユーザーロール */}
+                {role !== null && (
+                  <div className="mt-4 px-3">
+                    <UserRoleBadge role={role} />
+                  </div>
+                )}
+
+                {/* メール認証状況（未認証の場合のみ表示） */}
+                {user && !user.isAnonymous && !user.emailVerified && (
+                  <a
+                    href="/user/verify-email"
+                    className="mt-4 flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-yellow-800 dark:text-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                    メールアドレスを確認
+                  </a>
+                )}
+              </div>
+
+              {/* ========== コンテンツセクション（中部） ========== */}
               <div className="space-y-2 py-6">
 
-                {/* ここから サンプルリスト*/}
+                {/* 3. サンプルリスト*/}
                 <Disclosure as="div" className="-mx-3">
                   <DisclosureButton className="group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700">
                   サンプルリスト
@@ -310,24 +432,105 @@ export default function Header() {
 
                 {/* ここから お気に入りリスト*/}
                 <Disclosure as="div" className="-mx-3">
-                  <DisclosureButton className="group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <DisclosureButton
+                    onClick={() => {
+                      if (user?.isAnonymous) {
+                        toast.error('この機能はゲストユーザーは使用できません');
+                      }
+                    }}
+                    className={`group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 ${
+                      user?.isAnonymous
+                        ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-50'
+                        : 'text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                    disabled={user?.isAnonymous}
+                  >
                     お気に入りリスト
                     <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none group-data-[open]:rotate-180" />
                   </DisclosureButton>
-                  <DisclosurePanel className="mt-2 space-y-2">
-                    {favoriteSeries.map((item) => (
-                      <DisclosureButton
-                        key={item.seriesTitle}
-                        as="a"
-                        href={`/series/${item.seriesId}`}
-                        className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      >
-                        {item.seriesTitle}
-                      </DisclosureButton>
-                    ))}
-                  </DisclosurePanel>
+                  {!user?.isAnonymous && (
+                    <DisclosurePanel className="mt-2 space-y-2">
+                      {favoritesLoading ? (
+                        <div className="text-sm text-gray-500 px-3 py-2">読み込み中...</div>
+                      ) : sharedFavorites.length > 0 ? (
+                        <>
+                          {sharedFavorites.map((item) => (
+                            <DisclosureButton
+                              key={item.seriesId}
+                              as="a"
+                              href={`/series/${item.seriesId}`}
+                              className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                              {item.seriesTitle}
+                            </DisclosureButton>
+                          ))}
+                          <a
+                            href="/user/favorite"
+                            className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            すべてのお気に入りを見る
+                          </a>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-500 dark:text-gray-400 px-3 py-2">
+                          お気に入りはまだありません
+                        </div>
+                      )}
+                    </DisclosurePanel>
+                  )}
                 </Disclosure>
                 {/* ここまで お気に入りリスト*/}
+
+                {/* ここから 視聴履歴*/}
+                <Disclosure as="div" className="-mx-3">
+                  <DisclosureButton
+                    onClick={() => {
+                      if (user?.isAnonymous) {
+                        toast.error('この機能はゲストユーザーは使用できません');
+                      }
+                    }}
+                    className={`group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 ${
+                      user?.isAnonymous
+                        ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-50'
+                        : 'text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                    disabled={user?.isAnonymous}
+                  >
+                    視聴履歴
+                    <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none group-data-[open]:rotate-180" />
+                  </DisclosureButton>
+                  {!user?.isAnonymous && (
+                    <DisclosurePanel className="mt-2 space-y-2">
+                      {watchHistoryLoading ? (
+                        <div className="text-sm text-gray-500 px-3 py-2">読み込み中...</div>
+                      ) : sharedHistories.length > 0 ? (
+                        <>
+                          {sharedHistories.map((item: WatchHistoryResponse) => (
+                            <DisclosureButton
+                              key={item.id}
+                              as="a"
+                              href={`/episode/${item.episodeId}`}
+                              className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                              {item.episodeTitle}
+                            </DisclosureButton>
+                          ))}
+                          <a
+                            href="/user/history"
+                            className="block rounded-lg py-2 pl-6 pr-3 text-sm font-semibold leading-7 text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            すべての視聴履歴を見る
+                          </a>
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-500 dark:text-gray-400 px-3 py-2">
+                          視聴履歴はまだありません
+                        </div>
+                      )}
+                    </DisclosurePanel>
+                  )}
+                </Disclosure>
+                {/* ここまで 視聴履歴*/}
 
                 {/* ここから DBリスト*/}
                 <Disclosure as="div" className="-mx-3">
@@ -342,84 +545,20 @@ export default function Header() {
                   </DisclosurePanel>
                 </Disclosure>
                 {/* ここまで DBリスト*/}
-                <a
-                  href="#"
-                  onClick={handleComigSoon}
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  ジャンル別ランキング(coming soon...)
-                </a>
-                <a
-                  href="/stream"
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  JP_M3U Player (Test)
-                </a>
-                <div
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  ダークモード <ThemeToggleSwitch />
-                </div>
               </div>
-              
+
+              {/* ========== 設定セクション（下部） ========== */}
               <div className="py-6">
-                {/* プロフィール画像と名前 */}
-                {profile && (
-                  <a
-                    href="/user/profile"
-                    className="-mx-3 mb-4 flex items-center gap-x-3 rounded-lg px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <ProfileAvatar
-                      photoURL={profile.photoURL}
-                      userName={profile.userName}
-                      size="md"
-                    />
-                    <div>
-                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                        {profile.lastName} {profile.firstName}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        @{profile.userName}
-                      </p>
-                    </div>
-                  </a>
-                )}
 
-                {/* ロール表示 */}
-                {role !== null && (
-                  <div className="-mx-3 mb-4 px-3">
-                    <UserRoleBadge role={role} />
-                  </div>
-                )}
+                {/* 6. ダークモード */}
+                <div className="flex items-center justify-between -mx-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <span className="text-base font-semibold leading-7 text-gray-900 dark:text-gray-100">
+                    ダークモード
+                  </span>
+                  <ThemeToggleSwitch />
+                </div>
 
-                {!profile && (
-                  <a
-                    href="/user/profile"
-                    className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    プロファイル
-                  </a>
-                )}
-
-                {/* メール認証状況（未認証の場合のみ表示） */}
-                {user && !user.isAnonymous && !user.emailVerified && (
-                  <a
-                    href="/user/verify-email"
-                    className="-mx-3 mt-2 flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-yellow-800 dark:text-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
-                  >
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                    </svg>
-                    メールアドレスを確認
-                  </a>
-                )}
-
-                <button
-                  onClick={handleComigSoon}
-                  className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  バックアップ(coming soon...)
-                </button>
+                {/* 7. ログアウト */}
                 <button
                   onClick={handleLogoutClick}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
