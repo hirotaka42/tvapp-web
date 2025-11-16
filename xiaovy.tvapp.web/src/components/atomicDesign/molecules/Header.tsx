@@ -62,7 +62,7 @@ export default function Header() {
     }
   }, [mobileMenuOpen]);
 
-  const { clearAllAuthState } = useFirebaseAuth();
+  const { user, clearAllAuthState } = useFirebaseAuth();
   const { role } = useUserRole();
 
   const handleLogoutClick = () => {
@@ -338,6 +338,20 @@ export default function Header() {
                 >
                   プロファイル
                 </a>
+
+                {/* メール認証状況（未認証の場合のみ表示） */}
+                {user && !user.isAnonymous && !user.emailVerified && (
+                  <a
+                    href="/user/verify-email"
+                    className="-mx-3 mt-2 flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-yellow-800 dark:text-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                    メールアドレスを確認
+                  </a>
+                )}
+
                 <button
                   onClick={handleComigSoon}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
