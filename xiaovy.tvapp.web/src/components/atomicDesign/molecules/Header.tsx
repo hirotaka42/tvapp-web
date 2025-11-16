@@ -250,6 +250,12 @@ export default function Header() {
               プロフィール
             </a>
           )}
+          <a href="/user/favorite" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            お気に入り
+          </a>
+          <a href="/user/history" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+            視聴履歴
+          </a>
           <a onClick={handleLogoutClick} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 cursor-pointer">
             ログアウト
           </a>
@@ -414,6 +420,18 @@ export default function Header() {
                   </a>
                 )}
 
+                <a
+                  href="/user/favorite"
+                  className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  お気に入り
+                </a>
+                <a
+                  href="/user/history"
+                  className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  視聴履歴
+                </a>
                 <button
                   onClick={handleComigSoon}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
