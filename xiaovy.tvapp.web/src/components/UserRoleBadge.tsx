@@ -6,6 +6,11 @@ interface UserRoleBadgeProps {
 }
 
 const roleConfig = {
+  [UserRole.GUEST]: {
+    label: 'ゲストユーザー(機能制限)',
+    color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    darkColor: 'dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-700',
+  },
   [UserRole.GENERAL]: {
     label: '一般ユーザー',
     color: 'bg-gray-100 text-gray-800 border-gray-300',
@@ -34,13 +39,17 @@ const roleConfig = {
 };
 
 export function UserRoleBadge({ role, className = '' }: UserRoleBadgeProps) {
-  const config = roleConfig[role];
+  const config = roleConfig[role] || {
+    label: `不明なロール (${role})`,
+    color: 'bg-gray-100 text-gray-800 border-gray-300',
+    darkColor: 'dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600',
+  };
 
   return (
     <span
       className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${config.color} ${config.darkColor} ${className}`}
     >
-      {config.label} (Role: {role})
+      {config.label}
     </span>
   );
 }

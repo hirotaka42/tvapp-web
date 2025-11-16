@@ -46,21 +46,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     if (!auth) throw new Error('Firebase Auth is not initialized');
-    return signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    // IDトークンをlocalStorageに保存（暫定対応）
+    const token = await userCredential.user.getIdToken();
+    const tokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
+    if (tokenName) {
+      localStorage.setItem(tokenName, token);
+    }
+    return userCredential;
   };
 
   const signUp = async (email: string, password: string) => {
     if (!auth) throw new Error('Firebase Auth is not initialized');
-    return createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    // IDトークンをlocalStorageに保存（暫定対応）
+    const token = await userCredential.user.getIdToken();
+    const tokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
+    if (tokenName) {
+      localStorage.setItem(tokenName, token);
+    }
+    return userCredential;
   };
 
   /**
    * ゲスト（匿名）ログイン
    * Firebase匿名認証を使用してログインします
+   * ロール-1をカスタムクレイムとして設定
    */
   const signInAsGuest = async () => {
     if (!auth) throw new Error('Firebase Auth is not initialized');
-    return signInAnonymously(auth);
+    const userCredential = await signInAnonymously(auth);
+
+    // ゲストユーザーのロール設定はサーバー側で実施するため、
+    // ここではトークンを取得・保存
+    const token = await userCredential.user.getIdToken();
+    const tokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
+    if (tokenName) {
+      localStorage.setItem(tokenName, token);
+    }
+
+    return userCredential;
   };
 
   const logout = async () => {

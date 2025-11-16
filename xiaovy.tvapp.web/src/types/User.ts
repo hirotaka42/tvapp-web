@@ -1,5 +1,6 @@
 // src/types/User.ts
 export enum UserRole {
+  GUEST = -1,         // ゲストユーザー（機能制限）
   GENERAL = 0,        // 一般ユーザー
   DL_ENABLED = 1,     // DL有効化
   TV_ENABLED = 2,     // TV有効化
