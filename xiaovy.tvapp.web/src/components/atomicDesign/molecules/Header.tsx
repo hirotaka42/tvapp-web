@@ -26,6 +26,8 @@ import { seriesInfo } from '@/types/utils/favoriteSeries';
 import { GroupedDBVideoList } from '@/components/GroupedDBVideoList';
 import { ConfirmationModal } from '@/components/atomicDesign/molecules/ConfirmationModal';
 import { useFirebaseAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
+import { UserRoleBadge } from '@/components/UserRoleBadge';
 
 const defaultContents = [
   { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srcmcqwlmq', icon: PlayCircleIcon },
@@ -60,7 +62,8 @@ export default function Header() {
     }
   }, [mobileMenuOpen]);
 
-  const { clearAllAuthState } = useFirebaseAuth();
+  const { user, clearAllAuthState } = useFirebaseAuth();
+  const { role } = useUserRole();
 
   const handleLogoutClick = () => {
     setLogoutModalOpen(true);
@@ -208,7 +211,7 @@ export default function Header() {
         </PopoverGroup>
 
         {/* ユーザー管理機能 */}
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
+        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
           <a onClick={handleLogoutClick} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 cursor-pointer">
             ログアウト
           </a>
@@ -322,12 +325,33 @@ export default function Header() {
               </div>
               
               <div className="py-6">
-                <button
-                  onClick={handleComigSoon}
+                {/* ロール表示 */}
+                {role !== null && (
+                  <div className="-mx-3 mb-4 px-3">
+                    <UserRoleBadge role={role} />
+                  </div>
+                )}
+
+                <a
+                  href="/user/profile"
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  My アカウント(coming soon...)
-                </button>
+                  プロファイル
+                </a>
+
+                {/* メール認証状況（未認証の場合のみ表示） */}
+                {user && !user.isAnonymous && !user.emailVerified && (
+                  <a
+                    href="/user/verify-email"
+                    className="-mx-3 mt-2 flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-yellow-800 dark:text-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                    メールアドレスを確認
+                  </a>
+                )}
+
                 <button
                   onClick={handleComigSoon}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"

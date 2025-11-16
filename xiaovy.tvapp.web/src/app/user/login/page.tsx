@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect, ChangeEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useFirebaseAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import SignInForms from '@/components/atomicDesign/molecules/Forms/sign-in-forms';
@@ -15,6 +15,7 @@ interface FormData {
 const Login: React.FC = () => {
   const { user, signIn } = useFirebaseAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
@@ -41,8 +42,18 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      await signIn(formData.Email, formData.Password);
-      console.log('ログイン成功');
+      const userCredential = await signIn(formData.Email, formData.Password);
+      console.log('ログイン成功:', userCredential.user.uid);
+
+      // メールアドレス確認チェック
+      if (!userCredential.user.emailVerified) {
+        console.warn('[WARNING] メールアドレスが未確認です');
+        toast.error('メールアドレスの確認が完了していません');
+        router.push('/user/verify-email');
+        return;
+      }
+
+      console.log('[SUCCESS] ログイン成功（メール確認済み）');
       toast.success('ログインしました');
       router.push('/');
     } catch (error) {
@@ -73,6 +84,13 @@ const Login: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // メールアドレス確認完了メッセージの表示
+  useEffect(() => {
+    if (searchParams.get('verified') === 'true') {
+      toast.success('メールアドレスの確認が完了しました');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user) {
