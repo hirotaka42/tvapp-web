@@ -7,6 +7,8 @@ import { getSasUrl } from '@/utils/getSasUrl';
 import { getExpiryStatus } from '@/utils/formatExpiryDate';
 import { groupVideosBySeriesAndSeason, formatSeasonName } from '@/utils/groupVideos';
 import { GroupedVideoItem } from '@/components/GroupedVideoItem';
+import { useUserRole } from '@/hooks/useUserRole';
+import { UserRole } from '@/types/User';
 
 // モーダルコンポーネント
 const VideoModal: React.FC<{
@@ -44,6 +46,7 @@ interface GroupedDBVideoListProps {
 
 export const GroupedDBVideoList: React.FC<GroupedDBVideoListProps> = ({ maxItems }) => {
   const { videos, loading, error } = useCosmosVideos();
+  const { role } = useUserRole();
   const [selectedVideo, setSelectedVideo] = useState<VideoDownload | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
@@ -196,6 +199,21 @@ export const GroupedDBVideoList: React.FC<GroupedDBVideoListProps> = ({ maxItems
   }
 
   if (error) {
+    // ゲストユーザーの場合は機能制限メッセージを表示
+    if (role === UserRole.GUEST) {
+      return (
+        <div className="p-4 text-center">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
+            <p className="text-yellow-800 dark:text-yellow-200 font-semibold">🔒 機能制限中</p>
+            <p className="text-yellow-700 dark:text-yellow-300 text-sm mt-1">
+              ゲストユーザーはDBリストの利用ができません
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // その他のユーザーの場合はエラーメッセージを表示
     return (
       <div className="p-4 text-center">
         <p className="text-red-600 dark:text-red-400">エラー: {error}</p>
