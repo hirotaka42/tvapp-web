@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
       phoneNumber: phoneNumber || null,
       phoneNumberVerified: false,
       role: userRole,
+      photoURL: null,
       firstName,
       lastName,
       birthday: birthday || null,

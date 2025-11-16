@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       phoneNumber: null,
       phoneNumberVerified: false,
       role: UserRole.GENERAL,
+      photoURL: null,
       firstName: "ゲスト",
       lastName: "ユーザー",
       birthday: null,

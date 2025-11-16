@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// Firebase Storage セキュリティルール
+// プロフィール画像のアップロード・削除を制御
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ユーザープロフィール画像のルール
+    // パス: users/{userId}/profile.{extension}
+    match /users/{userId}/{fileName} {
+
+      // ファイル名がprofile.{ext}の形式であることを確認
+      function isProfileImage() {
+        return fileName.matches('profile\\.(jpg|jpeg|png|webp)');
+      }
+
+      // ファイルサイズが5MB以内であることを確認
+      function isValidSize() {
+        return request.resource.size <= 5 * 1024 * 1024;
+      }
+
+      // ファイルタイプが画像であることを確認
+      function isValidContentType() {
+        return request.resource.contentType.matches('image/(jpeg|png|webp)');
+      }
+
+      // 読み取り権限: 認証済みユーザーは全てのプロフィール画像を読める
+      // （プロフィール表示時に他ユーザーの画像も表示するため）
+      allow read: if request.auth != null;
+
+      // 書き込み権限: 認証済みユーザーは自分のプロフィール画像のみ書き込める
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && isProfileImage()
+                   && isValidSize()
+                   && isValidContentType();
+
+      // 削除権限: 認証済みユーザーは自分のプロフィール画像のみ削除できる
+      allow delete: if request.auth != null
+                    && request.auth.uid == userId
+                    && isProfileImage();
+    }
+
+    // その他のパスへのアクセスは全て拒否
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

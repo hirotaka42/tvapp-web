@@ -14,6 +14,8 @@ import { RankingService } from "@/services/implementation/RankingService";
 import { RankingServiceContext } from "@/contexts/RankingContext";
 import { SeriesService } from '@/services/implementation/SeriseService';
 import { SeriesServiceContext } from "@/contexts/SeriesContext";
+import { ProfileService } from "@/services/implementation/ProfileService";
+import { ProfileServiceContext } from "@/contexts/ProfileContext";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 
@@ -28,13 +30,15 @@ export const Providers: FC<PropsWithChildren> = ({ children }) => {
               <EpisodeServiceContext.Provider value={new EpisodeService()}>
                 <RankingServiceContext.Provider value={new RankingService()}>
                   <StreamServiceContext.Provider value={new StreamService()}>
-                    <Toaster
-                      position="bottom-right"
-                      toastOptions={{
-                        duration: 4000,
-                      }}
-                    />
-                      {children}
+                    <ProfileServiceContext.Provider value={new ProfileService()}>
+                      <Toaster
+                        position="bottom-right"
+                        toastOptions={{
+                          duration: 4000,
+                        }}
+                      />
+                        {children}
+                    </ProfileServiceContext.Provider>
                   </StreamServiceContext.Provider>
                 </RankingServiceContext.Provider>
               </EpisodeServiceContext.Provider>

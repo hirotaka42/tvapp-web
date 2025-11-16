@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -28,6 +28,9 @@ import { ConfirmationModal } from '@/components/atomicDesign/molecules/Confirmat
 import { useFirebaseAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { UserRoleBadge } from '@/components/UserRoleBadge';
+import { ProfileServiceContext } from '@/contexts/ProfileContext';
+import { ProfileAvatar } from '@/components/atomicDesign/atoms/ProfileAvatar';
+import { UserProfile } from '@/types/User';
 
 const defaultContents = [
   { seriesTitle: 'カズレーザーと学ぶ。', seriesId: 'srcmcqwlmq', icon: PlayCircleIcon },
@@ -49,7 +52,9 @@ export default function Header() {
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const pathname = usePathname();
   const [favoriteSeries, setFavoriteSeries] = useState<seriesInfo[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const router = useRouter();
+  const profileService = useContext(ProfileServiceContext);
 
   useEffect(() => {
     try {
@@ -64,6 +69,22 @@ export default function Header() {
 
   const { user, clearAllAuthState } = useFirebaseAuth();
   const { role } = useUserRole();
+
+  // プロフィール情報取得
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user && !user.isAnonymous && profileService) {
+        try {
+          const profileData = await profileService.getProfile();
+          setProfile(profileData);
+        } catch (error) {
+          console.error('Failed to fetch profile:', error);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [user, profileService]);
 
   const handleLogoutClick = () => {
     setLogoutModalOpen(true);
@@ -212,6 +233,23 @@ export default function Header() {
 
         {/* ユーザー管理機能 */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
+          {profile && (
+            <a href="/user/profile" className="flex items-center gap-x-2">
+              <ProfileAvatar
+                photoURL={profile.photoURL}
+                userName={profile.userName}
+                size="sm"
+              />
+              <span className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+                {profile.lastName} {profile.firstName}
+              </span>
+            </a>
+          )}
+          {!profile && (
+            <a href="/user/profile" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
+              プロフィール
+            </a>
+          )}
           <a onClick={handleLogoutClick} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 cursor-pointer">
             ログアウト
           </a>
@@ -325,6 +363,28 @@ export default function Header() {
               </div>
               
               <div className="py-6">
+                {/* プロフィール画像と名前 */}
+                {profile && (
+                  <a
+                    href="/user/profile"
+                    className="-mx-3 mb-4 flex items-center gap-x-3 rounded-lg px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <ProfileAvatar
+                      photoURL={profile.photoURL}
+                      userName={profile.userName}
+                      size="md"
+                    />
+                    <div>
+                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        {profile.lastName} {profile.firstName}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        @{profile.userName}
+                      </p>
+                    </div>
+                  </a>
+                )}
+
                 {/* ロール表示 */}
                 {role !== null && (
                   <div className="-mx-3 mb-4 px-3">
@@ -332,12 +392,14 @@ export default function Header() {
                   </div>
                 )}
 
-                <a
-                  href="/user/profile"
-                  className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  プロファイル
-                </a>
+                {!profile && (
+                  <a
+                    href="/user/profile"
+                    className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    プロファイル
+                  </a>
+                )}
 
                 {/* メール認証状況（未認証の場合のみ表示） */}
                 {user && !user.isAnonymous && !user.emailVerified && (
