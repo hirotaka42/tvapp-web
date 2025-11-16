@@ -309,9 +309,56 @@ export default function Header() {
           </div>
           <div className="mt-6 flow-root">
             <div className="-my-6 divide-y divide-gray-500/10">
+
+              {/* ========== ユーザー管理セクション（上部） ========== */}
+              <div className="py-6">
+                {/* 1. ユーザープロフィール */}
+                {profile && (
+                  <a
+                    href="/user/profile"
+                    className="flex items-center gap-x-3 rounded-lg px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <ProfileAvatar
+                      photoURL={profile.photoURL}
+                      userName={profile.userName}
+                      size="md"
+                    />
+                    <div>
+                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        {profile.lastName} {profile.firstName}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        @{profile.userName}
+                      </p>
+                    </div>
+                  </a>
+                )}
+
+                {/* 2. ユーザーロール */}
+                {role !== null && (
+                  <div className="mt-4 px-3">
+                    <UserRoleBadge role={role} />
+                  </div>
+                )}
+
+                {/* メール認証状況（未認証の場合のみ表示） */}
+                {user && !user.isAnonymous && !user.emailVerified && (
+                  <a
+                    href="/user/verify-email"
+                    className="mt-4 flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-yellow-800 dark:text-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                    メールアドレスを確認
+                  </a>
+                )}
+              </div>
+
+              {/* ========== コンテンツセクション（中部） ========== */}
               <div className="space-y-2 py-6">
 
-                {/* ここから サンプルリスト*/}
+                {/* 3. サンプルリスト*/}
                 <Disclosure as="div" className="-mx-3">
                   <DisclosureButton className="group flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700">
                   サンプルリスト
@@ -382,84 +429,20 @@ export default function Header() {
                   </DisclosurePanel>
                 </Disclosure>
                 {/* ここまで DBリスト*/}
-                <a
-                  href="#"
-                  onClick={handleComigSoon}
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  ジャンル別ランキング(coming soon...)
-                </a>
-                <a
-                  href="/stream"
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  JP_M3U Player (Test)
-                </a>
-                <div
-                  className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  ダークモード <ThemeToggleSwitch />
-                </div>
               </div>
-              
+
+              {/* ========== 設定セクション（下部） ========== */}
               <div className="py-6">
-                {/* プロフィール画像と名前 */}
-                {profile && (
-                  <a
-                    href="/user/profile"
-                    className="-mx-3 mb-4 flex items-center gap-x-3 rounded-lg px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <ProfileAvatar
-                      photoURL={profile.photoURL}
-                      userName={profile.userName}
-                      size="md"
-                    />
-                    <div>
-                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                        {profile.lastName} {profile.firstName}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        @{profile.userName}
-                      </p>
-                    </div>
-                  </a>
-                )}
 
-                {/* ロール表示 */}
-                {role !== null && (
-                  <div className="-mx-3 mb-4 px-3">
-                    <UserRoleBadge role={role} />
-                  </div>
-                )}
+                {/* 6. ダークモード */}
+                <div className="flex items-center justify-between -mx-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <span className="text-base font-semibold leading-7 text-gray-900 dark:text-gray-100">
+                    ダークモード
+                  </span>
+                  <ThemeToggleSwitch />
+                </div>
 
-                {!profile && (
-                  <a
-                    href="/user/profile"
-                    className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    プロファイル
-                  </a>
-                )}
-
-                {/* メール認証状況（未認証の場合のみ表示） */}
-                {user && !user.isAnonymous && !user.emailVerified && (
-                  <a
-                    href="/user/verify-email"
-                    className="-mx-3 mt-2 flex items-center gap-2 rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-yellow-800 dark:text-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
-                  >
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                    </svg>
-                    メールアドレスを確認
-                  </a>
-                )}
-
-                <button
-                  onClick={handleComigSoon}
-                  className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  バックアップ(coming soon...)
-                </button>
+                {/* 7. ログアウト */}
                 <button
                   onClick={handleLogoutClick}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"

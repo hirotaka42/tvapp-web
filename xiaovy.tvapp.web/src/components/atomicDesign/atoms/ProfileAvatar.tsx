@@ -3,20 +3,22 @@ import Image from 'next/image';
 interface ProfileAvatarProps {
   photoURL: string | null;
   userName: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
 
 const sizeClasses = {
+  xs: 'w-8 h-8 text-xs',
   sm: 'w-10 h-10 text-sm',
-  md: 'w-20 h-20 text-base',
+  md: 'w-12 h-12 text-base',
   lg: 'w-32 h-32 text-2xl',
   xl: 'w-48 h-48 text-4xl',
 };
 
 const sizePixels = {
+  xs: 32,
   sm: 40,
-  md: 80,
+  md: 48,
   lg: 128,
   xl: 192,
 };
