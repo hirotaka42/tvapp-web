@@ -1,6 +1,7 @@
 {
   "name": "xiaovy.tvapp.web",
-  "version": "0.1.0",
+  "version": "1.4.0",
+  "description": "あなたの好きなをもっと手軽に。日本最大級のストリーミングサービスをもっと便利に。",
   "private": true,
   "scripts": {
     "dev": "next dev",
