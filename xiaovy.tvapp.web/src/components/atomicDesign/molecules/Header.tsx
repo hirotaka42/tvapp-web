@@ -33,6 +33,7 @@ import { UserProfile } from '@/types/User';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useFavoritesData } from '@/contexts/FavoritesDataContext';
 import { useWatchHistory } from '@/hooks/useWatchHistory';
+import { useWatchHistoryData } from '@/contexts/WatchHistoryDataContext';
 import { WatchHistoryResponse } from '@/types/WatchHistory';
 
 const defaultContents = [
@@ -59,7 +60,8 @@ export default function Header() {
   const profileService = useContext(ProfileServiceContext);
   const { fetchFavorites, loading: favoritesLoading } = useFavorites();
   const { favorites: sharedFavorites, setFavorites: setSharedFavorites } = useFavoritesData();
-  const { histories: watchHistory, fetchHistories: fetchWatchHistory, loading: watchHistoryLoading } = useWatchHistory();
+  const { fetchHistories: fetchWatchHistory, loading: watchHistoryLoading } = useWatchHistory();
+  const { histories: sharedHistories, setHistories: setSharedHistories } = useWatchHistoryData();
   const { user, clearAllAuthState } = useFirebaseAuth();
 
   useEffect(() => {
@@ -89,6 +91,27 @@ export default function Header() {
       })();
     }
   }, [user, setSharedFavorites]);
+
+  // 視聴履歴を共有Contextに同期
+  useEffect(() => {
+    if (user && !user.isAnonymous) {
+      (async () => {
+        try {
+          const response = await fetch('/api/User/watch-history?limit=20&offset=0', {
+            headers: {
+              'Authorization': `Bearer ${await user.getIdToken()}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setSharedHistories(data.histories || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch watch history:', error);
+        }
+      })();
+    }
+  }, [user, setSharedHistories]);
 
   const { role } = useUserRole();
 
@@ -480,9 +503,9 @@ export default function Header() {
                     <DisclosurePanel className="mt-2 space-y-2">
                       {watchHistoryLoading ? (
                         <div className="text-sm text-gray-500 px-3 py-2">読み込み中...</div>
-                      ) : watchHistory.length > 0 ? (
+                      ) : sharedHistories.length > 0 ? (
                         <>
-                          {watchHistory.map((item: WatchHistoryResponse) => (
+                          {sharedHistories.map((item: WatchHistoryResponse) => (
                             <DisclosureButton
                               key={item.id}
                               as="a"
