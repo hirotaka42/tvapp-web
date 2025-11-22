@@ -9,15 +9,10 @@ import {
   Disclosure,
   DisclosureButton,
   DisclosurePanel,
-  Popover,
-  PopoverButton,
-  PopoverGroup,
-  PopoverPanel,
 } from '@headlessui/react'
 import {
   Bars3Icon,
   XMarkIcon,
-  HeartIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon, PlayCircleIcon } from '@heroicons/react/20/solid'
 import { ThemeToggleSwitch } from "@/app/themeToggleSwitch";
@@ -147,9 +142,6 @@ export default function Header() {
     }
   };
 
-  const handleComigSoon = () => {
-    toast('現在開発中です');
-  }
   // useAuth内のRouter処理で、ログインページへのリダイレクトが矯正されてしまう
   // そのため、Headerではアカウント確認を行わない(暫定対応)
   // TODO // パスをカスタマイズした際にバグになるため、修正が必要
@@ -161,7 +153,7 @@ export default function Header() {
     <>
     <header className="bg-white dark:bg-black sticky top-0 z-10">
       <nav aria-label="Global" className="mx-auto flex max-w-7xl items-center justify-between pt-2 pb-2 pl-6 pr-6 lg:px-8">
-        <div className="flex lg:flex-1">
+        <div className="flex flex-1">
           <a href="/" className="-m-1.5 p-1.5">
             <span className="sr-only">Your Company</span>
             <svg
@@ -174,8 +166,7 @@ export default function Header() {
             </svg>
           </a>
         </div>
-        {/* ここからPC表示 小のヘッダー lg:hidden */}
-        <div className="flex lg:hidden">
+        <div className="flex">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
@@ -185,158 +176,12 @@ export default function Header() {
             <Bars3Icon aria-hidden="true" className="h-6 w-6" />
           </button>
         </div>
-        {/* ここまでPC表示 小のヘッダー */}
-        {/* ここからPC表示 大のヘッダー hidden lg:flex */}
-        <PopoverGroup className="hidden lg:flex lg:gap-x-12">
-
-          {/* ここから サンプルリスト*/}
-          <Popover className="relative">
-            <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-              サンプル
-              <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400" />
-            </PopoverButton>
-            <PopoverPanel
-              transition
-              className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-lg ring-1 ring-gray-900/5 transition data-[closed]:translate-y-1 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in"
-            >
-              <div className="grid grid-cols-2 divide-x divide-gray-900/5 bg-gray-50 dark:bg-gray-700">
-                {defaultContents.map((item) => (
-                  <a
-                    key={item.seriesTitle}
-                    href={`/series/${item.seriesId}`}
-                    className="flex items-center justify-start gap-x-2.5 p-3 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600"
-                    style={{
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    <item.icon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400 dark:text-gray-300" />
-                    {item.seriesTitle}
-                  </a>
-                ))}
-              </div>
-            </PopoverPanel>
-          </Popover>
-          {/* ここまで サンプルリスト*/}
-
-          {/* ここから お気に入りリスト*/}
-          <Popover className="relative">
-            <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-              お気に入りリスト
-              <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400" />
-            </PopoverButton>
-            <PopoverPanel
-              transition
-              className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-lg ring-1 ring-gray-900/5 transition data-[closed]:translate-y-1 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in"
-            >
-              <div className="p-4">
-                {favoritesLoading ? (
-                  <div className="text-center py-4 text-gray-500">読み込み中...</div>
-                ) : sharedFavorites.length > 0 ? (
-                  sharedFavorites.map((item) => (
-                    <div
-                      key={item.seriesId}
-                      className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <div className="flex-auto">
-                        <a href={`/series/${item.seriesId}`} className="block font-semibold text-gray-900 dark:text-gray-100">
-                          {item.seriesTitle}
-                          <span className="absolute inset-0" />
-                        </a>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                    お気に入りはまだありません
-                  </div>
-                )}
-                {sharedFavorites.length > 0 && (
-                  <div className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">
-                    <a href="/user/favorite" className="block text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-semibold">
-                      すべてのお気に入りを見る
-                    </a>
-                  </div>
-                )}
-              </div>
-            </PopoverPanel>
-          </Popover>
-          {/* ここまで お気に入りリスト*/}
-
-          {/* ここから DBリスト*/}
-          <Popover className="relative">
-            <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-              DBリスト
-              <ChevronDownIcon aria-hidden="true" className="h-5 w-5 flex-none text-gray-400" />
-            </PopoverButton>
-            <PopoverPanel
-              transition
-              className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-lg ring-1 ring-gray-900/5 transition data-[closed]:translate-y-1 data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150 data-[enter]:ease-out data-[leave]:ease-in"
-            >
-              <div className="max-h-96 overflow-y-auto">
-                <GroupedDBVideoList />
-              </div>
-            </PopoverPanel>
-          </Popover>
-          {/* ここまで DBリスト*/}
-
-          {/* ここから 50件ランキング*/}
-          <a href="#" onClick={handleComigSoon} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-            ジャンル別ランキング
-          </a>
-          {/* ここまで 50件ランキング*/}
-
-          <a href="/stream" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-            JP_M3U Player (Test)
-          </a>
-        </PopoverGroup>
-
-        {/* ユーザー管理機能 */}
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
-          {profile && (
-            <div className="flex items-center gap-x-2">
-              <a href="/user/profile" className="flex items-center gap-x-2">
-                <ProfileAvatar
-                  photoURL={profile.photoURL}
-                  userName={profile.userName}
-                  size="sm"
-                />
-                <span className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-                  {profile.lastName} {profile.firstName}
-                </span>
-              </a>
-              {user && !user.isAnonymous && (
-                <div className="flex items-center gap-x-1">
-                  {/* お気に入いボタン - 一般ユーザーのみ表示 */}
-                  <button
-                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={user.isAnonymous}
-                    title={user.isAnonymous ? "ログインしてお気に入りを使用できます" : "お気に入りに追加"}
-                  >
-                    <HeartIcon className="w-5 h-5 text-gray-400 hover:text-red-500 dark:hover:text-red-400" />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-          {!profile && (
-            <a href="/user/profile" className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">
-              プロフィール
-            </a>
-          )}
-          <a onClick={handleLogoutClick} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100 cursor-pointer">
-            ログアウト
-          </a>
-        </div>
-        {/* ユーザー管理機能ここまで */}
-        {/* ここまでPC表示 大のヘッダー */}
       </nav>
 
       {/* ここからサイドバー */}
-      <Dialog open={mobileMenuOpen} onClose={setMobileMenuOpen} className="lg:hidden">
+      <Dialog open={mobileMenuOpen} onClose={setMobileMenuOpen}>
         <div className="fixed inset-0 z-50" />
-        <DialogPanel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white dark:bg-gray-800 px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
+        <DialogPanel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white dark:bg-gray-800 px-6 py-6 md:max-w-sm md:ring-1 md:ring-gray-900/10">
           <div className="flex items-center justify-between">
             <a href="#" className="-m-1.5 p-1.5">
               <span className="sr-only">Your Company</span>
