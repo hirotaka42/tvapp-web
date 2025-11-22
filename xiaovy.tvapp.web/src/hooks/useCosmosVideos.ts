@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { VideoDownload, VideoDownloadResponse } from '@/types/VideoDownload';
+import { useFirebaseAuth } from '@/contexts/AuthContext';
 
 // グローバルキャッシュ（コンポーネント間で共有）
 let cachedData: VideoDownload[] | null = null;
@@ -10,14 +11,37 @@ export const useCosmosVideos = () => {
   const [videos, setVideos] = useState<VideoDownload[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useFirebaseAuth();
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const getValidToken = async (): Promise<string | null> => {
+    // ユーザーがログインしている場合は、常に新しいトークンを取得
+    if (user && !user.isAnonymous) {
+      try {
+        const freshToken = await user.getIdToken(true); // forceRefresh = true
+        const tokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
+        if (tokenName) {
+          localStorage.setItem(tokenName, freshToken);
+        }
+        return freshToken;
+      } catch (error) {
+        console.error('Failed to get fresh token:', error);
+        // フォールバック: localStorageから取得
+      }
+    }
+
+    // localStorageからトークンを取得（フォールバック）
+    return localStorage.getItem(process.env.NEXT_PUBLIC_IDTOKEN_NAME || 'IdToken') ||
+           process.env.NEXT_PUBLIC_BETA_IDTOKEN ||
+           null;
+  };
 
   const fetchVideos = async (retryCount = 0) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // キャッシュが有効な場合は使用
       const now = Date.now();
       if (cachedData && (now - cacheTimestamp) < CACHE_DURATION) {
@@ -26,10 +50,10 @@ export const useCosmosVideos = () => {
         setLoading(false);
         return;
       }
-      
-      // ローカルストレージからトークンを取得
-      const token = localStorage.getItem('IdToken') || process.env.NEXT_PUBLIC_BETA_IDTOKEN;
-      
+
+      // トークンを取得（有効なものを自動更新）
+      const token = await getValidToken();
+
       if (!token) {
         throw new Error('認証トークンが見つかりません');
       }
@@ -51,7 +75,16 @@ export const useCosmosVideos = () => {
         console.warn(`Rate limited, retrying... (attempt ${retryCount + 1})`);
         return fetchVideos(retryCount + 1);
       }
-      
+
+      // 401 (Unauthorized) の場合はトークンをリセットしてリトライ
+      if (response.status === 401 && retryCount === 0) {
+        console.warn('Token expired or invalid, attempting to refresh...');
+        // キャッシュをクリアして再度リトライ
+        cachedData = null;
+        cacheTimestamp = 0;
+        return fetchVideos(retryCount + 1);
+      }
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}...`);
@@ -80,7 +113,8 @@ export const useCosmosVideos = () => {
 
   useEffect(() => {
     fetchVideos();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   return {
     videos,
