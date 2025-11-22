@@ -16,10 +16,37 @@ export function ProfileEditForm({ currentProfile }: ProfileEditFormProps) {
   const router = useRouter();
   const service = useContext(ProfileServiceContext);
 
+  const getRoleLabel = (role: number | string): string => {
+    // 文字列の場合は数値に変換
+    const roleNum = typeof role === 'string' ? parseInt(role, 10) : role;
+
+    // 特殊ケース：文字列 'user' は 0（一般ユーザー）に該当
+    if (role === 'user' || role === 'GENERAL') {
+      return '一般ユーザー';
+    }
+
+    switch (roleNum) {
+      case -1:
+        return 'ゲストユーザー（機能制限）';
+      case 0:
+        return '一般ユーザー';
+      case 1:
+        return 'DL有効化';
+      case 2:
+        return 'TV有効化';
+      case 10:
+        return 'プレビュー';
+      case 99:
+        return '特権ユーザー';
+      default:
+        return `ロール${role}`;
+    }
+  };
+
   const [formData, setFormData] = useState<UpdateProfileRequest>({
     nickname: currentProfile.nickname || '',
-    birthday: currentProfile.birthday || '',
     phoneNumber: currentProfile.phoneNumber || '',
+    birthday: currentProfile.birthday || '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -91,71 +118,116 @@ export function ProfileEditForm({ currentProfile }: ProfileEditFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* ニックネーム */}
-      <div>
-        <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-          ニックネーム
-        </label>
-        <input
-          id="nickname"
-          type="text"
-          value={formData.nickname || ''}
-          onChange={(e) => handleChange('nickname', e.target.value)}
-          disabled={isSubmitting}
-          maxLength={20}
-          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${
-            errors.nickname ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-          }`}
-          placeholder="Taro"
-        />
-        {errors.nickname && (
-          <p className="mt-1 text-sm text-red-600">{errors.nickname}</p>
-        )}
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          {(formData.nickname || '').length}/20
-        </p>
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {/* 基本情報セクション */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">基本情報</h2>
+        <div className="space-y-5">
+          {/* ニックネーム */}
+          <div>
+            <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              ニックネーム
+            </label>
+            <input
+              id="nickname"
+              type="text"
+              value={formData.nickname || ''}
+              onChange={(e) => handleChange('nickname', e.target.value)}
+              disabled={isSubmitting}
+              maxLength={20}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${
+                errors.nickname ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              }`}
+              placeholder="Taro"
+            />
+            {errors.nickname && (
+              <p className="mt-1 text-sm text-red-600">{errors.nickname}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {(formData.nickname || '').length}/20
+            </p>
+          </div>
+
+          {/* メールアドレス（読取専用） */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              メールアドレス
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={currentProfile.email}
+              disabled
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+            />
+          </div>
+
+          {/* 電話番号 */}
+          <div>
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              電話番号
+            </label>
+            <input
+              id="phoneNumber"
+              type="tel"
+              value={formData.phoneNumber || ''}
+              onChange={(e) => handleChange('phoneNumber', e.target.value)}
+              disabled={isSubmitting}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${
+                errors.phoneNumber ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              }`}
+              placeholder="090-1234-5678"
+            />
+            {errors.phoneNumber && (
+              <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* 生年月日 */}
-      <div>
-        <label htmlFor="birthday" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-          生年月日
-        </label>
-        <input
-          id="birthday"
-          type="date"
-          value={formData.birthday || ''}
-          onChange={(e) => handleChange('birthday', e.target.value)}
-          disabled={isSubmitting}
-          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${
-            errors.birthday ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-          }`}
-        />
-        {errors.birthday && (
-          <p className="mt-1 text-sm text-red-600">{errors.birthday}</p>
-        )}
-      </div>
+      {/* アカウント情報セクション */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">アカウント情報</h2>
+        <div className="space-y-4">
+          {/* アカウント作成日（読取専用） */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              アカウント作成日
+            </label>
+            <input
+              type="text"
+              value={new Date(currentProfile.createdAt).toLocaleString('ja-JP')}
+              disabled
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+            />
+          </div>
 
-      {/* 電話番号 */}
-      <div>
-        <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-          電話番号
-        </label>
-        <input
-          id="phoneNumber"
-          type="tel"
-          value={formData.phoneNumber || ''}
-          onChange={(e) => handleChange('phoneNumber', e.target.value)}
-          disabled={isSubmitting}
-          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${
-            errors.phoneNumber ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-          }`}
-          placeholder="090-1234-5678"
-        />
-        {errors.phoneNumber && (
-          <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
-        )}
+          {/* 最終更新日（読取専用） */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              最終更新日
+            </label>
+            <input
+              type="text"
+              value={new Date(currentProfile.updatedAt).toLocaleString('ja-JP')}
+              disabled
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+            />
+          </div>
+
+          {/* アカウントロール（読取専用） */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              アカウントロール
+            </label>
+            <input
+              type="text"
+              value={getRoleLabel(currentProfile.role)}
+              disabled
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+            />
+          </div>
+        </div>
       </div>
 
       {/* ボタン */}

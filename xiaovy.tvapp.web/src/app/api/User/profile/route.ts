@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
           emailVerified: authUser.emailVerified,
           phoneNumber: authUser.phoneNumber || null,
           phoneNumberVerified: false,
-          role: 'user',
+          role: 0,
           photoURL: null,
           firstName: '',
           lastName: '',
