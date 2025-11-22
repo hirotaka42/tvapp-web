@@ -4,8 +4,6 @@
  * プロフィール更新リクエスト
  */
 export interface UpdateProfileRequest {
-  firstName: string;
-  lastName: string;
   nickname?: string | null;
   birthday: string | null;
   phoneNumber: string | null;

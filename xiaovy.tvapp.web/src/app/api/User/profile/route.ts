@@ -47,21 +47,21 @@ export async function GET(request: NextRequest) {
         const authUser = await adminAuth.getUser(uid);
 
         // デフォルトのプロフィールを作成
-        const displayName = authUser.displayName || 'ユーザー';
-        const nameParts = displayName.split(' ');
+        // メールアドレスから@より前の文字列をニックネームに使用
+        const defaultNickname = authUser.email?.split('@')[0] || `user_${uid.substring(0, 8)}`;
 
         const defaultProfile = {
           uid: authUser.uid,
-          userName: authUser.email?.split('@')[0] || `user_${uid.substring(0, 8)}`,
+          userName: defaultNickname,
           email: authUser.email || '',
           emailVerified: authUser.emailVerified,
           phoneNumber: authUser.phoneNumber || null,
           phoneNumberVerified: false,
           role: 'user',
-          photoURL: null, // 重要: photoURLフィールドを追加
-          firstName: nameParts[nameParts.length - 1] || '名前',
-          lastName: nameParts.length > 1 ? nameParts[0] : '姓',
-          nickname: null, // ニックネーム追加
+          photoURL: null,
+          firstName: '',
+          lastName: '',
+          nickname: defaultNickname,
           birthday: null,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -141,24 +141,9 @@ export async function PUT(request: NextRequest) {
 
     // 2. リクエストボディをパース
     const body: UpdateProfileRequest = await request.json();
-    const { firstName, lastName, nickname, birthday, phoneNumber } = body;
+    const { nickname, birthday, phoneNumber } = body;
 
-    // 3. バリデーション
-    if (!firstName || firstName.trim() === '') {
-      return NextResponse.json(
-        { message: "名前（名）を入力してください" },
-        { status: 400 }
-      );
-    }
-
-    if (!lastName || lastName.trim() === '') {
-      return NextResponse.json(
-        { message: "名前（姓）を入力してください" },
-        { status: 400 }
-      );
-    }
-
-    // ニックネームの長さチェック
+    // 3. バリデーション - ニックネームの長さチェック
     if (nickname && nickname !== '' && nickname !== null) {
       if (nickname.trim().length > 20) {
         return NextResponse.json(
@@ -219,8 +204,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const updateData = {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
       nickname: (nickname && nickname.trim() !== '') ? nickname.trim() : null,
       birthday: birthday && birthday.trim() !== '' ? birthday : null,
       phoneNumber: phoneNumber && phoneNumber.trim() !== '' ? phoneNumber : null,

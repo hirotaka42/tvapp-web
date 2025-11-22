@@ -25,10 +25,10 @@ export function ProfileCard({ profile }: ProfileCardProps) {
             className="border-4 border-white dark:border-gray-700"
           />
 
-          {/* ユーザー名表示 */}
+          {/* ニックネーム表示 */}
           <div className="flex-1 text-center md:text-left">
             <h2 className="text-3xl font-bold text-white mb-2">
-              {profile.lastName} {profile.firstName}
+              {profile.nickname}
             </h2>
             <p className="text-blue-100 text-lg">
               @{profile.userName}
@@ -50,11 +50,7 @@ export function ProfileCard({ profile }: ProfileCardProps) {
       {/* 基本情報セクション */}
       <ProfileSection title="基本情報" icon="UserIcon">
         <ProfileField label="ユーザー名" value={profile.userName} />
-        <ProfileField label="姓" value={profile.lastName} />
-        <ProfileField label="名" value={profile.firstName} />
-        {profile.nickname && (
-          <ProfileField label="ニックネーム" value={profile.nickname} />
-        )}
+        <ProfileField label="ニックネーム" value={profile.nickname} />
         <ProfileField
           label="ロール"
           value={<BadgeDisplay role={profile.role} />}

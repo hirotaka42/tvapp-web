@@ -5,21 +5,13 @@ import { UserRole, UserProfile } from "@/types/User";
 export async function POST(request: NextRequest) {
   console.log('▶︎Call POST /api/User/Register');
   try {
-    const { email, password, firstName, lastName, nickname, birthday, phoneNumber, role, roleSecret } =
+    const { email, password, birthday, phoneNumber, role, roleSecret } =
       await request.json();
 
     // 1. バリデーション
-    if (!email || !password || !firstName || !lastName) {
+    if (!email || !password) {
       return NextResponse.json(
         { message: "必須フィールドが入力されていません" },
-        { status: 400 }
-      );
-    }
-
-    // ニックネームが入力されている場合は長さをチェック
-    if (nickname && nickname.trim().length > 20) {
-      return NextResponse.json(
-        { message: "ニックネームは20文字以内である必要があります" },
         { status: 400 }
       );
     }
@@ -59,17 +51,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Firebase Authにユーザー作成
+    // 2. メールアドレスから@より前の文字列を抽出してデフォルトニックネームを作成
+    const defaultNickname = email.split('@')[0];
+
+    // 3. Firebase Authにユーザー作成
     const userRecord = await adminAuth.createUser({
       email,
       password,
-      displayName: `${lastName} ${firstName}`,
+      displayName: defaultNickname,
       phoneNumber: phoneNumber || undefined,
     });
 
     console.log('▶︎Created Firebase user:', userRecord.uid);
 
-    // 3. Custom Claimsでロール設定（指定があれば使用、なければデフォルト）
+    // 4. Custom Claimsでロール設定（指定があれば使用、なければデフォルト）
     const userRole = role !== undefined ? role : UserRole.GENERAL;
     await adminAuth.setCustomUserClaims(userRecord.uid, {
       role: userRole
@@ -77,19 +72,19 @@ export async function POST(request: NextRequest) {
 
     console.log(`▶︎Set user role: ${userRole}`);
 
-    // 4. Firestoreにユーザープロファイル保存
+    // 5. Firestoreにユーザープロファイル保存
     const userProfile: UserProfile = {
       uid: userRecord.uid,
-      userName: `${lastName}${firstName}`,
+      userName: defaultNickname,
       email,
       emailVerified: false,
       phoneNumber: phoneNumber || null,
       phoneNumberVerified: false,
       role: userRole,
       photoURL: null,
-      firstName,
-      lastName,
-      nickname: (nickname && nickname.trim()) || null,
+      firstName: '',
+      lastName: '',
+      nickname: defaultNickname,
       birthday: birthday || null,
       createdAt: new Date(),
       updatedAt: new Date(),

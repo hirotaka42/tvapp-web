@@ -3,7 +3,7 @@
  */
 
 export interface ValidationError {
-  field: 'firstName' | 'lastName' | 'nickname' | 'birthday' | 'phoneNumber';
+  field: 'nickname' | 'birthday' | 'phoneNumber';
   message: string;
 }
 
@@ -118,23 +118,11 @@ export function validatePhoneNumber(value: string | null): string | null {
  * プロフィール更新リクエストの全体バリデーション
  */
 export function validateProfileUpdate(data: {
-  firstName: string;
-  lastName: string;
   nickname?: string | null;
   birthday: string | null;
   phoneNumber: string | null;
 }): ValidationResult {
   const errors: ValidationError[] = [];
-
-  const firstNameError = validateFirstName(data.firstName);
-  if (firstNameError) {
-    errors.push({ field: 'firstName', message: firstNameError });
-  }
-
-  const lastNameError = validateLastName(data.lastName);
-  if (lastNameError) {
-    errors.push({ field: 'lastName', message: lastNameError });
-  }
 
   const nicknameError = validateNickname(data.nickname || null);
   if (nicknameError) {

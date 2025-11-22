@@ -7,9 +7,6 @@ interface SignUpFormsProps {
     Email: string;
     Password: string;
     ConfirmPassword: string;
-    FirstName?: string;
-    LastName?: string;
-    Nickname?: string;
   };
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: (e: React.FormEvent) => void;
@@ -28,8 +25,6 @@ const SignUpForms: React.FC<SignUpFormsProps> = ({
     formData.Email.trim() !== '' &&
     formData.Password.trim() !== '' &&
     formData.ConfirmPassword.trim() !== '' &&
-    formData.FirstName?.trim() !== '' &&
-    formData.LastName?.trim() !== '' &&
     formData.Password === formData.ConfirmPassword;
 
   return (
@@ -108,54 +103,6 @@ const SignUpForms: React.FC<SignUpFormsProps> = ({
           )}
         </div>
 
-        <div>
-          <label htmlFor="FirstName" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            名前（名）
-          </label>
-          <input
-            id="FirstName"
-            name="FirstName"
-            type="text"
-            value={formData.FirstName || ''}
-            onChange={handleChange}
-            placeholder="太郎"
-            className="w-full h-12 px-4 rounded-lg border border-gray-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:text-white transition-all duration-200"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="LastName" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            名前（姓）
-          </label>
-          <input
-            id="LastName"
-            name="LastName"
-            type="text"
-            value={formData.LastName || ''}
-            onChange={handleChange}
-            placeholder="山田"
-            className="w-full h-12 px-4 rounded-lg border border-gray-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:text-white transition-all duration-200"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="Nickname" className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-            ニックネーム（オプション）
-          </label>
-          <input
-            id="Nickname"
-            name="Nickname"
-            type="text"
-            value={formData.Nickname || ''}
-            onChange={handleChange}
-            placeholder="Taro"
-            maxLength={20}
-            className="w-full h-12 px-4 rounded-lg border border-gray-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:text-white transition-all duration-200"
-          />
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            20文字以内
-          </p>
-        </div>
 
         <div className="text-sm text-gray-600 dark:text-gray-400">
           <p>アカウントを作成することで、以下に同意したものとみなされます：</p>

@@ -17,8 +17,6 @@ export function ProfileEditForm({ currentProfile }: ProfileEditFormProps) {
   const service = useContext(ProfileServiceContext);
 
   const [formData, setFormData] = useState<UpdateProfileRequest>({
-    firstName: currentProfile.firstName,
-    lastName: currentProfile.lastName,
     nickname: currentProfile.nickname || '',
     birthday: currentProfile.birthday || '',
     phoneNumber: currentProfile.phoneNumber || '',
@@ -48,8 +46,6 @@ export function ProfileEditForm({ currentProfile }: ProfileEditFormProps) {
 
     // クライアントサイドバリデーション
     const validationResult = validateProfileUpdate({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
       nickname: formData.nickname || null,
       birthday: formData.birthday || null,
       phoneNumber: formData.phoneNumber || null,
@@ -71,8 +67,6 @@ export function ProfileEditForm({ currentProfile }: ProfileEditFormProps) {
     try {
       // 空文字列をnullに変換
       const updateRequest: UpdateProfileRequest = {
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
         nickname: formData.nickname ? formData.nickname.trim() || null : null,
         birthday: formData.birthday ? formData.birthday.trim() || null : null,
         phoneNumber: formData.phoneNumber ? formData.phoneNumber.trim() || null : null,
@@ -98,48 +92,6 @@ export function ProfileEditForm({ currentProfile }: ProfileEditFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* 名前（姓） */}
-      <div>
-        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-          名前（姓） <span className="text-red-600">*</span>
-        </label>
-        <input
-          id="lastName"
-          type="text"
-          value={formData.lastName}
-          onChange={(e) => handleChange('lastName', e.target.value)}
-          disabled={isSubmitting}
-          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${
-            errors.lastName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-          }`}
-          placeholder="山田"
-        />
-        {errors.lastName && (
-          <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
-        )}
-      </div>
-
-      {/* 名前（名） */}
-      <div>
-        <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-          名前（名） <span className="text-red-600">*</span>
-        </label>
-        <input
-          id="firstName"
-          type="text"
-          value={formData.firstName}
-          onChange={(e) => handleChange('firstName', e.target.value)}
-          disabled={isSubmitting}
-          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${
-            errors.firstName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-          }`}
-          placeholder="太郎"
-        />
-        {errors.firstName && (
-          <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
-        )}
-      </div>
-
       {/* ニックネーム */}
       <div>
         <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
