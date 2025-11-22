@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       photoURL: null,
       firstName: "ゲスト",
       lastName: "ユーザー",
+      nickname: null,
       birthday: null,
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -19,6 +19,7 @@ export interface UserProfile {
   photoURL: string | null;
   firstName: string;
   lastName: string;
+  nickname: string | null;
   birthday: string | null;
   createdAt: Date;
   updatedAt: Date;

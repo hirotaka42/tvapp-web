@@ -52,6 +52,9 @@ export function ProfileCard({ profile }: ProfileCardProps) {
         <ProfileField label="ユーザー名" value={profile.userName} />
         <ProfileField label="姓" value={profile.lastName} />
         <ProfileField label="名" value={profile.firstName} />
+        {profile.nickname && (
+          <ProfileField label="ニックネーム" value={profile.nickname} />
+        )}
         <ProfileField
           label="ロール"
           value={<BadgeDisplay role={profile.role} />}

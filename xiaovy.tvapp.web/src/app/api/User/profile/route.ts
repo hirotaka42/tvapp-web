@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
           photoURL: null, // 重要: photoURLフィールドを追加
           firstName: nameParts[nameParts.length - 1] || '名前',
           lastName: nameParts.length > 1 ? nameParts[0] : '姓',
+          nickname: null, // ニックネーム追加
           birthday: null,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -140,7 +141,7 @@ export async function PUT(request: NextRequest) {
 
     // 2. リクエストボディをパース
     const body: UpdateProfileRequest = await request.json();
-    const { firstName, lastName, birthday, phoneNumber } = body;
+    const { firstName, lastName, nickname, birthday, phoneNumber } = body;
 
     // 3. バリデーション
     if (!firstName || firstName.trim() === '') {
@@ -155,6 +156,16 @@ export async function PUT(request: NextRequest) {
         { message: "名前（姓）を入力してください" },
         { status: 400 }
       );
+    }
+
+    // ニックネームの長さチェック
+    if (nickname && nickname !== '' && nickname !== null) {
+      if (nickname.trim().length > 20) {
+        return NextResponse.json(
+          { message: "ニックネームは20文字以内である必要があります" },
+          { status: 400 }
+        );
+      }
     }
 
     // 生年月日の形式チェック（YYYY-MM-DD）
@@ -210,6 +221,7 @@ export async function PUT(request: NextRequest) {
     const updateData = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
+      nickname: (nickname && nickname.trim() !== '') ? nickname.trim() : null,
       birthday: birthday && birthday.trim() !== '' ? birthday : null,
       phoneNumber: phoneNumber && phoneNumber.trim() !== '' ? phoneNumber : null,
       updatedAt: new Date(),

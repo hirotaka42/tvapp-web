@@ -3,7 +3,7 @@
  */
 
 export interface ValidationError {
-  field: 'firstName' | 'lastName' | 'birthday' | 'phoneNumber';
+  field: 'firstName' | 'lastName' | 'nickname' | 'birthday' | 'phoneNumber';
   message: string;
 }
 
@@ -74,6 +74,23 @@ export function validateBirthday(value: string | null): string | null {
 }
 
 /**
+ * ニックネームのバリデーション
+ */
+export function validateNickname(value: string | null): string | null {
+  // 空の場合はOK
+  if (!value || value.trim() === '') {
+    return null;
+  }
+
+  // 長さチェック
+  if (value.trim().length > 20) {
+    return 'ニックネームは20文字以内で入力してください';
+  }
+
+  return null;
+}
+
+/**
  * 電話番号のバリデーション
  */
 export function validatePhoneNumber(value: string | null): string | null {
@@ -103,6 +120,7 @@ export function validatePhoneNumber(value: string | null): string | null {
 export function validateProfileUpdate(data: {
   firstName: string;
   lastName: string;
+  nickname?: string | null;
   birthday: string | null;
   phoneNumber: string | null;
 }): ValidationResult {
@@ -116,6 +134,11 @@ export function validateProfileUpdate(data: {
   const lastNameError = validateLastName(data.lastName);
   if (lastNameError) {
     errors.push({ field: 'lastName', message: lastNameError });
+  }
+
+  const nicknameError = validateNickname(data.nickname || null);
+  if (nicknameError) {
+    errors.push({ field: 'nickname', message: nicknameError });
   }
 
   const birthdayError = validateBirthday(data.birthday);

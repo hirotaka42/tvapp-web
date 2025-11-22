@@ -5,13 +5,21 @@ import { UserRole, UserProfile } from "@/types/User";
 export async function POST(request: NextRequest) {
   console.log('▶︎Call POST /api/User/Register');
   try {
-    const { email, password, firstName, lastName, birthday, phoneNumber, role, roleSecret } =
+    const { email, password, firstName, lastName, nickname, birthday, phoneNumber, role, roleSecret } =
       await request.json();
 
     // 1. バリデーション
     if (!email || !password || !firstName || !lastName) {
       return NextResponse.json(
         { message: "必須フィールドが入力されていません" },
+        { status: 400 }
+      );
+    }
+
+    // ニックネームが入力されている場合は長さをチェック
+    if (nickname && nickname.trim().length > 20) {
+      return NextResponse.json(
+        { message: "ニックネームは20文字以内である必要があります" },
         { status: 400 }
       );
     }
@@ -81,6 +89,7 @@ export async function POST(request: NextRequest) {
       photoURL: null,
       firstName,
       lastName,
+      nickname: (nickname && nickname.trim()) || null,
       birthday: birthday || null,
       createdAt: new Date(),
       updatedAt: new Date(),
