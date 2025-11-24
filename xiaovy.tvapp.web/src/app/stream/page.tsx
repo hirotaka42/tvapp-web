@@ -91,11 +91,11 @@ const Stream = () => {
       {/* プレイヤー（固定） */}
       <div style={{ padding: '0', flexShrink: 0 }}>
         {selected ? (
-          <ReactPlayer 
-            url={selected.url} 
-            controls 
-            playing 
-            width="100%" 
+          <ReactPlayer
+            url={selected.url}
+            controls
+            playing
+            width="100%"
             height="auto"
             config={{
               file: {

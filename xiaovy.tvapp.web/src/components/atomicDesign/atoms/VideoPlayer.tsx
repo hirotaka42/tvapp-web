@@ -4,9 +4,12 @@ import ReactPlayer from 'react-player';
 interface VideoPlayerProps {
   url: string;
   onPlay?: () => void;
+  onProgress?: (state: { played: number; playedSeconds: number; loaded: number; loadedSeconds: number }) => void;
+  playing?: boolean;
+  controls?: boolean;
 }
 
-export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, onPlay }) => {
+export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, onPlay, onProgress, playing = true, controls = true }) => {
   const [clientSide, setClientSide] = useState(false);
 
   useEffect(() => {
@@ -27,10 +30,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, onPlay }) => {
         <ReactPlayer
           className='react-player'
           url={url}
-          controls={true}
+          controls={controls}
+          playing={playing}
           width='100%'
           height='100%'
           onPlay={handlePlay}
+          onProgress={onProgress}
+          progressInterval={500}
           config={{
             file: {
               attributes: {

@@ -6,13 +6,14 @@ import { Button } from '@/components/atomicDesign/atoms/Button'
 
 interface ConfirmationModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
+  onClose?: () => void;
+  onConfirm?: () => void;
   title: string;
   message?: string;
   confirmText?: string;
   cancelText?: string;
   confirmVariant?: 'primary' | 'secondary' | 'outline';
+  hideButtons?: boolean;
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -22,16 +23,21 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   title,
   message,
   confirmText = 'はい',
-  cancelText = 'いいえ',
-  confirmVariant = 'primary'
+  cancelText,
+  confirmVariant = 'primary',
+  hideButtons = false
 }) => {
   const handleConfirm = () => {
-    onConfirm();
-    onClose();
+    onConfirm?.();
+    onClose?.();
+  };
+
+  const handleClose = () => {
+    onClose?.();
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+    <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/30 dark:bg-black/50" aria-hidden="true" />
 
@@ -62,24 +68,28 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              size="md"
-              onClick={onClose}
-              fullWidth
-            >
-              {cancelText}
-            </Button>
-            <Button
-              variant={confirmVariant}
-              size="md"
-              onClick={handleConfirm}
-              fullWidth
-            >
-              {confirmText}
-            </Button>
-          </div>
+          {!hideButtons && (
+            <div className={`mt-6 ${cancelText ? 'grid grid-cols-2 gap-3' : 'flex justify-center'}`}>
+              {cancelText && (
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={handleClose}
+                  fullWidth
+                >
+                  {cancelText}
+                </Button>
+              )}
+              <Button
+                variant={confirmVariant}
+                size="md"
+                onClick={handleConfirm}
+                fullWidth={!!cancelText}
+              >
+                {confirmText}
+              </Button>
+            </div>
+          )}
         </DialogPanel>
       </div>
     </Dialog>

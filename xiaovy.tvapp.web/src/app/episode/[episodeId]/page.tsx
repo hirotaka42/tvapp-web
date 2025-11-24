@@ -16,6 +16,8 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useWatchHistory } from '@/hooks/useWatchHistory';
 import { ErrorState } from '@/components/atomicDesign/molecules/ErrorState';
 import { useWatchHistoryData } from '@/contexts/WatchHistoryDataContext';
+import { ConfirmationModal } from '@/components/atomicDesign/molecules/ConfirmationModal';
+import { useRouter } from 'next/navigation';
 
 interface SeasonGroupedContents {
     seasonTitle: string;
@@ -25,6 +27,7 @@ interface SeasonGroupedContents {
 function EpisodePage({ params }: { params: { episodeId: string } }) {
     const { user: loginUser } = useFirebaseAuth();
     const { episodeId } = params;
+    const router = useRouter();
     const [videoUrl, setVideoUrl] = useState<StreamResponseType | null>(null);
     const [episode, setEpisode] = useState<EpisodeResponseType | null>(null);
     const streamUrl = useStreamService(episodeId);
@@ -38,11 +41,58 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
     const { recordHistory } = useWatchHistory();
     const { addHistoryToList } = useWatchHistoryData();
     const [loadingTimeout, setLoadingTimeout] = useState<boolean>(false);
+    const [isPlaying, setIsPlaying] = useState<boolean>(true);
+    const [showLimitModal, setShowLimitModal] = useState<boolean>(false);
+    const [showInitialWarning, setShowInitialWarning] = useState<boolean>(false);
+    const [countdown, setCountdown] = useState<number>(10);
 
     const handleRetry = () => {
         // ページを再度読み込む
         window.location.reload();
     };
+
+    // ゲストユーザーの再生時間制限チェック
+    const handleProgress = useCallback((state: { played: number; playedSeconds: number; loaded: number; loadedSeconds: number }) => {
+        if (loginUser?.isAnonymous && state.playedSeconds >= 30) {
+            setIsPlaying(false);
+            setShowLimitModal(true);
+        }
+    }, [loginUser]);
+
+    // ゲストユーザーがエピソードページにアクセスした時の初回警告
+    useEffect(() => {
+        if (loginUser?.isAnonymous && episode) {
+            setShowInitialWarning(true);
+        }
+    }, [loginUser, episode]);
+
+    // 30秒制限達成後の10秒カウントダウンとリダイレクト
+    useEffect(() => {
+        if (showLimitModal) {
+            const timer = setInterval(() => {
+                setCountdown((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(timer);
+                        router.push('/');
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+            return () => clearInterval(timer);
+        } else {
+            // モーダルが閉じられたらカウントダウンをリセット
+            setCountdown(10);
+        }
+    }, [showLimitModal, router]);
+
+    // モーダル表示中は動画を強制停止
+    useEffect(() => {
+        if ((showLimitModal || showInitialWarning) && isPlaying) {
+            setIsPlaying(false);
+        }
+    }, [showLimitModal, showInitialWarning, isPlaying]);
 
     // 10秒以上読み込みに時間がかかったかを判定するuseEffect
     useEffect(() => {
@@ -172,7 +222,13 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
                 backgroundColor: '#000'
             }}>
                 {videoUrl ? (
-                    <VideoPlayer url={videoUrl.video_url} onPlay={handleVideoPlay} />
+                    <VideoPlayer
+                        url={videoUrl.video_url}
+                        onPlay={handleVideoPlay}
+                        onProgress={handleProgress}
+                        playing={isPlaying && !showLimitModal && !showInitialWarning}
+                        controls={!showLimitModal && !showInitialWarning}
+                    />
                 ) : (
                     <div style={{
                         display: 'flex',
@@ -235,6 +291,23 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
                     ))}
                 </div>
             )}
+
+            {/* ゲストユーザー用初回警告モーダル */}
+            <ConfirmationModal
+                isOpen={showInitialWarning}
+                onConfirm={() => setShowInitialWarning(false)}
+                title="視聴時間の制限について"
+                message="ゲストユーザーは30秒までの視聴に制限されています。全編をご覧になるには、アカウント登録またはログインをお願いします。"
+                confirmText="了解しました"
+            />
+
+            {/* ゲストユーザー用30秒制限達成モーダル（自動遷移のためボタンなし） */}
+            <ConfirmationModal
+                isOpen={showLimitModal}
+                title="視聴時間の制限"
+                message={`ホームに戻ります（${countdown}秒後）`}
+                hideButtons={true}
+            />
         </>
     );
 }
