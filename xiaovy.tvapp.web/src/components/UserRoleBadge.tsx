@@ -1,7 +1,7 @@
 import { UserRole } from '@/types/User';
 
 interface UserRoleBadgeProps {
-  role: UserRole;
+  role: UserRole | string | number; // レガシーデータ対応: 文字列や数値も受け付ける
   className?: string;
 }
 
@@ -39,7 +39,21 @@ const roleConfig = {
 };
 
 export function UserRoleBadge({ role, className = '' }: UserRoleBadgeProps) {
-  const config = roleConfig[role] || {
+  // 文字列ロールを数値に変換（レガシーデータ対応）
+  let normalizedRole: UserRole = role as UserRole;
+
+  if (typeof role === 'string') {
+    // 文字列 "user" は一般ユーザー (0) に該当
+    if (role === 'user' || role === 'GENERAL') {
+      normalizedRole = UserRole.GENERAL;
+    }
+    // 数値文字列の場合は変換
+    else if (!isNaN(Number(role))) {
+      normalizedRole = Number(role) as UserRole;
+    }
+  }
+
+  const config = roleConfig[normalizedRole] || {
     label: `不明なロール (${role})`,
     color: 'bg-gray-100 text-gray-800 border-gray-300',
     darkColor: 'dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600',

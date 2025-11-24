@@ -84,7 +84,11 @@ export async function GET(request: NextRequest) {
     const uid = authUser.uid;
     console.log('▶︎User found in Firebase Auth, UID:', uid);
 
-    // 5. Firestoreからプロファイル情報を取得
+    // 5. Custom Claimsからロールを取得
+    const roleFromClaims = authUser.customClaims?.role;
+    console.log('▶︎Role from Custom Claims:', roleFromClaims, '(type:', typeof roleFromClaims, ')');
+
+    // 6. Firestoreからプロファイル情報を取得
     const userRef = adminDb.collection('users').doc(uid);
     const userDoc = await userRef.get();
 
@@ -104,7 +108,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 6. 結果を整形して返却
+    console.log('▶︎Role value (Firestore):', userProfile.role, '(type:', typeof userProfile.role, ')');
+
+    // 7. Custom ClaimsのロールがFirestoreと異なる場合、またはFirestoreのロールが文字列の場合は同期
+    const shouldSyncRole =
+      roleFromClaims !== undefined &&
+      (userProfile.role !== roleFromClaims || typeof userProfile.role === 'string');
+
+    if (shouldSyncRole) {
+      console.log('▶︎Syncing role from Custom Claims to Firestore...');
+      console.log('▶︎Old role:', userProfile.role, '(type:', typeof userProfile.role, ')');
+      console.log('▶︎New role:', roleFromClaims, '(type:', typeof roleFromClaims, ')');
+
+      await userRef.update({
+        role: roleFromClaims,
+        updatedAt: new Date()
+      });
+      userProfile.role = roleFromClaims;
+      console.log('▶︎Role synced successfully!');
+    }
+
+    // 8. 結果を整形して返却
     const resultData = {
       uid: userProfile.uid,
       email: userProfile.email,
