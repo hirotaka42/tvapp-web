@@ -35,7 +35,12 @@ export async function GET(request: NextRequest) {
 
     console.log('▶︎Fetching profile for user:', uid);
 
-    // 2. Firestoreからプロファイル取得
+    // 2. Custom Claimsからロールを取得
+    const customClaims = decodedToken;
+    const roleFromClaims = customClaims.role;
+    console.log('▶︎Role from Custom Claims:', roleFromClaims, '(type:', typeof roleFromClaims, ')');
+
+    // 3. Firestoreからプロファイル取得
     const userRef = adminDb.collection('users').doc(uid);
     const userDoc = await userRef.get();
 
@@ -96,6 +101,32 @@ export async function GET(request: NextRequest) {
       console.log('▶︎Adding photoURL field to existing user document');
       await userRef.update({ photoURL: null });
       userProfile.photoURL = null;
+    }
+
+    console.log('▶︎=== Profile Data Debug ===');
+    console.log('▶︎UID:', uid);
+    console.log('▶︎Email:', userProfile.email);
+    console.log('▶︎Role value (Firestore):', userProfile.role);
+    console.log('▶︎Role type (Firestore):', typeof userProfile.role);
+    console.log('▶︎Role value (Custom Claims):', roleFromClaims);
+    console.log('▶︎========================');
+
+    // Custom ClaimsのロールがFirestoreと異なる場合、またはFirestoreのロールが文字列の場合は同期
+    const shouldSyncRole =
+      roleFromClaims !== undefined &&
+      (userProfile.role !== roleFromClaims || typeof userProfile.role === 'string');
+
+    if (shouldSyncRole) {
+      console.log('▶︎Syncing role from Custom Claims to Firestore...');
+      console.log('▶︎Old role:', userProfile.role, '(type:', typeof userProfile.role, ')');
+      console.log('▶︎New role:', roleFromClaims, '(type:', typeof roleFromClaims, ')');
+
+      await userRef.update({
+        role: roleFromClaims,
+        updatedAt: new Date()
+      });
+      userProfile.role = roleFromClaims;
+      console.log('▶︎Role synced successfully!');
     }
 
     return NextResponse.json(serializeTimestamps(userProfile));

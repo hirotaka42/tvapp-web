@@ -10,12 +10,20 @@ interface ProfileCardProps {
 
 export function ProfileCard({ profile }: ProfileCardProps) {
   const getRoleLabel = (role: number | string): string => {
-    // 文字列の場合は数値に変換
-    const roleNum = typeof role === 'string' ? parseInt(role, 10) : role;
-
-    // 特殊ケース：文字列 'user' は 0（一般ユーザー）に該当
-    if (role === 'user' || role === 'GENERAL') {
-      return '一般ユーザー';
+    // 文字列の場合は数値に変換（数値文字列の場合）
+    let roleNum: number;
+    if (typeof role === 'string') {
+      // "0", "1", "99" などの数値文字列の場合は変換
+      const parsed = parseInt(role, 10);
+      if (!isNaN(parsed)) {
+        roleNum = parsed;
+      } else {
+        // 数値に変換できない文字列の場合はデフォルト
+        console.warn('Invalid role value (non-numeric string):', role);
+        return '一般ユーザー';
+      }
+    } else {
+      roleNum = role;
     }
 
     switch (roleNum) {
@@ -32,7 +40,8 @@ export function ProfileCard({ profile }: ProfileCardProps) {
       case 99:
         return '特権ユーザー';
       default:
-        return `ロール${role}`;
+        console.warn('Unknown role value:', roleNum);
+        return `ロール${roleNum}`;
     }
   };
 
