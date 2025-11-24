@@ -219,22 +219,18 @@ export default function Header() {
                       userName={profile.userName}
                       size="md"
                     />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
                         {profile.nickname}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        @{profile.userName}
-                      </p>
+                      {/* ユーザーロール */}
+                      {role !== null && (
+                        <div className="mt-2">
+                          <UserRoleBadge role={role} className="text-xs" />
+                        </div>
+                      )}
                     </div>
                   </a>
-                )}
-
-                {/* 2. ユーザーロール */}
-                {role !== null && (
-                  <div className="mt-4 px-3">
-                    <UserRoleBadge role={role} />
-                  </div>
                 )}
 
                 {/* メール認証状況（未認証の場合のみ表示） */}
