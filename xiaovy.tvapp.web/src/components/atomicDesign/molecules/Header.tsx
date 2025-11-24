@@ -395,7 +395,17 @@ export default function Header() {
               {/* ========== 設定セクション（下部） ========== */}
               <div className="py-6">
 
-                {/* 6. ダークモード */}
+                {/* 6. ユーザー管理（特権ユーザーのみ） */}
+                {role === 99 && (
+                  <a
+                    href="/admin/users"
+                    className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    ユーザー管理
+                  </a>
+                )}
+
+                {/* 7. ダークモード */}
                 <div className="flex items-center justify-between -mx-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                   <span className="text-base font-semibold leading-7 text-gray-900 dark:text-gray-100">
                     ダークモード
@@ -403,7 +413,7 @@ export default function Header() {
                   <ThemeToggleSwitch />
                 </div>
 
-                {/* 7. ログアウト */}
+                {/* 8. ログアウト */}
                 <button
                   onClick={handleLogoutClick}
                   className="-mx-3 mt-2 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
