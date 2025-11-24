@@ -111,25 +111,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // sessionStorageをクリア
-      sessionStorage.clear();
+      // 注意: Firebase Authが使用するキー（firebase:で始まる）は削除しない
+      const sessionKeys = Object.keys(sessionStorage);
+      sessionKeys.forEach(key => {
+        if (!key.startsWith('firebase:') && !key.includes('firebase')) {
+          sessionStorage.removeItem(key);
+        }
+      });
 
-      // localStorageの全て（ユーザー関連データ）をクリア
+      // localStorageの特定キー（ユーザー関連データ）をクリア
+      // 注意: Firebase Authが使用するキー（firebase:で始まる）は削除しない
       const keysToRemove = [
         'favorites',
         'watchHistory',
         'profile',
         'userRole',
       ];
+
+      // 指定されたキーを削除
       keysToRemove.forEach(key => {
         localStorage.removeItem(key);
       });
 
       // ブラウザキャッシュをクリア（IndexedDB）
+      // 注意: Firebase Authが使用するIndexedDB（firebaseLocalStorageDb）は削除しない
       if ('indexedDB' in window && window.indexedDB.databases) {
         try {
           const dbs = await window.indexedDB.databases();
           dbs.forEach(db => {
-            if (db.name) {
+            // Firebase Authのデータベースは保持する
+            if (db.name && !db.name.includes('firebase')) {
               window.indexedDB.deleteDatabase(db.name);
             }
           });
