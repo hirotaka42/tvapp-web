@@ -1,14 +1,30 @@
 // src/components/atomicDesign/organisms/ProfileCard.tsx
 import Link from 'next/link';
+import { useState } from 'react';
 import { UserProfile } from '@/types/User';
 import { ProfileAvatar } from '@/components/atomicDesign/atoms/ProfileAvatar';
 import { formatDateTime } from '@/utils/dateFormatter';
+import toast from 'react-hot-toast';
 
 interface ProfileCardProps {
   profile: UserProfile;
 }
 
 export function ProfileCard({ profile }: ProfileCardProps) {
+  const [copying, setCopying] = useState(false);
+
+  const handleCopyUid = async () => {
+    try {
+      await navigator.clipboard.writeText(profile.uid);
+      setCopying(true);
+      toast.success('UIDをコピーしました');
+      setTimeout(() => setCopying(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy UID:', error);
+      toast.error('コピーに失敗しました');
+    }
+  };
+
   const getRoleLabel = (role: number | string): string => {
     // 文字列の場合は数値に変換（数値文字列の場合）
     let roleNum: number;
@@ -96,6 +112,21 @@ export function ProfileCard({ profile }: ProfileCardProps) {
       <div className="p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">アカウント情報</h3>
         <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 dark:text-gray-400">UID</span>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-900 dark:text-white font-mono text-sm">
+                {profile.uid}
+              </span>
+              <button
+                onClick={handleCopyUid}
+                className="px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition"
+                title="UIDをコピー"
+              >
+                {copying ? 'コピー済み' : 'コピー'}
+              </button>
+            </div>
+          </div>
           <div className="flex justify-between">
             <span className="text-gray-600 dark:text-gray-400">アカウント作成日</span>
             <span className="text-gray-900 dark:text-white font-medium">{formatDateTime(profile.createdAt)}</span>

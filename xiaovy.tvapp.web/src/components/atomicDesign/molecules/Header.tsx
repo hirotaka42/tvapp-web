@@ -221,7 +221,7 @@ export default function Header() {
                     />
                     <div>
                       <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                        {profile.lastName} {profile.firstName}
+                        {profile.nickname}
                       </p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         @{profile.userName}
