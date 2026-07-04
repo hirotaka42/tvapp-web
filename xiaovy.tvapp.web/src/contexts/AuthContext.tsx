@@ -8,6 +8,8 @@ import {
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
   UserCredential
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -17,6 +19,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<UserCredential>;
   signUp: (email: string, password: string) => Promise<UserCredential>;
+  signInWithGoogle: () => Promise<UserCredential>;
   logout: () => Promise<void>;
   clearAllAuthState: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -57,6 +60,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string) => {
     if (!auth) throw new Error('Firebase Auth is not initialized');
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    // IDトークンをlocalStorageに保存（暫定対応）
+    const token = await userCredential.user.getIdToken();
+    const tokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
+    if (tokenName) {
+      localStorage.setItem(tokenName, token);
+    }
+    return userCredential;
+  };
+
+  const signInWithGoogle = async () => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
     // IDトークンをlocalStorageに保存（暫定対応）
     const token = await userCredential.user.getIdToken();
     const tokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
@@ -151,6 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signIn,
     signUp,
+    signInWithGoogle,
     logout,
     clearAllAuthState,
     resetPassword
