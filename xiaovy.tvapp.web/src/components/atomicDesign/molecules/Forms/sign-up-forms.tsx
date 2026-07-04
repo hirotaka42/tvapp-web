@@ -1,6 +1,7 @@
 import { ChangeEvent } from 'react';
 import { PasswordInput } from '@/components/atomicDesign/atoms/PasswordInput';
 import { Button } from '@/components/atomicDesign/atoms/Button';
+import GoogleLoginButton from '@/components/atomicDesign/atoms/GoogleLoginButton';
 
 interface SignUpFormsProps {
   formData: {
@@ -10,6 +11,7 @@ interface SignUpFormsProps {
   };
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: (e: React.FormEvent) => void;
+  onGoogleSignIn: () => void;
   loading?: boolean;
   error?: string;
 }
@@ -18,6 +20,7 @@ const SignUpForms: React.FC<SignUpFormsProps> = ({
   formData,
   handleChange,
   handleSubmit,
+  onGoogleSignIn,
   loading = false,
   error
 }) => {
@@ -125,6 +128,17 @@ const SignUpForms: React.FC<SignUpFormsProps> = ({
           </Button>
         </div>
       </form>
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200 dark:border-slate-700"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-3 bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400">または</span>
+        </div>
+      </div>
+
+      <GoogleLoginButton onClick={onGoogleSignIn} disabled={loading} />
 
       <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
         すでにアカウントをお持ちですか？{' '}
