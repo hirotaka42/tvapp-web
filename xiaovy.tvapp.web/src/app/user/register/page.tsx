@@ -16,7 +16,7 @@ interface FormData {
 
 const Register: React.FC = () => {
   const router = useRouter();
-  const { signUp } = useFirebaseAuth();
+  const { signUp, signInWithGoogle } = useFirebaseAuth();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
@@ -118,6 +118,36 @@ const Register: React.FC = () => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const userCredential = await signInWithGoogle();
+      console.log('Googleログイン成功:', userCredential.user.uid);
+      // Google は emailVerified=true のためメール確認は不要
+      toast.success('ログインしました');
+      router.push('/');
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        // ユーザーがポップアップを閉じた/連打した場合はエラー表示しない
+        if (
+          error.code === 'auth/popup-closed-by-user' ||
+          error.code === 'auth/cancelled-popup-request'
+        ) {
+          return;
+        }
+        console.error('Google認証エラー:', error.code, error.message);
+        setError('Googleログインに失敗しました');
+      } else {
+        console.error('Unexpected error:', error);
+        setError('予期しないエラーが発生しました');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-slate-900">
       <BrandPanel />
@@ -126,6 +156,7 @@ const Register: React.FC = () => {
           formData={formData}
           handleChange={handleChange}
           handleSubmit={handleSubmit}
+          onGoogleSignIn={handleGoogleSignIn}
           loading={loading}
           error={error}
         />

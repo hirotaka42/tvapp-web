@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth';
 
 type SessionToken = {
     platformUid: string;
@@ -6,7 +7,10 @@ type SessionToken = {
 };
 
 // POST /api/service/session
-export async function POST() {
+export async function POST(request: NextRequest) {
+    const auth = await requireAuth(request);
+    if (!auth.ok) return auth.response;
+
     try {
         const response = await fetch(
             'https://platform-api.tver.jp/v2/api/platform_users/browser/create',

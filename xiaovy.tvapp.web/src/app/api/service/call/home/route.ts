@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth';
 
 // Genre types for TVer ranking API
 type RankingGenre = 'drama' | 'variety' | 'anime' | 'documentary' | 'sports';
@@ -56,6 +57,9 @@ interface RankingData {
 // Note: callHome API is deprecated and returns empty result.
 // Using ranking APIs instead to build home page content.
 export async function GET(request: NextRequest) {
+    const auth = await requireAuth(request);
+    if (!auth.ok) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const platformUid = searchParams.get('platformUid');
     const platformToken = searchParams.get('platformToken');

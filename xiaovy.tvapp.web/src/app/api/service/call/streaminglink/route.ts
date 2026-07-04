@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/service/call/streaminglink?episodeId=xxxx
 
@@ -7,6 +8,9 @@ import { NextRequest, NextResponse } from "next/server";
 //     "video_url": "https://sample"
 // }
 export async function GET(request: NextRequest) {
+    const auth = await requireAuth(request);
+    if (!auth.ok) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const episodeId = searchParams.get('episodeId');
     const functionHost = process.env.AZURE_FUNCTION_STREEAMING;

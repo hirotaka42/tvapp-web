@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/service/search?keyword=xxx&platformUid=xxx&platformToken=xxx
 export async function GET(req: NextRequest) {
+    const auth = await requireAuth(req);
+    if (!auth.ok) return auth.response;
+
     const { searchParams } = new URL(req.url);
     const keyword = searchParams.get('keyword');
     const platformUid = searchParams.get('platformUid');

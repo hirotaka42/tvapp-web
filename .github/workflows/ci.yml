@@ -1,0 +1,30 @@
+name: ci
+# push / PR のたびに lint・型チェック・テストを実行する(テスト実施を CI に組み込む)。
+# アプリは xiaovy.tvapp.web/ 配下にあるため working-directory を固定する。
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: xiaovy.tvapp.web
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # package-lock を厳密同期させたい場合は npm ci に切り替える(その際は lock を最新化してコミットすること)
+      - name: 依存インストール
+        run: npm install --no-audit --no-fund
+      - name: Lint
+        run: npm run lint
+      - name: 型チェック
+        run: npm run typecheck
+      - name: テスト
+        run: npm test

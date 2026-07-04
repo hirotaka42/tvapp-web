@@ -5,10 +5,11 @@ import {
   User,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInAnonymously,
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
   UserCredential
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -18,7 +19,7 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<UserCredential>;
   signUp: (email: string, password: string) => Promise<UserCredential>;
-  signInAsGuest: () => Promise<UserCredential>;
+  signInWithGoogle: () => Promise<UserCredential>;
   logout: () => Promise<void>;
   clearAllAuthState: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -68,23 +69,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return userCredential;
   };
 
-  /**
-   * ゲスト（匿名）ログイン
-   * Firebase匿名認証を使用してログインします
-   * ロール-1をカスタムクレイムとして設定
-   */
-  const signInAsGuest = async () => {
+  const signInWithGoogle = async () => {
     if (!auth) throw new Error('Firebase Auth is not initialized');
-    const userCredential = await signInAnonymously(auth);
-
-    // ゲストユーザーのロール設定はサーバー側で実施するため、
-    // ここではトークンを取得・保存
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    // IDトークンをlocalStorageに保存（暫定対応）
     const token = await userCredential.user.getIdToken();
     const tokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
     if (tokenName) {
       localStorage.setItem(tokenName, token);
     }
-
     return userCredential;
   };
 
@@ -173,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signIn,
     signUp,
-    signInAsGuest,
+    signInWithGoogle,
     logout,
     clearAllAuthState,
     resetPassword
