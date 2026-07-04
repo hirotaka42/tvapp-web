@@ -1,8 +1,6 @@
 import { ChangeEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import { PasswordInput } from '@/components/atomicDesign/atoms/PasswordInput';
 import { Button } from '@/components/atomicDesign/atoms/Button';
-import { GuestLoginButton } from '@/components/atomicDesign/atoms/GuestLoginButton';
 
 interface SignInFormsProps {
   formData: {
@@ -11,7 +9,6 @@ interface SignInFormsProps {
   };
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: (e: React.FormEvent) => void;
-  router: ReturnType<typeof useRouter>;
   loading?: boolean;
   error?: string;
 }
@@ -20,7 +17,6 @@ const SignInForms: React.FC<SignInFormsProps> = ({
   formData,
   handleChange,
   handleSubmit,
-  router,
   loading = false,
   error
 }) => {
@@ -106,17 +102,6 @@ const SignInForms: React.FC<SignInFormsProps> = ({
             ログイン
           </Button>
         </div>
-
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400">または</span>
-          </div>
-        </div>
-
-        <GuestLoginButton router={router} />
       </form>
 
       <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">

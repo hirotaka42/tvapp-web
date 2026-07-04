@@ -106,7 +106,6 @@ const Login: React.FC = () => {
           formData={formData}
           handleChange={handleChange}
           handleSubmit={handleSubmit}
-          router={router}
           loading={loading}
           error={error}
         />
