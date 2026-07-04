@@ -2,7 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Text truncation utilities */
+/*
+ * TVapp デザイントークン(作り直し)
+ * コンセプト「夜の居間にともるスクリーン」= 温かいチャコール + 灯火のアンバー。
+ * ダーク既定。ライトは :root(class 未付与)、ダークは .dark(Tailwind darkMode:class)。
+ */
+:root {
+  --bg:#f6f1e8; --bg2:#efe8db; --surf:#fffdf8; --surf2:#f3ecdf; --line:#e0d6c4;
+  --tx:#241d12; --tx2:#6a604e; --tx3:#9a8f7a;
+  --acc:#c98216; --acc2:#a9690c; --acc-soft:#f5ead3;
+  --tver:#1f9e6a; --abema:#2a2620; --yt:#d1352b; --nico:#3a6fb0;
+  --ok:#1f9e6a; --err:#d1352b;
+}
+.dark {
+  --bg:#17130e; --bg2:#1e1913; --surf:#241e17; --surf2:#2c251c; --line:#3a3025;
+  --tx:#f2ebdf; --tx2:#b6ac9a; --tx3:#847b6b;
+  --acc:#e6a94e; --acc2:#f0c078; --acc-soft:#2a2015;
+  --tver:#4bbe8a; --abema:#e7e3da; --yt:#e15b52; --nico:#6f9bd6;
+  --ok:#5ec98e; --err:#e56b62;
+}
+
+body {
+  background: var(--bg);
+  color: var(--tx);
+  font-feature-settings: "palt" 1;
+}
+
 .line-clamp-2 {
   overflow: hidden;
   display: -webkit-box;
@@ -11,17 +36,5 @@
   -webkit-box-orient: vertical;
 }
 
-/* Video Player Styles */
-.player-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.react-player {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
+.player-wrapper { position: relative; width: 100%; height: 100%; }
+.react-player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }

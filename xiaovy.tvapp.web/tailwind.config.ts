@@ -14,6 +14,12 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        app: {
+          bg: "var(--bg)", bg2: "var(--bg2)", surf: "var(--surf)", surf2: "var(--surf2)",
+          line: "var(--line)", tx: "var(--tx)", tx2: "var(--tx2)", tx3: "var(--tx3)",
+          acc: "var(--acc)", acc2: "var(--acc2)", "acc-soft": "var(--acc-soft)",
+          tver: "var(--tver)", abema: "var(--abema)", yt: "var(--yt)", nico: "var(--nico)",
+        },
       },
       animation: {
         'fade-out': 'fade-out 5s ease both'

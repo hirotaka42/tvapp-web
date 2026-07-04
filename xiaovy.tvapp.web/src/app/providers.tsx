@@ -38,7 +38,7 @@ export const Providers: FC<PropsWithChildren> = ({ children }) => {
   const watchHistoryService = useMemo(() => new WatchHistoryService(), []);
 
   return (
-    <ThemeProvider attribute="class">
+    <ThemeProvider attribute="class" defaultTheme="dark">
       <AuthProvider>
         <FavoritesDataProvider>
           <WatchHistoryDataProvider>

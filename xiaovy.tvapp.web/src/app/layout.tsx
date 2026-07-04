@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Providers } from "@/app/providers";
-import Header from '@/components/atomicDesign/molecules/Header';
 import "./globals.css";
 
 const geistSans = localFont({
@@ -31,7 +30,6 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen dark:bg-black dark:text-white`}
       >
         <Providers>
-          <Header />
           {children}
         </Providers>
       </body>
