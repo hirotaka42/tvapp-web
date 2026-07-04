@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/service/call/episode?episodeId=xxxx&platformUid=xxxx&platformToken=xxxx
 export async function GET(request: NextRequest) {
+    const auth = await requireAuth(request);
+    if (!auth.ok) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const episodeId = searchParams.get('episodeId');
     const platformUid = searchParams.get('platformUid');

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/service/call/ranking/episode/detail/[genre]
 export async function GET(request: NextRequest, { params }: { params: { genre: string } }) {
+    const auth = await requireAuth(request);
+    if (!auth.ok) return auth.response;
+
     const { genre } = params;
 
     if (!genre || genre.trim() === '') {
