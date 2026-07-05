@@ -18,6 +18,7 @@ import { ErrorState } from '@/components/atomicDesign/molecules/ErrorState';
 import { useWatchHistoryData } from '@/contexts/WatchHistoryDataContext';
 import { ConfirmationModal } from '@/components/atomicDesign/molecules/ConfirmationModal';
 import { useRouter } from 'next/navigation';
+import { PHASE2_USER_DATA_ENABLED } from '@/lib/features';
 
 interface SeasonGroupedContents {
     seasonTitle: string;
@@ -129,7 +130,7 @@ function EpisodePage(props: { params: Promise<{ episodeId: string }> }) {
     // お気に入りの状態を確認するuseEffect
     useEffect(() => {
         const checkFavorite = async () => {
-            if (episodeInfo && loginUser && !loginUser.isAnonymous) {
+            if (episodeInfo && loginUser && PHASE2_USER_DATA_ENABLED) {
                 try {
                     const isFav = await checkIsFavorite(episodeInfo.data.seriesID);
                     setIsFavorite(isFav);
@@ -152,7 +153,7 @@ function EpisodePage(props: { params: Promise<{ episodeId: string }> }) {
     // 動画再生検知時のコールバック
     const handleVideoPlay = useCallback(async () => {
         console.log('動画再生を検知しました');
-        if (episode && loginUser && !loginUser.isAnonymous) {
+        if (episode && loginUser && PHASE2_USER_DATA_ENABLED) {
             try {
                 const history = await recordHistory({
                     episodeId: episode.data.id,
@@ -271,7 +272,7 @@ function EpisodePage(props: { params: Promise<{ episodeId: string }> }) {
                         >
                             {seriesTitle}
                         </a>
-                        {!loginUser.isAnonymous && (
+                        {PHASE2_USER_DATA_ENABLED && (
                             <FavoriteButton
                                 seriesId={episode.data.seriesID}
                                 seriesTitle={seriesTitle}
