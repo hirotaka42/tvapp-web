@@ -20,7 +20,7 @@ function item(
   source: SourceId,
   id: string,
   title: string,
-  opts: Partial<Pick<Item, 'subtitle' | 'rank' | 'playability'>> = {},
+  opts: Partial<Pick<Item, 'subtitle' | 'rank' | 'playability' | 'stream'>> = {},
 ): Item {
   return {
     source,
@@ -30,6 +30,7 @@ function item(
     subtitle: opts.subtitle,
     rank: opts.rank,
     playability: opts.playability ?? 'playable',
+    ...(opts.stream ? { stream: opts.stream } : {}),
   };
 }
 
@@ -119,12 +120,12 @@ const youtubeSections: Section[] = [
     key: 'youtube-music-global',
     label: '音楽ランキング(世界)',
     items: [
-      item('youtube', 'yt-mg1', 'Die With A Smile / Lady Gaga, Bruno Mars', { subtitle: 'YouTube', rank: 1 }),
-      item('youtube', 'yt-mg2', 'Birds of a Feather / Billie Eilish', { subtitle: 'YouTube', rank: 2 }),
-      item('youtube', 'yt-mg3', 'APT. / ROSE, Bruno Mars', { subtitle: 'YouTube', rank: 3 }),
-      item('youtube', 'yt-mg4', 'Blinding Lights / The Weeknd', { subtitle: 'YouTube', rank: 4 }),
-      item('youtube', 'yt-mg5', 'Espresso / Sabrina Carpenter', { subtitle: 'YouTube', rank: 5 }),
-      item('youtube', 'yt-mg6', 'TRUSTFALL / P!NK', { subtitle: 'YouTube', rank: 6 }),
+      item('youtube', 'kJQP7kiw5Fk', 'Despacito / Luis Fonsi ft. Daddy Yankee', { subtitle: 'YouTube', rank: 1, stream: { kind: 'youtube', videoId: 'kJQP7kiw5Fk' } }),
+      item('youtube', '9bZkp7q19f0', 'GANGNAM STYLE / PSY', { subtitle: 'YouTube', rank: 2, stream: { kind: 'youtube', videoId: '9bZkp7q19f0' } }),
+      item('youtube', 'RgKAFK5djSk', 'See You Again / Wiz Khalifa ft. Charlie Puth', { subtitle: 'YouTube', rank: 3, stream: { kind: 'youtube', videoId: 'RgKAFK5djSk' } }),
+      item('youtube', 'OPf0YbXqDm0', 'Uptown Funk / Mark Ronson ft. Bruno Mars', { subtitle: 'YouTube', rank: 4, stream: { kind: 'youtube', videoId: 'OPf0YbXqDm0' } }),
+      item('youtube', 'JGwWNGJdvx8', 'Shape of You / Ed Sheeran', { subtitle: 'YouTube', rank: 5, stream: { kind: 'youtube', videoId: 'JGwWNGJdvx8' } }),
+      item('youtube', 'dQw4w9WgXcQ', 'Never Gonna Give You Up / Rick Astley', { subtitle: 'YouTube', rank: 6, stream: { kind: 'youtube', videoId: 'dQw4w9WgXcQ' } }),
     ],
   },
   {

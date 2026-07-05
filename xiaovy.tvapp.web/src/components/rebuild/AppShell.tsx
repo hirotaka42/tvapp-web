@@ -2,6 +2,7 @@
 // アプリ外枠。ヘッダー + メイン。
 
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { SearchIcon, HeartIcon, UserIcon } from './icons';
 
 interface AppShellProps {
@@ -32,9 +33,9 @@ export default function AppShell({ headerCenter, children }: AppShellProps) {
           <button type="button" className="sm:hidden" aria-label="検索">
             <SearchIcon className="h-5 w-5 text-app-tx3" />
           </button>
-          <button type="button" aria-label="お気に入り">
+          <Link href="/library" aria-label="お気に入り">
             <HeartIcon className="h-5 w-5 text-app-tx3" />
-          </button>
+          </Link>
           <button type="button" aria-label="アカウント">
             <UserIcon className="h-5 w-5 text-app-tx3" />
           </button>

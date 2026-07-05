@@ -38,6 +38,8 @@ export interface Item extends ContentRef {
   /** ランキング順位(ある場合)。 */
   rank?: number;
   playability: Playability;
+  /** 実再生ソース。再生可能な項目だけ持つ。 */
+  stream?: { kind: 'youtube'; videoId: string };
 }
 
 /** 発見ホーム等の「1 列」。key はキュレーションの識別子。 */

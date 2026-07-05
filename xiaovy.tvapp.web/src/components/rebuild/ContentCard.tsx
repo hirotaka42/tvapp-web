@@ -1,11 +1,12 @@
 'use client';
 
 // src/components/rebuild/ContentCard.tsx
-// 1 アイテムのカード。サムネプレースホルダ + 題字 + ソースドット + ランク + ハート。
+// 1 アイテムのカード。カード全体が /watch/{source}/{id} へ遷移。
+// ハートのクリックは stopPropagation でお気に入りトグルのみ。
 
-import { useState } from 'react';
+import Link from 'next/link';
 import type { Item, SourceId } from '@/lib/sources/types';
-import { HeartIcon } from './icons';
+import FavoriteButton from './FavoriteButton';
 
 const SOURCE_COLOR: Record<SourceId, string> = {
   tver: 'var(--tver)',
@@ -15,14 +16,15 @@ const SOURCE_COLOR: Record<SourceId, string> = {
 };
 
 export default function ContentCard({ item }: { item: Item }) {
-  const [liked, setLiked] = useState(false);
   const isDrmBlocked = item.playability === 'drm-unplayable';
 
   return (
-    <div className="group relative flex flex-col gap-1.5">
-      {/* サムネ枠 */}
+    <Link
+      href={`/watch/${item.source}/${item.id}`}
+      className="group relative flex flex-col gap-1.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-app-acc"
+    >
+      {/* Thumbnail placeholder */}
       <div className="relative h-24 rounded-lg overflow-hidden bg-app-surf2">
-        {/* CSS グラデのプレースホルダ */}
         <div
           className="absolute inset-0"
           style={{
@@ -31,37 +33,29 @@ export default function ContentCard({ item }: { item: Item }) {
           }}
         />
 
-        {/* ランク */}
+        {/* Rank */}
         {item.rank != null && (
           <span className="absolute bottom-1 left-2 text-3xl font-extrabold leading-none text-app-tx opacity-80 drop-shadow">
             {item.rank}
           </span>
         )}
 
-        {/* DRM バッジ */}
+        {/* DRM badge */}
         {isDrmBlocked && (
           <span className="absolute top-1.5 left-1.5 rounded bg-app-surf/80 px-1.5 py-0.5 text-[10px] font-medium text-app-tx3">
             再生不可
           </span>
         )}
 
-        {/* ハート */}
-        <button
-          type="button"
-          aria-label={liked ? 'お気に入り解除' : 'お気に入り追加'}
-          onClick={() => setLiked((v) => !v)}
+        {/* Favorite (intercept click) */}
+        <FavoriteButton
+          item={item}
           className="absolute top-1.5 right-1.5 rounded-full p-1 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-        >
-          <HeartIcon
-            className="h-4 w-4"
-            style={liked ? { fill: 'var(--acc)', stroke: 'var(--acc)' } : undefined}
-          />
-        </button>
+        />
       </div>
 
-      {/* テキスト部 */}
+      {/* Text */}
       <div className="flex items-start gap-1.5 px-0.5">
-        {/* ソースドット */}
         <span
           className="mt-1 inline-block h-2 w-2 flex-shrink-0 rounded-full"
           style={{ backgroundColor: SOURCE_COLOR[item.source] }}
@@ -76,6 +70,6 @@ export default function ContentCard({ item }: { item: Item }) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
