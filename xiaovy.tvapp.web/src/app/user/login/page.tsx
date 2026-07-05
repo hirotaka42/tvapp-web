@@ -13,10 +13,12 @@ interface FormData {
 }
 
 const Login: React.FC = () => {
-  const { user, signIn } = useFirebaseAuth();
+  const { user, signIn, signInWithGoogle, sendEmailSignInLink, isEmailSignInLink, completeEmailLinkSignIn } = useFirebaseAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [emailLinkSent, setEmailLinkSent] = useState(false);
   const [error, setError] = useState<string>('');
 
   const [formData, setFormData] = useState<FormData>({
@@ -91,6 +93,56 @@ const Login: React.FC = () => {
     }
   };
 
+  // Google ログイン
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setError('');
+    try {
+      await signInWithGoogle();
+      toast.success('ログインしました');
+      router.push(getRedirect());
+    } catch (err) {
+      console.error('Google ログイン失敗:', err);
+      setError('Google ログインに失敗しました');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  // メールリンク(パスワードなし)送信
+  const handleSendEmailLink = async () => {
+    setError('');
+    if (!formData.Email.trim()) {
+      setError('メールアドレスを入力してください');
+      return;
+    }
+    try {
+      await sendEmailSignInLink(formData.Email);
+      setEmailLinkSent(true);
+      toast.success('ログイン用リンクを送信しました');
+    } catch (err) {
+      console.error('メールリンク送信失敗:', err);
+      setError('メールリンクの送信に失敗しました');
+    }
+  };
+
+  // メールリンクで戻ってきた場合はサインインを完了する
+  useEffect(() => {
+    const url = window.location.href;
+    if (isEmailSignInLink(url)) {
+      completeEmailLinkSignIn(url)
+        .then(() => {
+          toast.success('ログインしました');
+          router.push(getRedirect());
+        })
+        .catch((err) => {
+          console.error('メールリンクのログイン失敗:', err);
+          setError('メールリンクでのログインに失敗しました');
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // メールアドレス確認完了メッセージの表示
   useEffect(() => {
     if (searchParams.get('verified') === 'true') {
@@ -113,8 +165,11 @@ const Login: React.FC = () => {
           formData={formData}
           handleChange={handleChange}
           handleSubmit={handleSubmit}
-          router={router}
+          onGoogleSignIn={handleGoogleSignIn}
+          onSendEmailLink={handleSendEmailLink}
           loading={loading}
+          googleLoading={googleLoading}
+          emailLinkSent={emailLinkSent}
           error={error}
         />
       </div>
