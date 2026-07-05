@@ -150,7 +150,7 @@ function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
             {seriesContents.map((season, index) => (
                 <div key={index}>
                     <h2
-                        className="text-md font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
+                        className="text-base font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
                     >{season.seasonTitle}</h2>
                     <GenreContentCardList contents={season.contents} />
                 </div>

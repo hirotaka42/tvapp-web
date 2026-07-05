@@ -24,6 +24,12 @@ const Login: React.FC = () => {
     Password: ''
   });
 
+  // ログイン後の復帰先(内部パスのみ許可。オープンリダイレクト防止)
+  const getRedirect = () => {
+    const r = searchParams.get('redirect');
+    return r && r.startsWith('/') && !r.startsWith('//') ? r : '/';
+  };
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -55,7 +61,7 @@ const Login: React.FC = () => {
 
       console.log('[SUCCESS] ログイン成功（メール確認済み）');
       toast.success('ログインしました');
-      router.push('/');
+      router.push(getRedirect());
     } catch (error) {
       if (error instanceof FirebaseError) {
         console.error('Firebase エラー:', error.code, error.message);
@@ -94,8 +100,9 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      router.push('/');
+      router.push(getRedirect());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, router]);
 
   return (

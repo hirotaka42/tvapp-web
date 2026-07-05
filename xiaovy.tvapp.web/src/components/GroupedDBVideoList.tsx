@@ -268,7 +268,7 @@ export const GroupedDBVideoList: React.FC<GroupedDBVideoListProps> = ({ maxItems
                       onClick={() => toggleSeason(seasonKey)}
                       className="w-full px-6 py-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-between text-left transition-colors"
                     >
-                      <h3 className="text-md font-medium text-gray-800 dark:text-gray-200">
+                      <h3 className="text-base font-medium text-gray-800 dark:text-gray-200">
                         {formatSeasonName(season.seasonName, season.seasonNumber)}
                       </h3>
                       <div className="flex items-center space-x-2">

@@ -38,7 +38,7 @@ export const TabsWithUnderlineRanking: React.FC<TabProps> = ({ tabs }) => {
                 onClick={() => setActiveTab(index)}
                 className={`inline-block py-4 px-6 text-brack-500 hover:text-gray-800 dark:text-white font-medium border-b-4 border-transparent ${
                   activeTab === index ? 'border-b-indigo-600 text-indigo-600' : 'border-gray-500'
-                } tablink whitespace-nowrap text-md font-bold tracking-tight`}
+                } tablink whitespace-nowrap text-base font-bold tracking-tight`}
                 role="tab"
               >
                 {tab.title}
