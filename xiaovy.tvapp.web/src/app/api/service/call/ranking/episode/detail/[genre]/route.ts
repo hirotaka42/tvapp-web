@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/service/call/ranking/episode/detail/[genre]
-export async function GET(request: NextRequest, { params }: { params: { genre: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ genre: string }> }) {
+    const params = await props.params;
     const { genre } = params;
 
     if (!genre || genre.trim() === '') {

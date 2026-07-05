@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, use } from 'react';
 import { VideoPlayer } from '@/components/atomicDesign/atoms/VideoPlayer';
 import { useStreamService } from '@/hooks/useStream';
 import { useEpisodeService } from '@/hooks/useEpisode';
@@ -24,7 +24,8 @@ interface SeasonGroupedContents {
     contents: ConvertedCardViewContent[];
 }
 
-function EpisodePage({ params }: { params: { episodeId: string } }) {
+function EpisodePage(props: { params: Promise<{ episodeId: string }> }) {
+    const params = use(props.params);
     const { user: loginUser, loading: authLoading } = useFirebaseAuth();
     const { episodeId } = params;
     const router = useRouter();

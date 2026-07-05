@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/content/episode/[episodeId]
-export async function GET(request: NextRequest, { params }: { params: { episodeId: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ episodeId: string }> }) {
+    const params = await props.params;
     const { episodeId } = params;
 
     if (!episodeId) {

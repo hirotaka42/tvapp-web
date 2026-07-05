@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useSessionService } from '@/hooks/useSession';
 import { GenreContentCardList } from '@/components/atomicDesign/molecules/GenreContentCardList';
 import { ConvertedCardViewContent } from '@/types/CardItem/ForGeneric';
@@ -15,7 +15,8 @@ interface SeasonGroupedContents {
     contents: ConvertedCardViewContent[];
 }
 
-function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
+function SeriesEpisodesPage(props: { params: Promise<{ seriesId: string }> }) {
+    const params = use(props.params);
     const { seriesId } = params;
     const [seriesContents, setSeriesContents] = useState<SeasonGroupedContents[] | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
