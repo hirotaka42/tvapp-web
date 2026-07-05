@@ -1,0 +1,101 @@
+name: Deploy (version-gated)
+
+# 版ゲート方式のデプロイ:
+#   main への push(=PRマージ)時に、アプリ(xiaovy.tvapp.web)の package.json の
+#   version が直前コミットから上がっている場合「だけ」Cloudflare Workers へデプロイする。
+#   version を上げない変更はデプロイされない(AGENTS-SHARED §4「版ゲート」)。
+
+on:
+  push:
+    branches: [main]
+
+# 同一 main への多重デプロイを直列化(古い実行はキャンセル)
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  contents: write # 版タグ(v x.y.z)の付与に使用
+
+jobs:
+  # --- 版ゲート: package.json の version が上がったかを判定 ---
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # 直前コミットとの差分を見るため
+
+      - id: check
+        name: バージョン変化を判定
+        run: |
+          APP=xiaovy.tvapp.web
+          CUR=$(node -p "require('./$APP/package.json').version")
+          PREV=$(git show HEAD~1:$APP/package.json 2>/dev/null \
+                 | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).version)}catch{console.log('none')}})" \
+                 || echo "none")
+          echo "現在: $CUR / 直前: $PREV"
+          echo "version=$CUR" >> "$GITHUB_OUTPUT"
+          if [ "$CUR" != "$PREV" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::version が $PREV → $CUR に上がったためデプロイします"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::version 変化なし($CUR)。デプロイをスキップします"
+          fi
+
+  # --- デプロイ本体(版が上がったときだけ実行) ---
+  deploy:
+    needs: gate
+    if: needs.gate.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: xiaovy.tvapp.web
+    env:
+      # ビルド時に埋め込む公開 Firebase 設定(GitHub の Variables から注入)
+      NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      NEXT_PUBLIC_FIREBASE_APP_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
+      NEXT_PUBLIC_IDTOKEN_NAME: ${{ vars.NEXT_PUBLIC_IDTOKEN_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: xiaovy.tvapp.web/package-lock.json
+
+      - name: 依存インストール
+        run: npm ci
+
+      - name: テスト(ユニット)
+        run: npm test
+
+      - name: OpenNext ビルド
+        run: npm run cf:build
+
+      - name: Cloudflare Workers へデプロイ
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
+
+      - name: 版タグを付与(v x.y.z)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v${{ needs.gate.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "タグ $TAG は既存。スキップ"
+          else
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
