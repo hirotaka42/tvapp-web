@@ -43,9 +43,8 @@ jobs:
       - name: 型検査
         run: npx tsc --noEmit
 
-      - name: Lint
-        run: npm run lint
-
+      # 注: Next 16 で `next lint` は廃止。ESLint 直接運用の整備までは
+      # tsc + test + build + cf:build で品質を担保する。
       - name: テスト(ユニット)
         run: npm test
 
