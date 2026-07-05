@@ -251,7 +251,7 @@ describe('resolveStreaksPlayback', () => {
 // ---- resolveEpisodeStream(オーケストレーション) --------------------------
 
 describe('resolveEpisodeStream', () => {
-  function fullFetch(now: Date) {
+  function fullFetch() {
     return makeFetch([
       { match: 'callEpisode', respond: () => mockResponse({ result: { episode: { content: { version: 12 } } } }) },
       { match: 'statics.tver.jp', respond: () => mockResponse(STATIC_CONTENT) },
@@ -261,7 +261,7 @@ describe('resolveEpisodeStream', () => {
 
   it('セッション/streaks_info を注入して m3u8 を解決する', async () => {
     const now = new Date(Date.UTC(2026, 6, 5)); // 7月 → key01
-    const { fn, calls } = fullFetch(now);
+    const { fn, calls } = fullFetch();
     const r = await resolveEpisodeStream('ep1wxk911o', {
       fetchFn: fn,
       now,
@@ -279,7 +279,7 @@ describe('resolveEpisodeStream', () => {
 
   it('12月は key06 を選ぶ', async () => {
     const now = new Date(Date.UTC(2026, 11, 15)); // 12月 → key06
-    const { fn, calls } = fullFetch(now);
+    const { fn, calls } = fullFetch();
     await resolveEpisodeStream('ep1wxk911o', { fetchFn: fn, now, session: SESSION, streaksInfo: STREAKS_INFO });
     const pbCall = calls.find((c) => c.url.includes('playback.api.streaks.jp'))!;
     expect((pbCall.init?.headers as Record<string, string>)['X-Streaks-Api-Key']).toBe('KEY-JUN-DEC');
