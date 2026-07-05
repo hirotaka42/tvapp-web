@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function proxy(request: NextRequest) {
-  console.log('▶︎Call middleware');
-
+// 注: Next 16 は proxy.ts 規約を推奨するが、proxy は Node ランタイム専用で
+// OpenNext(Cloudflare)は Node middleware 未対応のため、Edge で動く従来の
+// middleware.ts を用いる(Next 16 では非推奨警告が出るが動作する)。
+export async function middleware(request: NextRequest) {
   // 公開ルート（認証不要）
   const publicPaths = [
     '/api/User/Register',
@@ -13,16 +14,8 @@ export async function proxy(request: NextRequest) {
     '/api/health',
   ];
 
-  if (publicPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
+  if (publicPaths.some((path) => request.nextUrl.pathname.startsWith(path))) {
     return NextResponse.next();
-  }
-
-  // レガシールート（リダイレクト・リライト）
-  if (request.nextUrl.pathname === '/about') {
-    return NextResponse.redirect(new URL('/redirected', request.url));
-  }
-  if (request.nextUrl.pathname === '/another') {
-    return NextResponse.rewrite(new URL('/rewrite', request.url));
   }
 
   // Authorizationヘッダーの存在チェック（詳細な検証は各APIで実施）
@@ -30,10 +23,7 @@ export async function proxy(request: NextRequest) {
   if (!authHeader?.startsWith('Bearer ')) {
     // /api/ パスのみ認証必須
     if (request.nextUrl.pathname.startsWith('/api/')) {
-      return NextResponse.json(
-        { message: 'トークンがありません。' },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: 'トークンがありません。' }, { status: 401 });
     }
   }
 
@@ -41,9 +31,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/about/:path*',
-    '/another/:path*',
-    '/api/:path*',
-  ],
+  matcher: ['/api/:path*'],
 };
