@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp テスト観点仕様書</title>
+<style>
+  :root{
+    --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+    --acc:#0969da;--ok:#1a7f37;--warn:#9a6700;--err:#d1242f;
+    --code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+  }
+  html[data-theme="dark"]{
+    --bg:#0b0e14;--panel:#11151f;--line:#252b3b;--tx:#dde3f0;--tx2:#8b93a7;
+    --acc:#7aa2f7;--ok:#9ece6a;--warn:#e0af68;--err:#f7768e;
+    --code-bg:#1a2030;--code-tx:#9fd3ff;--th-bg:#1a2030;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+    font-size:16px;line-height:1.8;letter-spacing:.02em;font-feature-settings:"palt" 1}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 100px}
+  a{color:var(--acc)}
+  h1{font-size:26px;margin:0 0 6px;line-height:1.4}
+  .meta{margin:14px 0 26px;color:var(--tx2);font-size:13px}
+  .tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--tx2);margin:0 6px 6px 0}
+  .tag b{color:var(--tx)}
+  .status-ok{color:var(--ok)}.status-wip{color:var(--warn)}
+  h2{font-size:19px;margin:34px 0 12px;border-left:4px solid var(--acc);padding-left:11px}
+  h3{font-size:16px;margin:22px 0 7px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--th-bg)}
+  code{background:var(--code-bg);color:var(--code-tx);padding:1px 6px;border-radius:5px;font-family:"SF Mono","Consolas",monospace;font-size:13px}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto}
+  pre code{background:none;padding:0}
+  .note{border-left:4px solid var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);padding:10px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+  ul,ol{padding-left:22px}
+  figure{margin:20px 0;text-align:center}
+  figcaption{color:var(--tx2);font-size:13px;margin-top:8px}
+  svg{max-width:100%;height:auto}
+  footer{margin-top:52px;color:var(--tx2);font-size:12px;border-top:1px solid var(--line);padding-top:20px}
+  #themeToggle{position:fixed;top:14px;right:14px;z-index:10;border:1px solid var(--line);
+    background:var(--panel);color:var(--tx);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer}
+  @media print{
+    html[data-theme="dark"]{
+      --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+      --acc:#0969da;--code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+    }
+    #themeToggle{display:none}
+    a{color:#0550ae}
+  }
+</style>
+</head>
+<body>
+<button id="themeToggle" onclick="__toggle()">☾ ダーク</button>
+<div class="wrap">
+<h1>TVapp テスト観点仕様書</h1>
+<div class="meta">
+  <span class="tag">対象 <b>tvapp-web (xiaovy.tvapp.web)</b></span>
+  <span class="tag">ブランチ <b>project/tvapp-cf-zero-cost</b></span>
+  <span class="tag">関連 <b>純TS ストリーム解決 / TVER 代理ルート / Firebase Auth</b></span>
+  <span class="tag">ステータス <b class="status-wip">WIP（テストFW未導入・TDDで導入）</b></span>
+</div>
+
+<p>
+本書は TVapp（TVER 視聴 Web アプリ）に対して、<b>どの単位で・何を・どの入力で確かめるか</b>という
+テスト観点を網羅的に定義する。Cloudflare + Firebase への $0 移行に伴い、これまで Azure Functions + yt-dlp が
+担っていたストリーム解決を <b>純 TypeScript の API ルート内実装</b>へ差し替える。この差し替えは TDD（テスト先行）で進める。
+本書はその設計対象と、既存 TVER 代理ルート・認証・UI の観点を、実コードとデータフローの事実に沿って表で整理する。
+</p>
+
+<div class="note">
+本書は <b>TDD（テスト先行）で実装予定の純 TS ストリーム解決器</b>に対するテスト観点を定義する。
+現状 <code>package.json</code> にテストフレームワークは未導入（scripts は <code>dev / build / start / lint</code> のみ）で、
+vitest はこの移行の一部として導入する。ストリーム解決の記述対象は<b>移行後の純 TS 解決器</b>であり、
+既存実装は参考に留める（現行は Azure 依存の <code>src/app/api/service/call/streaminglink/route.ts</code>）。差し替え前後で観点が変わる箇所は明記する。
+</div>
+
+<h2>1. 目的と範囲</h2>
+<p>本テスト観点仕様の対象と非対象を次に分ける。</p>
+<table>
+  <thead><tr><th>区分</th><th>対象</th><th>備考</th></tr></thead>
+  <tbody>
+    <tr><td>ストリーム解決（純TS）</td><td>TVER 公開 API を素の HTTP で辿り、非DRMのHLS(m3u8) URL を返す一連のロジック</td><td>本移行の主対象。<code>src/app/api/service/*</code> と新設の解決モジュール</td></tr>
+    <tr><td>TVER 代理ルート</td><td>session / call/home(ranking合成) / call/ranking/episode/detail/[genre] / call/episode / call/seriesEpisodes/[seriesId] / search / content/episode / content/series</td><td>フロントから叩く BFF ルート。必須パラメータと上流失敗の伝播が主眼</td></tr>
+    <tr><td>認証</td><td>middleware のトークン有無判定、匿名ゲストのロール設定・視聴制限</td><td>Firebase Auth（client）+ IDトークン検証</td></tr>
+    <tr><td>UI</td><td>エピソードページのローディング・タイムアウト・エラー表示・ゲスト30秒制限モーダル</td><td><code>src/app/episode/[episodeId]/page.tsx</code></td></tr>
+    <tr><td class="status-wip">非対象</td><td>Firestore を用いるお気に入り／視聴履歴／プロフィール／管理画面、Cosmos DB 連携</td><td>MVP 範囲外（段階2）。firebase-admin 依存箇所は移行後に別途観点化</td></tr>
+  </tbody>
+</table>
+
+<h2>2. テスト戦略</h2>
+
+<h3>2.1 TDD（テスト先行）の運用</h3>
+<p>
+純TSストリーム解決は「TVER の実レスポンスを固定化したフィクスチャ」に対して先にテストを書き、
+Red → Green → Refactor で実装する。外部 API は<b>ネットワークに出さず</b>、<code>fetch</code> をモックして
+記録済みレスポンス（正常・各種異常）を差し込む。これにより geo 制限や月替わりキーなど、
+実行環境・時刻に依存する条件を決定論的に再現する。
+</p>
+<ol>
+  <li><b>Red</b>: 観点（例「streaks 無しの旧作は Brightcove へフォールバックする」）を表明する失敗テストを書く。</li>
+  <li><b>Green</b>: 最小実装で通す。</li>
+  <li><b>Refactor</b>: 重複除去・境界の明確化。テストは緑のまま。</li>
+</ol>
+
+<h3>2.2 テストの階層（vitest）</h3>
+<table>
+  <thead><tr><th>階層</th><th>粒度</th><th>対象</th><th>外部依存の扱い</th></tr></thead>
+  <tbody>
+    <tr><td>ユニット</td><td>純関数</td><td>月替わりキー選択、キー <code>key0{idx}</code> 算出、sources から非DRM抽出、version 抽出、URL 組み立て</td><td>依存なし（引数のみ）。時刻はテストから注入</td></tr>
+    <tr><td>統合（結線）</td><td>解決フロー全体</td><td>session→callEpisode→statics→streaks_info→playback を通した m3u8 解決、各段の失敗伝播</td><td><code>fetch</code> をモックし段ごとに応答を差し込む</td></tr>
+    <tr><td>ルート（API）</td><td>Route Handler</td><td>各 <code>route.ts</code> の 400/上流ステータス伝播/500、middleware の 401</td><td><code>NextRequest</code> を組み立て、<code>fetch</code> をモック</td></tr>
+  </tbody>
+</table>
+<div class="note">
+E2E（実ブラウザでの再生・実 TVER 疎通）は本仕様の対象外。geo（JP限定）・月替わりキーは実行時刻/回線に依存するため、
+自動テストは<b>フィクスチャと注入した時刻</b>で決定論的に検証し、実疎通は手動確認に委ねる。
+</div>
+
+<h3>2.3 境界値・異常系の基本方針</h3>
+<ul>
+  <li><b>必須パラメータ</b>: 欠落 / 空文字 / 空白のみ を境界として区別する（既存の代理ルートには空白のみも弾く実装があり、純 TS 解決器でも同じ方針で弾く。§5.1 参照）。</li>
+  <li><b>月替わりキー</b>: JST の全 12 か月 + 6月/12月の <code>% 6 === 0</code> 分岐を境界として全数検証する（§4）。</li>
+  <li><b>上流ステータス</b>: 200 以外（403 / 404 / 5xx）を<b>そのまま</b>クライアントへ伝播することを確認する。</li>
+  <li><b>DRM 除外</b>: <code>key_systems</code> を持つ source を除外し、非DRMが 0 件のときの挙動を境界として確認する。</li>
+</ul>
+
+<h2>3. ストリーム解決のテスト観点</h2>
+<p>
+純TS解決器は、エピソードID を起点に TVER の公開 API を順に辿り、非DRMのHLS(m3u8)を得る。
+全リクエストは <code>Origin</code> / <code>Referer</code> を TVER 相当に固定した素の HTTP で、認証は各段のトークン/キーで行う。
+月替わりキー選択と <code>Origin: https://tver.jp</code> が要になる。
+</p>
+<p>
+下図は純TS解決器が<b>サーバ側で辿る上流 TVER API の5段</b>（<code>/callEpisode</code> などは上流 TVER のパス短縮表記）。
+フロントが叩く BFF ルート（<code>/api/service/*</code>）は §5 で別途扱う。
+ランキング（<code>callEpisodeRankingDetail</code>）による<b>ホーム合成は解決フローとは別系統</b>で、§5 の代理ルートに含める。
+</p>
+
+<figure>
+<svg viewBox="0 0 820 480" role="img" aria-label="ストリーム解決の5段フロー" style="color:var(--acc)">
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-family="'SF Mono','Consolas',monospace" font-size="14" fill="var(--tx)">
+    <!-- boxes -->
+    <g>
+      <rect x="40" y="16" width="560" height="52" rx="8" fill="var(--panel)" stroke="var(--line)"/>
+      <text x="56" y="37" font-weight="bold">1. session</text>
+      <text x="56" y="58" fill="var(--tx2)" font-size="13">POST platform-api /browser/create → platform_uid / platform_token</text>
+    </g>
+    <g>
+      <rect x="40" y="92" width="560" height="52" rx="8" fill="var(--panel)" stroke="var(--line)"/>
+      <text x="56" y="113" font-weight="bold">2. callEpisode</text>
+      <text x="56" y="134" fill="var(--tx2)" font-size="13">GET platform-api /callEpisode/{id} → content.version</text>
+    </g>
+    <g>
+      <rect x="40" y="168" width="560" height="52" rx="8" fill="var(--panel)" stroke="var(--line)"/>
+      <text x="56" y="189" font-weight="bold">3. statics（episode.json）</text>
+      <text x="56" y="210" fill="var(--tx2)" font-size="13">GET statics /episode/{id}.json?v={version} → streaks / video</text>
+    </g>
+    <g>
+      <rect x="40" y="244" width="560" height="52" rx="8" fill="var(--panel)" stroke="var(--line)"/>
+      <text x="56" y="265" font-weight="bold">4. streaks_info（月替わりキー）</text>
+      <text x="56" y="286" fill="var(--tx2)" font-size="13">GET player /streaks_info_v2.json → key0{idx}</text>
+    </g>
+    <g>
+      <rect x="40" y="320" width="560" height="52" rx="8" fill="var(--panel)" stroke="var(--line)"/>
+      <text x="56" y="341" font-weight="bold">5. playback（Origin/Referer: tver.jp 必須）</text>
+      <text x="56" y="362" fill="var(--tx2)" font-size="13">GET playback.api.streaks.jp /medias/ref:{ref} → sources[]</text>
+    </g>
+    <g>
+      <rect x="40" y="396" width="560" height="60" rx="8" fill="none" stroke="currentColor" stroke-dasharray="4 3"/>
+      <text x="56" y="419" font-weight="bold" fill="currentColor">出力</text>
+      <text x="56" y="440" fill="var(--tx2)" font-size="13">type=application/x-mpegURL の src（m3u8・非DRM）</text>
+    </g>
+    <!-- arrows -->
+    <g stroke="currentColor" stroke-width="1.8" fill="none">
+      <line x1="320" y1="68" x2="320" y2="90" marker-end="url(#ah)"/>
+      <line x1="320" y1="144" x2="320" y2="166" marker-end="url(#ah)"/>
+      <line x1="320" y1="220" x2="320" y2="242" marker-end="url(#ah)"/>
+      <line x1="320" y1="296" x2="320" y2="318" marker-end="url(#ah)"/>
+      <line x1="320" y1="372" x2="320" y2="394" marker-end="url(#ah)"/>
+    </g>
+    <!-- side annotations -->
+    <g font-size="13" fill="var(--tx2)">
+      <rect x="622" y="244" width="170" height="52" rx="6" fill="none" stroke="var(--line)"/>
+      <text x="634" y="266" fill="var(--warn)">idx=(JST月%6)||6</text>
+      <text x="634" y="287">6月/12月→key06</text>
+      <rect x="622" y="320" width="170" height="52" rx="6" fill="none" stroke="var(--line)"/>
+      <text x="634" y="342" fill="var(--err)">Origin誤り→403</text>
+      <text x="634" y="363">(id139) / geo=JP</text>
+    </g>
+  </g>
+</svg>
+<figcaption>ストリーム解決の5段フロー（session → callEpisode → statics → streaks_info → playback）と要注意点。ランキングによるホーム合成は別系統（§5）。</figcaption>
+</figure>
+
+<h3>3.1 段ごとの観点マトリクス</h3>
+<table>
+  <thead><tr><th>#</th><th>段 / 対象</th><th>観点（入力）</th><th>期待</th><th>種別</th></tr></thead>
+  <tbody>
+    <tr><td>S1</td><td>session</td><td>作成 API が 200 / <code>result.platform_uid</code>・<code>platform_token</code> を含む</td><td>uid・token を取り出して後段へ渡す</td><td>統合</td></tr>
+    <tr><td>S2</td><td>session</td><td>作成 API が 200 以外（例 5xx / タイムアウト）</td><td>後段へ進まず失敗を返す（上流ステータスを伝播）</td><td>異常</td></tr>
+    <tr><td>S3</td><td>session</td><td>200 だが <code>result</code> の必須フィールド欠落</td><td>解決不能として明示的に失敗（未定義を後段へ渡さない）</td><td>異常</td></tr>
+    <tr><td>E1</td><td>callEpisode</td><td>200 / <code>content.version</code> あり</td><td>version を statics のクエリ <code>?v=</code> に用いる</td><td>統合</td></tr>
+    <tr><td>E2</td><td>callEpisode</td><td>200 だが <code>version</code> 欠落</td><td>version 前提の後段に進めないため失敗（または既定挙動を定義して検証）</td><td>境界</td></tr>
+    <tr><td>C1</td><td>statics episode.json</td><td>200 / <code>streaks</code>(projectID・mediaID・videoRefID) あり</td><td>Streaks 経路で playback を解決</td><td>統合</td></tr>
+    <tr><td>C2</td><td>statics episode.json</td><td>200 だが <code>streaks</code> 無し・<code>video</code>(Brightcove) あり</td><td>Brightcove フォールバック（account/videoRefID + policyKey）へ切替</td><td>分岐</td></tr>
+    <tr><td>C3</td><td>statics episode.json</td><td>404 / <code>MEDIA_NOT_FOUND</code> 相当</td><td>「該当メディア無し」を区別して伝播（500 に潰さない）</td><td>異常</td></tr>
+    <tr><td>K1</td><td>streaks_info_v2</td><td>各 JST 月（1〜12）を注入し <code>idx=(月%6)||6</code> を算出</td><td><code>key0{idx}</code> を選択（§4 の全数表）</td><td>境界</td></tr>
+    <tr><td>K2</td><td>streaks_info_v2</td><td>該当 project の <code>api_key.key0{idx}</code> が存在しない</td><td>キー欠落として明示的に失敗（空キーで playback へ進まない）</td><td>異常</td></tr>
+    <tr><td>P1</td><td>playback</td><td>正しい <code>Origin: https://tver.jp</code> ・<code>Referer: https://tver.jp/</code> ・<code>X-Streaks-Api-Key</code> ・<code>Accept: application/json</code></td><td>200 / <code>sources[]</code> を取得</td><td>統合</td></tr>
+    <tr><td>P2</td><td>playback</td><td><code>Origin</code> が tver.jp でない（誤り/欠落）</td><td>403（id139 相当）を伝播。誤った Origin を送らないことをリクエスト検証</td><td>異常</td></tr>
+    <tr><td>P3</td><td>playback</td><td>非JP相当の geo 制限応答</td><td>geo 由来の失敗を区別して伝播（自動テストは応答フィクスチャで再現）</td><td>異常</td></tr>
+    <tr><td>P4</td><td>playback → sources</td><td><code>sources[]</code> に <code>type=application/x-mpegURL</code> の非DRMが1件以上</td><td>その <code>src</code>(m3u8) を採用して返す</td><td>統合</td></tr>
+    <tr><td>P5</td><td>playback → sources</td><td>DRM（<code>key_systems</code> 付き）の source が混在</td><td>DRM を<b>除外</b>し、非DRMのみ採用</td><td>境界</td></tr>
+    <tr><td>P6</td><td>playback → sources</td><td>DRM を除外した結果、非DRMが 0 件</td><td>「再生可能ソース無し」を明示的に返す（空文字URLを返さない）</td><td>境界</td></tr>
+    <tr><td>P7</td><td>playback → tracks</td><td><code>tracks[]</code> に <code>kind=captions/subtitles</code></td><td>字幕トラックを抽出して付随（採用時）</td><td>統合</td></tr>
+    <tr><td>M1</td><td>m3u8 取得</td><td>採用した m3u8 URL への取得が 200 / テキスト応答</td><td>マニフェスト取得成功（採用URLの疎通確認を行う場合）</td><td>統合</td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 純関数として切り出す観点（ユニット）</h3>
+<p>フローから独立してテストしやすい純関数を、純 TS 解決器で<b>新たに切り出して実装する</b>（現状未実装・TDD で導入する設計）。境界値をユニットで固める。以下の関数名は実装予定の設計上の呼称。</p>
+<pre><code>// 月替わりキー選択（時刻はテストから注入し決定論化）
+selectStreaksKey(apiKey, jstMonth)         // idx=(jstMonth%6)||6 → key0{idx}
+extractVersion(callEpisodeResult)          // content.version を取り出す / 欠落は null
+pickClearHls(sources)                       // application/x-mpegURL かつ key_systems 無しの src
+hasStreaks(episodeJson) / hasBrightcove(..) // Streaks / Brightcove 経路の判定
+buildPlaybackUrl(projectID, videoRefID)     // /v1/projects/{p}/medias/ref:{ref}</code></pre>
+<div class="note">
+時刻依存を排すため、月は関数引数で受ける（内部で <code>new Date()</code> を直接読まない）。
+呼び出し側が「リクエスト時の JST 月」を計算して渡す設計にすると、K1 の全数テストが決定論的になる。
+</div>
+
+<h2>4. 月替わりキー選択の境界値マトリクス</h2>
+<p>
+キー選択式は <code>idx = (JSTの月 % 6) || 6</code>。<code>% 6 === 0</code> になる 6月・12月で <code>|| 6</code> により
+<code>key06</code> へ落ちる分岐が要。全 12 か月を境界として検証する。
+</p>
+<table>
+  <thead><tr><th>JST 月</th><th>月 % 6</th><th>採用 idx</th><th>選択キー</th><th>境界の要点</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>1</td><td>1</td><td><code>key01</code></td><td></td></tr>
+    <tr><td>2</td><td>2</td><td>2</td><td><code>key02</code></td><td></td></tr>
+    <tr><td>3</td><td>3</td><td>3</td><td><code>key03</code></td><td></td></tr>
+    <tr><td>4</td><td>4</td><td>4</td><td><code>key04</code></td><td></td></tr>
+    <tr><td>5</td><td>5</td><td>5</td><td><code>key05</code></td><td></td></tr>
+    <tr><td>6</td><td>0</td><td>6</td><td><code>key06</code></td><td class="status-wip"><b>0→6 分岐</b></td></tr>
+    <tr><td>7</td><td>1</td><td>1</td><td><code>key01</code></td><td>周回（7月=1月と同じ）</td></tr>
+    <tr><td>8</td><td>2</td><td>2</td><td><code>key02</code></td><td></td></tr>
+    <tr><td>9</td><td>3</td><td>3</td><td><code>key03</code></td><td></td></tr>
+    <tr><td>10</td><td>4</td><td>4</td><td><code>key04</code></td><td></td></tr>
+    <tr><td>11</td><td>5</td><td>5</td><td><code>key05</code></td><td></td></tr>
+    <tr><td>12</td><td>0</td><td>6</td><td><code>key06</code></td><td class="status-wip"><b>0→6 分岐</b></td></tr>
+  </tbody>
+</table>
+<pre><code>describe('selectStreaksKey', () => {
+  const table = [[1,'key01'],[2,'key02'],[3,'key03'],[4,'key04'],[5,'key05'],
+    [6,'key06'],[7,'key01'],[8,'key02'],[9,'key03'],[10,'key04'],[11,'key05'],[12,'key06']];
+  it.each(table)('JST %i月 → %s', (month, expected) => {
+    expect(selectStreaksKey(apiKeyFixture, month).name).toBe(expected);
+  });
+});</code></pre>
+
+<h2>5. TVER 代理ルートのテスト観点</h2>
+<p>
+BFF の各 Route Handler は、必須クエリを検証してから TVER 公開 API を叩き、上流の失敗を<b>ステータスごと伝播</b>する。
+実装は概ね「必須欠落→400」「<code>!response.ok</code>→上流の <code>response.status</code> を返す」「例外→500」で統一されている。
+</p>
+
+<h3>5.1 必須パラメータと伝播</h3>
+<table>
+  <thead><tr><th>ルート</th><th>必須</th><th>欠落時</th><th>上流失敗時</th><th>成功時</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /api/service/session</code></td><td>—（body 固定 <code>device_type=pc</code>）</td><td>—</td><td>上流ステータス伝播（例 5xx）</td><td><code>{ platformUid, platformToken }</code></td></tr>
+    <tr><td><code>GET /api/service/call/episode</code></td><td>episodeId / platformUid / platformToken</td><td>400「必須です」</td><td>上流ステータス伝播</td><td><code>{ data }</code></td></tr>
+    <tr><td><code>GET /api/service/call/ranking/episode/detail/[genre]</code></td><td>genre（空白のみも弾く）</td><td>400</td><td>上流ステータス伝播</td><td><code>{ data }</code></td></tr>
+    <tr><td><code>GET /api/service/call/home</code></td><td>platformUid / platformToken</td><td>400</td><td>各 genre 個別失敗は <code>null</code> で除外し合成継続</td><td>ranking を callHome 形へ合成</td></tr>
+    <tr><td><code>GET /api/service/call/seriesEpisodes/[seriesId]</code></td><td>seriesId / platform_uid / platform_token</td><td>400</td><td>上流ステータス伝播</td><td><code>{ data }</code></td></tr>
+    <tr><td><code>GET /api/service/search</code></td><td>keyword / platformUid / platformToken</td><td>400</td><td>上流ステータス伝播</td><td><code>{ data }</code></td></tr>
+    <tr><td><code>GET /api/content/episode/[episodeId]</code></td><td>episodeId</td><td>400</td><td>上流ステータス伝播</td><td><code>{ data }</code>（statics episode.json）</td></tr>
+    <tr><td><code>GET /api/service/call/streaminglink</code></td><td>episodeId（空白のみも弾く）</td><td>400</td><td>上流ステータス伝播<span class="status-wip">（現行 Azure 依存 → 純TSへ差替）</span></td><td><code>{ video_url }</code></td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 代理ルート共通の観点</h3>
+<ul>
+  <li><b>ヘッダ固定</b>: TVER 系は <code>x-tver-platform-type: web</code> ・<code>Origin/Referer=tver.jp</code>（session のみ <code>s.tver.jp</code>）。リクエスト検証でこれらが付くことを確認する。</li>
+  <li><b>ステータス伝播</b>: 上流 403/404/5xx を <code>response.status</code> のまま返し、<b>500 に丸めない</b>ことを確認する。</li>
+  <li><b>例外時 500</b>: <code>fetch</code> 自体が throw（ネットワーク断など）したときのみ 500 を返す。</li>
+  <li><b>home の部分失敗耐性</b>: 5ジャンル中いくつかが失敗しても、成功分だけで合成を続ける（<code>filter(r =&gt; r !== null)</code>）。全滅時の挙動も観点化する。</li>
+  <li><b>クエリのエスケープ</b>: <code>search</code> の <code>keyword</code> が URL に素で連結される点。特殊文字（空白・記号・日本語）を境界として検証する。</li>
+</ul>
+
+<pre><code>// 例: 必須欠落 → 400
+it('episodeId が無ければ 400', async () => {
+  const req = new NextRequest('http://x/api/service/call/episode');
+  const res = await GET(req);
+  expect(res.status).toBe(400);
+});
+// 例: 上流 403 をそのまま伝播
+it('上流 403 を 403 で返す', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 403 }));
+  const req = new NextRequest('http://x/api/service/call/episode?episodeId=a&platformUid=u&platformToken=t');
+  const res = await GET(req);
+  expect(res.status).toBe(403);
+});</code></pre>
+
+<h2>6. 認証のテスト観点</h2>
+<p>
+認証は 2 層。middleware が <code>/api/</code> 配下の <code>Authorization: Bearer</code> 有無を判定し、
+無ければ 401 を返す（公開ルートは除外）。各 API は Bearer トークンを検証し、匿名（ゲスト）はロールと視聴制限で扱いを変える。
+</p>
+
+<h3>6.1 middleware（トークン有無）</h3>
+<table>
+  <thead><tr><th>入力</th><th>期待</th></tr></thead>
+  <tbody>
+    <tr><td><code>/api/*</code> かつ <code>Authorization</code> 無し（または <code>Bearer </code> で始まらない）</td><td>401「トークンがありません。」</td></tr>
+    <tr><td>公開ルート（<code>/api/User/Register</code>, <code>/api/User/setGuestRole</code>, <code>/api/utils/verify-token</code>, <code>/api/health</code> 等）</td><td>トークン無しでも <code>next()</code> で通過</td></tr>
+    <tr><td>非 <code>/api/</code> パス（ページ）でトークン無し</td><td>401 にせず通過（詳細は各画面/ API で判定）</td></tr>
+    <tr><td><code>/about</code> / <code>/another</code></td><td>redirect / rewrite（レガシールート）</td></tr>
+  </tbody>
+</table>
+<div class="note">
+middleware は<b>トークンの中身を検証しない</b>（存在のみ判定）。中身の検証は各 API（<code>verify-token</code> の
+<code>jwtVerify</code>、または firebase-admin の <code>verifyIdToken</code>）が担う。この責務分担を観点として明示する。
+</div>
+
+<h3>6.2 トークン検証（各 API）</h3>
+<table>
+  <thead><tr><th>対象</th><th>観点</th><th>期待</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /api/utils/verify-token</code></td><td>有効な JWT（<code>JWT_SECRET_KEY</code> 署名）</td><td><code>{ valid: true, payload }</code></td></tr>
+    <tr><td><code>POST /api/utils/verify-token</code></td><td>無効／改竄／期限切れ JWT</td><td><code>verifyToken</code> が <code>null</code> → 401 <code>{ valid: false }</code></td></tr>
+    <tr><td><code>POST /api/utils/verify-token</code></td><td><code>JWT_SECRET_KEY</code> 未設定</td><td><code>verifyToken</code> が throw → 500</td></tr>
+    <tr><td>firebase-admin 系（favorites 等）<span class="status-wip">(段階2)</span></td><td><code>Authorization</code> 無し</td><td>401「認証が必要です」</td></tr>
+    <tr><td>firebase-admin 系</td><td>不正トークン（<code>auth/argument-error</code>）</td><td>401「トークンが無効です」</td></tr>
+    <tr><td>firebase-admin 系</td><td>本文バリデーション（<code>seriesId</code>/<code>seriesTitle</code> 空）</td><td>400</td></tr>
+  </tbody>
+</table>
+
+<h3>6.3 匿名ゲストの制限</h3>
+<table>
+  <thead><tr><th>対象</th><th>観点</th><th>期待</th></tr></thead>
+  <tbody>
+    <tr><td><code>POST /api/User/setGuestRole</code></td><td>有効な匿名トークン</td><td>Custom Claims に <code>role=GUEST</code> を設定し、ゲストプロファイルを作成</td></tr>
+    <tr><td><code>POST /api/User/setGuestRole</code></td><td><code>Authorization</code> 無し</td><td>401「認証が必要です」</td></tr>
+    <tr><td>エピソード再生（ゲスト）</td><td><code>loginUser.isAnonymous</code> かつ <code>playedSeconds &gt;= 30</code></td><td>再生停止し 30秒制限モーダルを表示、10秒カウントダウン後 <code>/</code> へ遷移</td></tr>
+    <tr><td>エピソード初回アクセス（ゲスト）</td><td>episode 取得後の初回</td><td>視聴時間制限の初回警告モーダルを表示</td></tr>
+    <tr><td>お気に入りボタン（ゲスト）</td><td><code>isAnonymous</code></td><td>FavoriteButton を非表示（お気に入り操作不可）</td></tr>
+  </tbody>
+</table>
+<pre><code>// ゲスト30秒制限（handleProgress 相当）
+it('ゲストは30秒で停止＋制限モーダル', () => {
+  const ui = renderEpisode({ user: { isAnonymous: true } });
+  ui.emitProgress({ playedSeconds: 30 });
+  expect(ui.isPlaying).toBe(false);
+  expect(ui.limitModalOpen).toBe(true);
+});
+it('29秒では停止しない（境界）', () => {
+  const ui = renderEpisode({ user: { isAnonymous: true } });
+  ui.emitProgress({ playedSeconds: 29 });
+  expect(ui.isPlaying).toBe(true);
+});</code></pre>
+
+<h2>7. UI のテスト観点</h2>
+<p>
+エピソードページ（<code>src/app/episode/[episodeId]/page.tsx</code>）は、認証状態・データ取得・タイムアウトで
+表示を切り替える。状態遷移を観点として固定する。
+</p>
+<table>
+  <thead><tr><th>状態</th><th>条件</th><th>表示</th></tr></thead>
+  <tbody>
+    <tr><td>認証待ち</td><td><code>!loginUser</code></td><td><code>null</code>（何も描画しない）</td></tr>
+    <tr><td>episodeId 欠落</td><td><code>!episodeId</code></td><td>ErrorState「エピソードIDが指定されていません」＋ホームリンク</td></tr>
+    <tr><td>データ取得中</td><td><code>!episode</code> かつ 未タイムアウト</td><td><code>null</code>（＋動画枠は「動画を読み込み中...」）</td></tr>
+    <tr><td>タイムアウト</td><td><code>!episode</code> かつ 10秒経過（<code>loadingTimeout</code>）</td><td>ErrorState「エピソードが見つかりません」＋再読み込み(<code>onRetry</code>)</td></tr>
+    <tr><td>動画URL未取得</td><td><code>episode</code> あり / <code>videoUrl</code> なし</td><td>「動画を読み込み中...」プレースホルダ</td></tr>
+    <tr><td>再生可能</td><td><code>videoUrl.video_url</code> あり</td><td>VideoPlayer（react-player, HLS）を描画</td></tr>
+    <tr><td>ゲスト初回</td><td><code>isAnonymous</code> ＋ episode 取得</td><td>初回警告モーダル（「了解しました」）</td></tr>
+    <tr><td>ゲスト制限到達</td><td>30秒到達</td><td>制限モーダル（ボタン無し・自動遷移カウントダウン）</td></tr>
+  </tbody>
+</table>
+<div class="note">
+タイムアウト判定は <code>setTimeout(..., 10000)</code> に依存する。テストでは <code>vi.useFakeTimers()</code> で
+10秒を進め、<code>episode</code> 未取得のままタイムアウト表示に切り替わることを検証する（実時間を待たない）。
+</div>
+<ul>
+  <li><b>ローディング</b>: 初期は <code>null</code>／プレースホルダ。<code>episode</code> と <code>videoUrl</code> の到着で描画が進むこと。</li>
+  <li><b>タイムアウト</b>: 10秒経過かつ未取得で ErrorState。到着済みならタイムアウト表示に落ちないこと（境界: 到着が9.9秒 vs 10.1秒）。</li>
+  <li><b>エラー表示</b>: episodeId 欠落とタイムアウトで異なる文言・アイコン。再読み込み導線（<code>onRetry</code> / <code>window.location.reload</code>）の存在。</li>
+  <li><b>モーダル排他</b>: モーダル表示中は <code>isPlaying=false</code> に強制され、<code>controls</code> も無効化されること。</li>
+</ul>
+
+<h2>8. 網羅マトリクス</h2>
+<p>観点をレイヤ × 種別で俯瞰する。各セルは §3〜§7 の対応 ID・項目を指す。</p>
+<table>
+  <thead><tr><th>レイヤ \ 種別</th><th>正常系</th><th>境界値</th><th>異常系</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>ストリーム解決（純TS）</td>
+      <td>S1・E1・C1・P1・P4・M1</td>
+      <td>K1(全12月)・E2・P5・P6</td>
+      <td>S2・S3・C3・K2・P2・P3</td>
+    </tr>
+    <tr>
+      <td>経路分岐</td>
+      <td>C1(Streaks)</td>
+      <td>C2(Brightcove 切替判定)</td>
+      <td>C2 かつ双方欠落</td>
+    </tr>
+    <tr>
+      <td>TVER 代理ルート</td>
+      <td>各ルート成功時 <code>{ data }</code></td>
+      <td>空文字/空白のみパラメータ・search 特殊文字・home 部分失敗</td>
+      <td>必須欠落 400・上流 403/404/5xx 伝播・例外 500</td>
+    </tr>
+    <tr>
+      <td>認証</td>
+      <td>有効トークン通過・ゲストロール設定</td>
+      <td>29秒 vs 30秒・公開ルート除外</td>
+      <td>トークン無 401・不正トークン 401・secret 未設定 500</td>
+    </tr>
+    <tr>
+      <td>UI</td>
+      <td>再生可能描画</td>
+      <td>タイムアウト境界(9.9/10.1秒)・モーダル排他</td>
+      <td>episodeId 欠落・タイムアウト ErrorState</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="note">
+※ Brightcove 経路（C2）はブリーフ上「旧作のフォールバック」であり、現行の主経路は Streaks。
+フォールバック観点は「Streaks 欠落時に確実に切り替わること」と「双方欠落時に明示失敗すること」を最小で押さえる。
+</div>
+
+<h2>9. テスト環境・実行（vitest 導入前提）</h2>
+<p>TDD 開始のための最小構成。導入は本移行の一部として行う（現状は未導入）。</p>
+<table>
+  <thead><tr><th>項目</th><th>方針</th></tr></thead>
+  <tbody>
+    <tr><td>ランナー</td><td>vitest（<code>test</code> / <code>test:watch</code> / <code>coverage</code> スクリプトを追加）</td></tr>
+    <tr><td>環境</td><td>ユニット/統合/ルートは <code>node</code> 環境。UI 状態ロジックは jsdom 相当（または状態関数を純化して node で）</td></tr>
+    <tr><td>外部通信</td><td><code>vi.spyOn(globalThis,'fetch')</code> でモック。実 TVER へは出さない</td></tr>
+    <tr><td>時刻</td><td>月は関数引数注入で決定論化。タイマは <code>vi.useFakeTimers()</code></td></tr>
+    <tr><td>フィクスチャ</td><td>各段の実レスポンス（正常・streaks有/無・DRM混在・403・404）を JSON として固定保存</td></tr>
+    <tr><td>秘密情報</td><td>フィクスチャに実キー・実トークンを含めない（ダミー化）</td></tr>
+  </tbody>
+</table>
+<pre><code>// package.json（追加案）
+"scripts": {
+  "test": "vitest run",
+  "test:watch": "vitest",
+  "coverage": "vitest run --coverage"
+}</code></pre>
+
+<footer>
+<div>TVapp テスト観点仕様書</div>
+<div>対象: tvapp-web (xiaovy.tvapp.web) / ブランチ: project/tvapp-cf-zero-cost</div>
+<div>記載は調査ブリーフと実コード（<code>src/app/api</code>・<code>src/services</code>・<code>src/app/episode</code>・<code>src/middleware.ts</code>）に基づく客観的事実。</div>
+<div>テストフレームワークは現状未導入で、本書は TDD で満たすべき観点を定義する。</div>
+</footer>
+</div>
+<script>
+  (function(){
+    var t=localStorage.getItem('doc-theme');
+    if(t)document.documentElement.setAttribute('data-theme',t);
+    __sync();
+  })();
+  function __toggle(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var n=d?'light':'dark';
+    document.documentElement.setAttribute('data-theme',n);
+    localStorage.setItem('doc-theme',n);__sync();
+  }
+  function __sync(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var b=document.getElementById('themeToggle');
+    if(b)b.textContent=d?'☀ ライト':'☾ ダーク';
+  }
+</script>
+</body>
+</html>

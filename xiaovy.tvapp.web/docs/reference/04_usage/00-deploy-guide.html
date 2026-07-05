@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp デプロイ手順書（Cloudflare Workers + Firebase・ほぼ $0）</title>
+<style>
+  :root{
+    --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+    --acc:#0969da;--ok:#1a7f37;--warn:#9a6700;--err:#d1242f;
+    --code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+  }
+  html[data-theme="dark"]{
+    --bg:#0b0e14;--panel:#11151f;--line:#252b3b;--tx:#dde3f0;--tx2:#8b93a7;
+    --acc:#7aa2f7;--ok:#9ece6a;--warn:#e0af68;--err:#f7768e;
+    --code-bg:#1a2030;--code-tx:#9fd3ff;--th-bg:#1a2030;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+    font-size:16px;line-height:1.8;letter-spacing:.02em;font-feature-settings:"palt" 1}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 100px}
+  a{color:var(--acc)}
+  h1{font-size:26px;margin:0 0 6px;line-height:1.4}
+  .meta{margin:14px 0 26px;color:var(--tx2);font-size:13px}
+  .tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--tx2);margin:0 6px 6px 0}
+  .tag b{color:var(--tx)}
+  .status-ok{color:var(--ok)}.status-wip{color:var(--warn)}
+  h2{font-size:19px;margin:34px 0 12px;border-left:4px solid var(--acc);padding-left:11px}
+  h3{font-size:16px;margin:22px 0 7px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--th-bg)}
+  code{background:var(--code-bg);color:var(--code-tx);padding:1px 6px;border-radius:5px;font-family:"SF Mono","Consolas",monospace;font-size:13px}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto}
+  pre code{background:none;padding:0}
+  .note{border-left:4px solid var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);padding:10px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+  ul,ol{padding-left:22px}
+  figure{margin:20px 0;text-align:center}
+  figcaption{color:var(--tx2);font-size:13px;margin-top:8px}
+  svg{max-width:100%;height:auto}
+  footer{margin-top:52px;color:var(--tx2);font-size:12px;border-top:1px solid var(--line);padding-top:20px}
+  #themeToggle{position:fixed;top:14px;right:14px;z-index:10;border:1px solid var(--line);
+    background:var(--panel);color:var(--tx);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer}
+  @media print{
+    html[data-theme="dark"]{
+      --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+      --acc:#0969da;--code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+    }
+    #themeToggle{display:none}
+    a{color:#0550ae}
+  }
+</style>
+</head>
+<body>
+<button id="themeToggle" onclick="__toggle()">☾ ダーク</button>
+<div class="wrap">
+<h1>TVapp デプロイ手順書 — Cloudflare Workers + Firebase（ほぼ $0）</h1>
+<div class="meta">
+  <span class="tag">対象 <b>tvapp-web</b></span>
+  <span class="tag">ブランチ <b>project/tvapp-cf-zero-cost</b></span>
+  <span class="tag">version <b>1.4.0</b></span>
+  <span class="tag">区分 <b>reference / 04_usage</b></span>
+  <span class="tag">ステータス <b class="status-ok">MVP デプロイ手順</b></span>
+</div>
+
+<p>この手順書を上から順にたどれば、Firebase と Cloudflare を設定して TVapp（MVP）を
+Cloudflare Workers 上へデプロイできる。作業ディレクトリは
+<code>tvapp-service/tvapp-web/xiaovy.tvapp.web</code>。読者は本人（開発者）を想定する。</p>
+
+<nav class="note" aria-label="目次">
+  <b>この手順書の流れ</b>
+  <ol>
+    <li><a href="#s0">これは何をデプロイするか</a></li>
+    <li><a href="#s1">事前に用意するもの</a></li>
+    <li><a href="#s2">環境変数（重要な性質）</a></li>
+    <li><a href="#s3">ローカル検証手順</a></li>
+    <li><a href="#s4">Firebase コンソール設定</a></li>
+    <li><a href="#s5">Cloudflare へデプロイ</a></li>
+    <li><a href="#s6">デプロイ後の確認（完了定義）</a></li>
+    <li><a href="#s7">並行作業チェックリスト</a></li>
+    <li><a href="#s8">コスト・制限・トラブルシュート</a></li>
+  </ol>
+</nav>
+
+<h2 id="s0">0. これは何をデプロイするか</h2>
+<ul>
+  <li><b>フロント/BFF</b>: Next.js 14（App Router）を <code>@opennextjs/cloudflare</code>（OpenNext）で
+    Cloudflare Workers に載せる。</li>
+  <li><b>データ解決</b>: TVER の閲覧・再生は公開 API への純 TypeScript 解決で行う。
+    Azure Functions / yt-dlp / Cosmos DB は不要。</li>
+  <li><b>認証</b>: Firebase Auth（クライアント）。</li>
+  <li><b>MVP スコープ</b>: ホーム（ランキング閲覧）／検索／シリーズ／エピソード再生／ログイン・新規登録・ゲスト。</li>
+  <li><b>段階2</b>（お気に入り／視聴履歴／プロフィール／管理）は現状 <code>deferred-phase2/</code> に退避済みで
+    MVP には含めない（Firestore クライアント方式で後日有効化予定）。</li>
+  <li><b>コスト</b>: Cloudflare Workers 無料枠（10 万リクエスト/日）、Firebase Spark（無料枠）。ほぼ $0。</li>
+</ul>
+
+<figure>
+<svg viewBox="0 0 900 300" role="img" aria-label="TVapp MVP の構成図">
+  <defs>
+    <marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="var(--acc)"/>
+    </marker>
+  </defs>
+  <!-- Browser -->
+  <rect x="20" y="110" width="160" height="80" rx="10" fill="var(--panel)" stroke="var(--acc)" stroke-width="2"/>
+  <text x="100" y="142" text-anchor="middle" fill="var(--tx)" font-size="15" font-weight="bold">ブラウザ</text>
+  <text x="100" y="164" text-anchor="middle" fill="var(--tx2)" font-size="12">本人（開発者）</text>
+  <!-- Cloudflare Workers -->
+  <rect x="300" y="70" width="260" height="160" rx="10" fill="var(--panel)" stroke="var(--acc)" stroke-width="2"/>
+  <text x="430" y="100" text-anchor="middle" fill="var(--tx)" font-size="15" font-weight="bold">Cloudflare Workers</text>
+  <text x="430" y="122" text-anchor="middle" fill="var(--tx2)" font-size="12">無料枠 10万req/日</text>
+  <rect x="325" y="140" width="210" height="70" rx="8" fill="var(--bg)" stroke="var(--line)" stroke-width="1.5"/>
+  <text x="430" y="168" text-anchor="middle" fill="var(--tx)" font-size="13" font-weight="bold">Next.js 14 (App Router)</text>
+  <text x="430" y="190" text-anchor="middle" fill="var(--tx2)" font-size="12">OpenNext / .open-next/worker.js</text>
+  <!-- TVER public API -->
+  <rect x="690" y="40" width="185" height="80" rx="10" fill="var(--panel)" stroke="var(--line)" stroke-width="1.5"/>
+  <text x="782" y="72" text-anchor="middle" fill="var(--tx)" font-size="14" font-weight="bold">TVER 公開 API</text>
+  <text x="782" y="94" text-anchor="middle" fill="var(--tx2)" font-size="12">純 TS 解決（JP 限定）</text>
+  <!-- Firebase Auth -->
+  <rect x="690" y="180" width="185" height="80" rx="10" fill="var(--panel)" stroke="var(--line)" stroke-width="1.5"/>
+  <text x="782" y="212" text-anchor="middle" fill="var(--tx)" font-size="14" font-weight="bold">Firebase Auth</text>
+  <text x="782" y="234" text-anchor="middle" fill="var(--tx2)" font-size="12">メール/PW・匿名</text>
+  <!-- arrows -->
+  <line x1="182" y1="150" x2="298" y2="150" stroke="var(--acc)" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="240" y="140" text-anchor="middle" fill="var(--tx2)" font-size="11">HTTPS</text>
+  <line x1="562" y1="130" x2="688" y2="90" stroke="var(--acc)" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="625" y="102" text-anchor="middle" fill="var(--tx2)" font-size="11">閲覧/再生</text>
+  <line x1="182" y1="165" x2="688" y2="220" stroke="var(--acc)" stroke-width="2" marker-end="url(#ah)" stroke-dasharray="5 4"/>
+  <text x="470" y="270" text-anchor="middle" fill="var(--tx2)" font-size="11">認証はクライアント直（SDK 値はビルド時に埋め込み）</text>
+</svg>
+<figcaption>図1. MVP 構成 — ブラウザ → Cloudflare Workers（Next.js/OpenNext） → TVER 公開 API。認証は Firebase Auth へクライアント直。</figcaption>
+</figure>
+
+<h2 id="s1">1. 事前に用意するもの</h2>
+<ul>
+  <li><b>Firebase プロジェクト</b>（用意済み）。Authentication を有効化し、サインイン方法で
+    「メール/パスワード」と「匿名」を ON にする。</li>
+  <li><b>Firebase の SDK 構成値6つ</b>（コンソール &gt; プロジェクトの設定 &gt; 全般 &gt; マイアプリ &gt;
+    SDK setup and configuration）:
+    <code>apiKey</code> / <code>authDomain</code> / <code>projectId</code> /
+    <code>storageBucket</code> / <code>messagingSenderId</code> / <code>appId</code>。</li>
+  <li><b>Cloudflare アカウント</b>（無料）。デプロイには wrangler のログイン（<code>npx wrangler login</code>）
+    または API トークン（環境変数 <code>CLOUDFLARE_API_TOKEN</code>）。</li>
+  <li><b>Node.js 20+</b> と <b>npm</b>。</li>
+</ul>
+
+<h2 id="s2">2. 環境変数（重要な性質）</h2>
+<p><code>.env.local.example</code> を <code>.env.local</code> にコピーして Firebase 値を記入する。</p>
+<pre><code>cp .env.local.example .env.local
+# エディタで .env.local を開き、Firebase の6値 + IDTOKEN_NAME を記入</code></pre>
+
+<h3>MVP で必須の変数</h3>
+<p>すべて <code>NEXT_PUBLIC_</code> 接頭辞で、<b>ビルド時にクライアントへ埋め込まれる</b>。</p>
+<table>
+  <thead><tr><th>変数名</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_API_KEY</code></td><td>SDK 構成の apiKey</td></tr>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</code></td><td>authDomain（例 <code>your-project.firebaseapp.com</code>）</td></tr>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_PROJECT_ID</code></td><td>projectId</td></tr>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET</code></td><td>storageBucket（例 <code>your-project.appspot.com</code>）</td></tr>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID</code></td><td>messagingSenderId</td></tr>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_APP_ID</code></td><td>appId</td></tr>
+    <tr><td><code>NEXT_PUBLIC_IDTOKEN_NAME</code></td><td>認証トークンの localStorage キー名（任意の文字列。例 <code>IdToken</code>）</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <b>つまずきやすい点:</b> <code>NEXT_PUBLIC_*</code> は<b>「ビルド時」</b>に埋め込まれる。
+  そのため <code>npm run cf:build</code> を実行する環境（手元 or CI）に必ず設定しておくこと。
+  <b>実行時の Worker 変数（wrangler の vars 等）に入れても反映されない</b>。
+</div>
+
+<p>サーバー専用の秘密（将来 <code>JWT_SECRET_KEY</code> 等）は
+<code>npx wrangler secret put NAME</code> か <code>wrangler.jsonc</code> の vars/secrets で扱う。
+<b>MVP では不要</b>。</p>
+
+<h2 id="s3">3. ローカル検証手順</h2>
+<p>作業ディレクトリ: <code>tvapp-service/tvapp-web/xiaovy.tvapp.web</code>。</p>
+<ol>
+  <li>依存をインストール:
+    <pre><code>npm install</code></pre></li>
+  <li>ユニットテスト（vitest 34 件・ネット不要）:
+    <pre><code>npm test</code></pre></li>
+  <li>（任意）実 TVER への疎通テスト（<b>日本国内 IP 必須</b>）:
+    <pre><code>npm run test:live</code></pre></li>
+  <li>開発サーバーで動作確認 → <code>http://localhost:3000</code> でログイン → ホーム → エピソード再生:
+    <pre><code>npm run dev</code></pre></li>
+  <li>Cloudflare 向けビルド（<code>next build</code> → OpenNext で <code>.open-next/worker.js</code> を生成）:
+    <pre><code>npm run cf:build</code></pre></li>
+  <li>ローカルの workerd で Worker を起動して確認（<code>wrangler dev</code> 相当）:
+    <pre><code>npm run cf:preview</code></pre></li>
+</ol>
+
+<h2 id="s4">4. Firebase コンソール設定</h2>
+<ul>
+  <li><b>Authentication &gt; Sign-in method</b>:「メール/パスワード」と「匿名」を有効化する。</li>
+  <li><b>Authentication &gt; Settings &gt; 承認済みドメイン</b>: デプロイ先ドメインを追加する。
+    <ul>
+      <li><code>&lt;worker名&gt;.&lt;サブドメイン&gt;.workers.dev</code></li>
+      <li>独自ドメインがあればそれも追加</li>
+      <li><code>localhost</code> は既定で許可されている（ローカル検証はそのまま可）</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="s5">5. Cloudflare へデプロイ</h2>
+<ol>
+  <li><b>初回のみ</b>: wrangler をログイン（ブラウザで承認）。CI では <code>CLOUDFLARE_API_TOKEN</code> を使う:
+    <pre><code>npx wrangler login</code></pre></li>
+  <li>デプロイ（内部で <code>opennextjs-cloudflare build</code> → <code>deploy</code>）。
+    <code>.env.local</code> の <code>NEXT_PUBLIC_*</code> がビルドに乗る:
+    <pre><code>npm run cf:deploy</code></pre></li>
+  <li>完了後、払い出される URL を開く:
+    <pre><code>https://&lt;worker名&gt;.&lt;サブドメイン&gt;.workers.dev</code></pre></li>
+</ol>
+<p><code>wrangler.jsonc</code> の設定値（現行）:</p>
+<table>
+  <thead><tr><th>キー</th><th>値</th></tr></thead>
+  <tbody>
+    <tr><td><code>name</code></td><td><code>tvapp-web</code></td></tr>
+    <tr><td><code>main</code></td><td><code>.open-next/worker.js</code></td></tr>
+    <tr><td><code>compatibility_flags</code></td><td><code>["nodejs_compat"]</code></td></tr>
+  </tbody>
+</table>
+
+<figure>
+<svg viewBox="0 0 900 200" role="img" aria-label="デプロイ手順のフロー">
+  <defs>
+    <marker id="fa" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="var(--acc)"/>
+    </marker>
+  </defs>
+  <!-- step boxes -->
+  <g font-size="13">
+    <rect x="15" y="70" width="150" height="60" rx="8" fill="var(--panel)" stroke="var(--acc)" stroke-width="1.8"/>
+    <text x="90" y="95" text-anchor="middle" fill="var(--tx)" font-weight="bold">.env.local</text>
+    <text x="90" y="115" text-anchor="middle" fill="var(--tx2)" font-size="12">Firebase 6値記入</text>
+
+    <rect x="205" y="70" width="150" height="60" rx="8" fill="var(--panel)" stroke="var(--acc)" stroke-width="1.8"/>
+    <text x="280" y="95" text-anchor="middle" fill="var(--tx)" font-weight="bold">wrangler login</text>
+    <text x="280" y="115" text-anchor="middle" fill="var(--tx2)" font-size="12">初回のみ</text>
+
+    <rect x="395" y="70" width="150" height="60" rx="8" fill="var(--panel)" stroke="var(--acc)" stroke-width="1.8"/>
+    <text x="470" y="95" text-anchor="middle" fill="var(--tx)" font-weight="bold">cf:deploy</text>
+    <text x="470" y="115" text-anchor="middle" fill="var(--tx2)" font-size="12">build → deploy</text>
+
+    <rect x="585" y="70" width="150" height="60" rx="8" fill="var(--panel)" stroke="var(--acc)" stroke-width="1.8"/>
+    <text x="660" y="95" text-anchor="middle" fill="var(--tx)" font-weight="bold">承認済みドメイン</text>
+    <text x="660" y="115" text-anchor="middle" fill="var(--tx2)" font-size="12">workers.dev 追加</text>
+
+    <rect x="770" y="70" width="115" height="60" rx="8" fill="var(--panel)" stroke="var(--ok)" stroke-width="1.8"/>
+    <text x="827" y="95" text-anchor="middle" fill="var(--tx)" font-weight="bold">動作確認</text>
+    <text x="827" y="115" text-anchor="middle" fill="var(--tx2)" font-size="12">ログイン/再生</text>
+  </g>
+  <!-- arrows -->
+  <line x1="167" y1="100" x2="203" y2="100" stroke="var(--acc)" stroke-width="2" marker-end="url(#fa)"/>
+  <line x1="357" y1="100" x2="393" y2="100" stroke="var(--acc)" stroke-width="2" marker-end="url(#fa)"/>
+  <line x1="547" y1="100" x2="583" y2="100" stroke="var(--acc)" stroke-width="2" marker-end="url(#fa)"/>
+  <line x1="737" y1="100" x2="768" y2="100" stroke="var(--acc)" stroke-width="2" marker-end="url(#fa)"/>
+</svg>
+<figcaption>図2. デプロイの流れ — 環境変数記入 → wrangler ログイン → cf:deploy → Firebase 承認済みドメイン追加 → 動作確認。</figcaption>
+</figure>
+
+<h2 id="s6">6. デプロイ後の確認（完了定義）</h2>
+<ol>
+  <li>払い出し URL でログイン（メール/パスワード or ゲスト）ができる。</li>
+  <li>ホームにランキングが表示される。エピソードを開くと再生できる。</li>
+  <li>ゲストは 30 秒で視聴制限（現行仕様）。</li>
+</ol>
+<div class="note">
+  <b>つまずきやすい点:</b> Firebase の<b>承認済みドメインに <code>workers.dev</code> を追加していない</b>と、
+  払い出し URL でのログインが失敗する。ログイン画面から先に進めないときは、まずここを確認する（§4）。
+</div>
+
+<h2 id="s7">7. 並行作業チェックリスト</h2>
+<p>依存の少ない作業から着手できる。上から順にチェックしていけばよい。</p>
+<table>
+  <thead><tr><th>done</th><th>作業</th><th>場所 / コマンド</th></tr></thead>
+  <tbody>
+    <tr><td>☐</td><td>Firebase Authentication を有効化（メール/パスワード・匿名）</td><td>Firebase コンソール（§4）</td></tr>
+    <tr><td>☐</td><td>SDK 構成6値を取得</td><td>プロジェクトの設定 &gt; 全般 &gt; SDK</td></tr>
+    <tr><td>☐</td><td><code>.env.local</code> に6値 + <code>IDTOKEN_NAME</code> を記入</td><td><code>cp .env.local.example .env.local</code></td></tr>
+    <tr><td>☐</td><td>Cloudflare アカウントを用意</td><td>Cloudflare（無料）</td></tr>
+    <tr><td>☐</td><td>wrangler にログイン</td><td><code>npx wrangler login</code></td></tr>
+    <tr><td>☐</td><td><code>workers.dev</code> を Firebase 承認済みドメインへ追加</td><td>Authentication &gt; Settings</td></tr>
+    <tr><td>☐</td><td>デプロイ</td><td><code>npm run cf:deploy</code></td></tr>
+  </tbody>
+</table>
+
+<h2 id="s8">8. コスト・制限・トラブルシュート</h2>
+<h3>コストと制限</h3>
+<ul>
+  <li>Cloudflare Workers 無料枠（10 万リクエスト/日）、Firebase Spark（無料枠）で運用でき、ほぼ $0。</li>
+  <li>TVER は日本国内（JP）からのみ視聴可能（geo 制限）。国外からのアクセスは <code>451</code> 応答になる。</li>
+</ul>
+<h3>よくある詰まり</h3>
+<table>
+  <thead><tr><th>症状</th><th>原因</th><th>対処</th></tr></thead>
+  <tbody>
+    <tr><td>ログイン画面から進めない</td><td>Firebase の承認済みドメイン未追加</td><td><code>workers.dev</code> を承認済みドメインへ追加（§4）</td></tr>
+    <tr><td>再生できない</td><td>国外 IP（geo 制限）または配信終了</td><td>日本国内 IP から / 別エピソードで確認</td></tr>
+    <tr><td>ビルド後にログインできない・値が空</td><td>ビルド時に <code>NEXT_PUBLIC_*</code> 未設定</td><td><code>cf:build</code> を実行する環境に env を設定（§2）</td></tr>
+  </tbody>
+</table>
+
+<footer>
+  TVapp — Cloudflare Workers + Firebase デプロイ手順書（MVP・ほぼ $0）。
+  対象: tvapp-web / reference / 04_usage。
+</footer>
+</div>
+<script>
+  (function(){
+    var t=localStorage.getItem('doc-theme');
+    if(t)document.documentElement.setAttribute('data-theme',t);
+    __sync();
+  })();
+  function __toggle(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var n=d?'light':'dark';
+    document.documentElement.setAttribute('data-theme',n);
+    localStorage.setItem('doc-theme',n);__sync();
+  }
+  function __sync(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var b=document.getElementById('themeToggle');
+    if(b)b.textContent=d?'☀ ライト':'☾ ダーク';
+  }
+</script>
+</body>
+</html>
