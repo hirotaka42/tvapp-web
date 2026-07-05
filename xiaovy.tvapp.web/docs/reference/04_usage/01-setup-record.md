@@ -39,9 +39,20 @@
   - `NEXT_PUBLIC_IDTOKEN_NAME` = `IdToken`
 - **firebase-tools 導入**: `npm install -g firebase-tools`（ローカル。ユーザーが `firebase login` 済み）
 
+### 2026-07-06 認証(サインイン方法)の決定 — ユーザーがコンソールで設定
+**採用するサインイン方法（有効化済み）**
+- ✅ **Google**（Google アカウントでログイン）
+- ✅ **メール/パスワード**
+- ✅ **メールリンク（パスワードなし・passwordless）**… メール/パスワードの設定内で有効化
+**採用しないもの（設計判断）**
+- ❌ **匿名（ゲスト）ログインは使わない**（ユーザー決定。ゲスト前提を設計から外す）
+  - 影響: 既存コードの「ゲストとしてログイン」ボタン、`signInAnonymously`、
+    エピソードの「ゲスト30秒視聴制限」・ゲスト警告モーダルは**削除/無効化する**（別タスク）。
+- いずれのサインイン方法も **Spark(無料)枠で提供**され課金は発生しない。
+**公開名（Public-facing name）**: 推奨は「TVapp」。（設定値が確定したらここに追記）
+
 ## 未実施（次にやること）
-- [ ] **Authentication のサインイン方法を有効化**（コンソール）: 「メール/パスワード」ON、「匿名」ON。
-      ※ Identity Toolkit API での自動有効化は、認証情報ストア読み取りが安全上ブロックされたため手動トグルで行う。
+- [ ] コード反映: 匿名(ゲスト)導線の削除、Google ログイン導線の追加、メールリンク(passwordless)ログインの追加。
 - [ ] Authentication > Settings > 承認済みドメイン: 本番の `*.workers.dev`（デプロイ後）を追加。localhost は既定で許可。
 - [ ] Cloudflare: アカウント/ API トークン用意 → CI/CD Secrets 登録（`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`）。
 - [ ] GitHub Variables 登録（`NEXT_PUBLIC_FIREBASE_*`, `NEXT_PUBLIC_IDTOKEN_NAME`）。
