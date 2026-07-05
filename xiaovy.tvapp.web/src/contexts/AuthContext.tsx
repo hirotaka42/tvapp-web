@@ -26,11 +26,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// ローカル開発専用の認証バイパス。
+// 本番(NODE_ENV=production)では絶対に無効。かつ明示フラグ時のみ有効。
+// Firebase 設定なしで TVER のブラウズ/再生を確認するための開発用アフォーダンス。
+const DEV_BYPASS_AUTH =
+  process.env.NODE_ENV !== 'production' &&
+  process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === '1';
+
+const DEV_MOCK_USER = {
+  uid: 'dev-local-user',
+  email: 'dev@localhost',
+  emailVerified: true,
+  isAnonymous: false,
+  displayName: 'Local Dev',
+  getIdToken: async () => 'dev-local-token',
+  getIdTokenResult: async () => ({ claims: { role: 99 }, token: 'dev-local-token' }),
+} as unknown as User;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (DEV_BYPASS_AUTH) {
+      // 開発用: 常にログイン済み扱い(Firebase 未設定でも UI を通す)
+      setUser(DEV_MOCK_USER);
+      setLoading(false);
+      return;
+    }
     if (!auth) {
       setLoading(false);
       return;
