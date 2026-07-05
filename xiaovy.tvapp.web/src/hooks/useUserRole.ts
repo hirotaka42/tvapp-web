@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useFirebaseAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types/User';
+import { PHASE2_USER_DATA_ENABLED } from '@/lib/features';
 
 export function useUserRole() {
   const { user } = useFirebaseAuth();
@@ -8,36 +9,30 @@ export function useUserRole() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // ロール(カスタムクレイム)は段階2/管理機能向け。MVP では未設定なので
+    // リトライやログを出さず即座に一般ユーザーとして扱う(ログ雑音・遅延の回避)。
+    if (!PHASE2_USER_DATA_ENABLED) {
+      setRole(user ? UserRole.GENERAL : null);
+      setLoading(false);
+      return;
+    }
+
     const fetchRole = async (retryCount = 0) => {
       if (!user) {
         setRole(null);
         setLoading(false);
         return;
       }
-
       try {
-        // ID Tokenを取得してCustom Claimsを読み取る
-        const idTokenResult = await user.getIdTokenResult(true); // forceRefresh: true
+        const idTokenResult = await user.getIdTokenResult(true);
         const userRole = idTokenResult.claims.role as UserRole;
-        console.log('=== useUserRole Debug (Attempt ' + (retryCount + 1) + ') ===');
-        console.log('User UID:', user.uid);
-        console.log('Is Anonymous:', user.isAnonymous);
-        console.log('Fetched user role:', userRole);
-        console.log('All Claims:', idTokenResult.claims);
-        console.log('Role type:', typeof userRole);
-        console.log('========================');
-
-        // ロールが明示的に設定されているか確認
         if (userRole !== undefined && userRole !== null) {
           setRole(userRole);
           setLoading(false);
         } else if (retryCount < 3) {
-          // ロールが取得できない場合は、最大3回までリトライ
-          console.warn(`Role is undefined, retrying... (${retryCount + 1}/3)`);
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
           fetchRole(retryCount + 1);
         } else {
-          console.warn('Role is undefined after 3 retries, setting to GENERAL');
           setRole(UserRole.GENERAL);
           setLoading(false);
         }
