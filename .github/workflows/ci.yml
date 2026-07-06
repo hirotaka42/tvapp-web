@@ -45,8 +45,8 @@ jobs:
 
       # 注: Next 16 で `next lint` は廃止。ESLint 直接運用の整備までは
       # tsc + test + build + cf:build で品質を担保する。
-      - name: テスト(ユニット)
-        run: npm test
+      - name: テスト + カバレッジ(80%未満は失敗)
+        run: npm run test:coverage
 
       - name: 本番ビルド(Next)
         run: npm run build

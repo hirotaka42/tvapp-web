@@ -76,8 +76,8 @@ jobs:
       - name: 依存インストール
         run: npm ci
 
-      - name: テスト(ユニット)
-        run: npm test
+      - name: テスト + カバレッジ(80%未満はデプロイしない)
+        run: npm run test:coverage
 
       - name: OpenNext ビルド
         run: npm run cf:build
