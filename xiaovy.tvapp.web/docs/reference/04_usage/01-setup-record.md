@@ -58,6 +58,18 @@
 - [ ] GitHub Variables 登録（`NEXT_PUBLIC_FIREBASE_*`, `NEXT_PUBLIC_IDTOKEN_NAME`）。
 - [ ] （段階2）Firestore を無料枠で有効化（Blaze にしない）。Storage は使わない方針を維持。
 
+### 2026-07-06 Cloudflare 初回デプロイ と 地域制限の判明（重要）
+- **本番URL**: `https://tvapp-web.kodama-hirotaka-190380-cloudflare.workers.dev`（wrangler OAuth・workers.dev サブドメイン自動登録）。
+- **デプロイ成功**: `next build`→OpenNext→`wrangler deploy`。health/`/`/login は 200、TVER ブラウズ(session/ランキング)も本番で成功。
+- **⚠ 判明した制約（恒常）**: **ストリーム解決(Streaks playback)が本番で地域制限エラー(id124=geo)**。3回とも `この地域からは視聴できません`。
+  - 原因: **Cloudflare Workers の外向き IP が非JP/データセンター判定**され、Streaks が JP 限定で拒否。ローカル(JP家庭回線)からは今も解決OK(live test 通過)。
+  - 含意: **$0 の Cloudflare 単独では TVER 再生の「解決」だけが成立しない**(ブラウズは可)。解決には **JP egress のホスト**が要る。
+  - 元実装(Azure Functions/JP)が見れていたのは JP-egress だったため。Azure Functions 従量課金も無料枠内(~$0)。
+- **選択肢(要判断)**:
+  - (A) ハイブリッド: フロント+ブラウズ=Cloudflare($0)、**解決だけ JP-egress**(ユーザーの Proxmox/SBC 家庭サーバ + **Cloudflare Tunnel 無料**、または Azure Functions JP ~$0)。
+  - (B) 全体を JP 家庭サーバで動かす($0・常時起動+トンネル)。
+  - (C) その他の JP-egress 無料ホストを調査。
+
 ## 備考
 - Web の `apiKey` はクライアントに埋め込む公開値であり秘密ではない（漏えい時も Firestore/Storage のセキュリティルールで守る設計）。
 - 本記録は `.gitignore` の `**/docs/**` により通常は無視されるため、トレーサビリティ確保のため force-add でコミットする。

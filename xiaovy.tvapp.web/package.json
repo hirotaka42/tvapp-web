@@ -12,8 +12,9 @@
     "test:watch": "vitest",
     "test:live": "TVER_LIVE=1 vitest run",
     "cf:build": "opennextjs-cloudflare build",
-    "cf:preview": "opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare deploy"
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "deploy:safe": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "@azure/cosmos": "^4.5.1",
