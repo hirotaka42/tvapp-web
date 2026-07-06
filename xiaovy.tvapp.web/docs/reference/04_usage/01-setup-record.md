@@ -70,6 +70,19 @@
   - (B) 全体を JP 家庭サーバで動かす($0・常時起動+トンネル)。
   - (C) その他の JP-egress 無料ホストを調査。
 
+### 2026-07-06 Azure委譲で再生解決が本番で成立(完成)
+- **既存 Azure Function を再利用**(新規作成なし=追加費用なし)。
+  - Function App: `Platform-Stream-Loader` / RG `rg-dev-xiaovy000` / **Japan East** / **状態 Running**。
+  - プラン: **Y1(Dynamic)= Consumption 従量課金**(固定費なし・無料枠内=~$0)。ランタイム Python 3.12(yt-dlp)。
+  - サブスクリプション: `XIAOVYポータル_開発_サービス提供`(9fcfd9ea-…)。**会社/組織テナント**(roivy.net, MFA)。※会社環境である点に留意。
+  - health_check: `TVer/Twitter/YouTube/ABEMA/niconico` 対応。→ ABEMA/YouTube も将来ここ経由で対応可能。
+- **Cloudflare 側の接続設定**:
+  - `wrangler.jsonc` vars に `AZURE_FUNCTION_STREEAMING=https://platform-stream-loader.azurewebsites.net`(公開・非秘密)。
+  - `AZURE_FUNCTION_STREEAMING_CODE_KEY` は **wrangler secret**(暗号化)で登録。
+  - streaminglink ルートは二段構え(Azure設定時は委譲、未設定時は純TS)。
+- **本番検証(成功)**: `/api/health` の resolver=`azure-jp`、`streaminglink` が m3u8 を返す。**地域制限を突破**。
+- **最終到達点**: フロント+ブラウズ=Cloudflare($0) / 認証=Firebase(Google) / 解決=Azure Function(JP・~$0)。全経路が本番で稼働。
+
 ## 備考
 - Web の `apiKey` はクライアントに埋め込む公開値であり秘密ではない（漏えい時も Firestore/Storage のセキュリティルールで守る設計）。
 - 本記録は `.gitignore` の `**/docs/**` により通常は無視されるため、トレーサビリティ確保のため force-add でコミットする。
