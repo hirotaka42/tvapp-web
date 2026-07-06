@@ -24,6 +24,7 @@ import { FavoritesDataProvider } from "@/contexts/FavoritesDataContext";
 import { WatchHistoryDataProvider } from "@/contexts/WatchHistoryDataContext";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ServiceProvider } from "@/contexts/ServiceContext";
 
 export const Providers: FC<PropsWithChildren> = ({ children }) => {
   // サービスインスタンスをメモ化して、不要な再生成を防ぐ
@@ -51,13 +52,15 @@ export const Providers: FC<PropsWithChildren> = ({ children }) => {
                         <ProfileServiceContext.Provider value={profileService}>
                           <FavoriteServiceContext.Provider value={favoriteService}>
                             <WatchHistoryServiceContext.Provider value={watchHistoryService}>
-                              <Toaster
-                                position="bottom-right"
-                                toastOptions={{
-                                  duration: 4000,
-                                }}
-                              />
+                              <ServiceProvider>
+                                <Toaster
+                                  position="bottom-right"
+                                  toastOptions={{
+                                    duration: 4000,
+                                  }}
+                                />
                                 {children}
+                              </ServiceProvider>
                             </WatchHistoryServiceContext.Provider>
                           </FavoriteServiceContext.Provider>
                         </ProfileServiceContext.Provider>

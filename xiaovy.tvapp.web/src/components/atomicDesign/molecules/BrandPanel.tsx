@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import React from 'react';
 
 export const BrandPanel: React.FC = () => {
@@ -5,14 +6,14 @@ export const BrandPanel: React.FC = () => {
     <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 to-blue-600 p-12 items-center justify-center">
       <div className="max-w-md text-white">
         <div className="mb-8">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 36 24"
-            fill="currentColor"
-            className="h-12 w-auto mb-6"
-          >
-            <path d="M18.724 1.714c-4.538 0-7.376 2.286-8.51 6.857 1.702-2.285 3.687-3.143 5.957-2.57 1.296.325 2.22 1.271 3.245 2.318 1.668 1.706 3.6 3.681 7.819 3.681 4.539 0 7.376-2.286 8.51-6.857-1.701 2.286-3.687 3.143-5.957 2.571-1.294-.325-2.22-1.272-3.245-2.32-1.668-1.705-3.6-3.68-7.819-3.68zM10.214 12c-4.539 0-7.376 2.286-8.51 6.857 1.701-2.286 3.687-3.143 5.957-2.571 1.294.325 2.22 1.272 3.245 2.32 1.668 1.705 3.6 3.68 7.818 3.68 4.54 0 7.377-2.286 8.511-6.857-1.702 2.286-3.688 3.143-5.957 2.571-1.295-.326-2.22-1.272-3.245-2.32-1.669-1.705-3.6-3.68-7.82-3.68z"></path>
-          </svg>
+          <Image
+            src="/brand/tvapp-wordmark-light.png"
+            alt="TVapp"
+            width={220}
+            height={80}
+            className="mb-6 h-auto w-56"
+            unoptimized
+          />
           <h1 className="text-5xl font-bold mb-4 leading-tight">
             TVApp Web
           </h1>
