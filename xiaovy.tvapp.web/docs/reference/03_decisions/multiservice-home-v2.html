@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="ja" data-svc="tver">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp — マルチサービス・ホーム v2(サービスごとに別世界 / TVER・ABEMA・YouTube・niconico)</title>
+<!--
+  TVapp 統合ビューア ホーム v2 — 「サービス切替 = 世界の総入れ替え」モック
+  対象: tvapp-web / docs/reference/03_decisions
+  v1(multiservice-home.html)が共通骨格+テーマ変数だったのに対し、v2 は
+  4 サービスそれぞれが独立した DOM とレイアウト構造を持つ(色だけでなく骨格・密度・タイポも別物)。
+  自己完結(外部 CSS / CDN / JS フレームワーク不使用)。番組・チャンネル・人物・数値はすべて架空。
+-->
+<style>
+/* ============================================================
+   0. リセット
+   ============================================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+  font-feature-settings:"palt" 1;
+  line-height:1.7;letter-spacing:.02em;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font:inherit}
+ul,ol{list-style:none}
+img,svg{display:block}
+[hidden]{display:none!important}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wrap{max-width:1280px;margin:0 auto;padding:0 28px}
+@media(max-width:640px){.wrap{padding:0 16px}}
+
+/* 世界ごとの body 背景(オーバースクロール時の余白も世界色にする) */
+html[data-svc="tver"] body{background:#fff7e9}
+html[data-svc="abema"] body{background:#02110a}
+html[data-svc="youtube"] body{background:#0f0f0f}
+html[data-svc="niconico"] body{background:#fbf3e4}
+
+/* ============================================================
+   1. 共通ヘッダー(構造は共有・色と質感はサービス連動)
+   ============================================================ */
+[data-svc="tver"]{
+  --hd-bg:#0d0d10;--hd-tx:#ffffff;--hd-tx2:#9a9aa8;--hd-line:#2c2c34;
+  --hd-acc:#ffd400;--hd-acc-ink:#0d0d10;--hd-in:#1b1b22;--hd-glow:rgba(255,212,0,.4);
+}
+[data-svc="abema"]{
+  --hd-bg:#031510;--hd-tx:#e9f8ef;--hd-tx2:#6f9d85;--hd-line:#0e3322;
+  --hd-acc:#17e087;--hd-acc-ink:#02180d;--hd-in:#07231a;--hd-glow:rgba(23,224,135,.4);
+}
+[data-svc="youtube"]{
+  --hd-bg:#0f0f0f;--hd-tx:#f1f1f1;--hd-tx2:#9b9b9b;--hd-line:#2b2b2b;
+  --hd-acc:#ff0033;--hd-acc-ink:#ffffff;--hd-in:#212121;--hd-glow:rgba(255,0,51,.35);
+}
+[data-svc="niconico"]{
+  --hd-bg:#fff8ea;--hd-tx:#33220f;--hd-tx2:#a1876a;--hd-line:#ecd9ba;
+  --hd-acc:#ff8c1a;--hd-acc-ink:#2c1602;--hd-in:#ffffff;--hd-glow:rgba(255,140,26,.35);
+}
+.skip{
+  position:fixed;left:14px;top:-64px;z-index:400;
+  background:var(--hd-acc);color:var(--hd-acc-ink);font-size:12.5px;font-weight:700;
+  padding:8px 16px;border-radius:8px;transition:top .2s ease;
+}
+.skip:focus-visible{top:12px;outline:2px solid var(--hd-tx);outline-offset:2px}
+.hd{
+  position:sticky;top:0;z-index:300;
+  background:var(--hd-bg);color:var(--hd-tx);
+  border-bottom:1px solid var(--hd-line);
+  transition:background-color .45s ease,color .45s ease,border-color .45s ease;
+}
+.hd-in{
+  max-width:1380px;margin:0 auto;padding:10px 24px;
+  display:flex;align-items:center;gap:18px;
+}
+.hd :focus-visible{outline:2px solid var(--hd-acc);outline-offset:3px;border-radius:8px}
+.lg{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.lg-tile{fill:var(--hd-acc);transition:fill .45s ease}
+.lg-w{stroke:var(--hd-acc-ink);stroke-width:2.5;fill:none;stroke-linecap:round;transition:stroke .45s ease}
+.lg-t{line-height:1}
+.lg-wm{
+  display:block;font-family:"Avenir Next","Segoe UI",sans-serif;
+  font-size:20px;font-weight:800;letter-spacing:.015em;
+}
+.lg-sub{
+  display:block;font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:8px;font-weight:600;letter-spacing:.32em;text-transform:uppercase;
+  color:var(--hd-tx2);margin-top:2px;
+}
+/* --- サービスドック --- */
+.dk{
+  display:flex;gap:5px;padding:5px;flex:0 0 auto;
+  background:var(--hd-in);border:1px solid var(--hd-line);border-radius:14px;
+  transition:background-color .45s ease,border-color .45s ease;
+}
+.dk-b{
+  --me:#888;--me-ink:#fff;
+  position:relative;display:flex;align-items:center;gap:8px;
+  padding:7px 14px;border-radius:10px;color:var(--hd-tx2);
+  font-size:13px;font-weight:800;letter-spacing:.03em;white-space:nowrap;
+  transition:color .2s ease,background-color .25s ease,box-shadow .25s ease,transform .2s ease;
+}
+.dk-b[data-svc="tver"]{--me:#ffd400;--me-ink:#111008}
+.dk-b[data-svc="abema"]{--me:#17e087;--me-ink:#02180d}
+.dk-b[data-svc="youtube"]{--me:#ff0033;--me-ink:#ffffff}
+.dk-b[data-svc="niconico"]{--me:#ff8c1a;--me-ink:#2c1602}
+.dk-b i{
+  width:8px;height:8px;border-radius:50%;flex:0 0 auto;
+  background:var(--me);opacity:.85;transition:transform .25s ease;
+}
+.dk-b:hover{color:var(--hd-tx)}
+.dk-b:hover i{transform:scale(1.3)}
+.dk-b[aria-selected="true"]{
+  background:var(--me);color:var(--me-ink);
+  box-shadow:0 4px 16px var(--hd-glow);transform:translateY(-1px);
+}
+.dk-b[aria-selected="true"] i{background:var(--me-ink);opacity:.9}
+.dk-k{
+  position:absolute;top:-7px;right:8px;display:none;
+  font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:9px;font-weight:700;letter-spacing:.06em;line-height:1.3;
+  background:var(--hd-bg);color:var(--hd-tx2);border:1px solid var(--hd-line);
+  border-radius:4px;padding:0 4px;
+}
+@media(min-width:1100px){.dk-k{display:block}}
+/* --- 検索・ユーザー --- */
+.hd-sr{flex:1 1 120px;min-width:0;max-width:430px;position:relative;margin-left:auto}
+.hd-sr svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);stroke:var(--hd-tx2);pointer-events:none}
+.hd-sr input{
+  width:100%;border:1px solid var(--hd-line);border-radius:999px;
+  background:var(--hd-in);color:var(--hd-tx);
+  padding:8px 16px 8px 39px;font-size:13px;line-height:1.4;
+  transition:border-color .2s ease,box-shadow .2s ease,background-color .45s ease;
+}
+.hd-sr input::placeholder{color:var(--hd-tx2)}
+.hd-sr input:focus{outline:none;border-color:var(--hd-acc);box-shadow:0 0 0 3px var(--hd-glow)}
+.hd-u{position:relative;flex:0 0 auto}
+.hd-ub{
+  display:flex;align-items:center;gap:8px;
+  padding:4px 11px 4px 4px;border-radius:999px;
+  border:1px solid var(--hd-line);background:var(--hd-in);color:var(--hd-tx);
+  transition:border-color .2s ease,background-color .45s ease;
+}
+.hd-ub:hover{border-color:var(--hd-acc)}
+.hd-av{
+  display:grid;place-items:center;width:31px;height:31px;border-radius:50%;
+  font-size:14px;font-weight:700;flex:0 0 auto;
+  background:linear-gradient(155deg,var(--hd-acc),var(--hd-acc) 40%,var(--hd-glow));
+  color:var(--hd-acc-ink);transition:background .45s ease;
+}
+.hd-un{font-size:13px;font-weight:700;white-space:nowrap}
+.hd-ub svg{transition:transform .2s ease}
+.hd-ub[aria-expanded="true"] svg{transform:rotate(180deg)}
+.hd-um{
+  position:absolute;right:0;top:calc(100% + 10px);z-index:310;
+  min-width:232px;padding:6px;
+  background:var(--hd-bg);border:1px solid var(--hd-line);border-radius:14px;
+  box-shadow:0 18px 50px rgba(0,0,0,.45);
+  animation:umIn .16s ease both;
+}
+@keyframes umIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.hd-um-h{padding:9px 13px 8px;border-bottom:1px solid var(--hd-line);margin-bottom:5px}
+.hd-um-h b{display:block;font-size:13.5px}
+.hd-um-h span{font-size:11px;color:var(--hd-tx2)}
+.hd-um a{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;border-radius:9px;font-size:13px;color:var(--hd-tx2);
+  transition:background .15s ease,color .15s ease;
+}
+.hd-um a:hover{background:var(--hd-in);color:var(--hd-tx)}
+.hd-um a svg{stroke:currentColor;flex:0 0 auto}
+.hd-um .out{color:var(--hd-acc)}
+.hd-hint{
+  flex:0 0 auto;font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--hd-tx2);white-space:nowrap;
+}
+.hd-hint kbd{
+  font-family:inherit;font-size:9.5px;font-weight:700;
+  border:1px solid var(--hd-line);border-radius:4px;padding:0 4px;margin:0 1px;
+  background:var(--hd-in);
+}
+@media(max-width:1240px){.hd-hint{display:none}}
+@media(max-width:1000px){
+  .hd-in{flex-wrap:wrap;row-gap:8px;padding:9px 14px}
+  .dk{order:5;flex:1 1 100%;justify-content:stretch}
+  .dk-b{flex:1 1 0;justify-content:center;padding:7px 6px}
+  .hd-sr{max-width:none}
+}
+@media(max-width:640px){
+  .lg-sub{display:none}
+  .hd-un{display:none}
+  .hd-ub{padding-right:8px}
+  .dk-b{font-size:11.5px;gap:5px}
+  .dk-b i{width:6px;height:6px}
+}
+@media(max-width:400px){.dk-b{font-size:10.5px;padding:7px 2px;letter-spacing:0}}
+
+/* 切替トランジション */
+.world{animation:worldIn .32s ease both}
+@keyframes worldIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   2. TVER 世界 — ボールド・ビビッド(紙面 × ステッカー × 熱量)
+   ============================================================ */
+#tv{
+  background:#fff7e9;color:#141414;
+  background-image:radial-gradient(rgba(20,16,8,.06) 1.2px,transparent 1.3px);
+  background-size:22px 22px;
+  overflow:hidden;
+}
+#tv :focus-visible{outline:3px solid #ff2e88;outline-offset:3px;border-radius:6px}
+/* --- 急上昇ティッカー --- */
+.tv-tick{background:#0d0d10;color:#fff;border-bottom:3px solid #0d0d10;overflow:hidden}
+.tv-tick-in{display:flex;width:max-content;animation:tvMarq 28s linear infinite}
+.tv-tick-seq{display:flex;align-items:center;gap:40px;padding:8px 20px;white-space:nowrap;font-size:12.5px;font-weight:700;letter-spacing:.06em}
+.tv-tick-seq b{
+  background:#ffd400;color:#0d0d10;border-radius:5px;padding:0 9px;margin-right:9px;
+  font-size:10.5px;font-weight:800;letter-spacing:.1em;
+}
+.tv-tick-seq b.pk{background:#ff2e88;color:#fff}
+.tv-tick-seq .up{color:#ff7cb4;font-weight:800}
+@keyframes tvMarq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+/* --- カテゴリチップ --- */
+.tv-cat{display:flex;gap:9px;overflow-x:auto;padding-top:18px;padding-bottom:6px;scrollbar-width:none}
+.tv-cat::-webkit-scrollbar{display:none}
+.tv-cat a{
+  flex:0 0 auto;font-size:12.5px;font-weight:800;padding:6px 16px;border-radius:999px;
+  background:#fff;border:2px solid #0d0d10;color:#0d0d10;box-shadow:2.5px 2.5px 0 #0d0d10;
+  transition:transform .16s ease,box-shadow .16s ease,background .16s ease;
+}
+.tv-cat a:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 #0d0d10;background:#e9fbff}
+.tv-cat a[aria-current="page"]{background:#0d0d10;color:#ffd400}
+/* --- ヒーロー --- */
+.tv-hero{display:grid;grid-template-columns:1fr 1.02fr;gap:40px;align-items:center;padding-top:30px;padding-bottom:8px}
+.tv-hero-k{
+  display:inline-block;transform:rotate(-2.4deg);
+  background:#ffd400;border:2.5px solid #0d0d10;border-radius:8px;
+  padding:4px 16px;font-size:12.5px;font-weight:800;letter-spacing:.14em;
+  box-shadow:3px 3px 0 #0d0d10;
+}
+.tv-hero h1{font-size:clamp(34px,4vw,52px);font-weight:800;line-height:1.16;margin:16px 0 10px}
+.tv-hero h1 em{font-style:normal;background:linear-gradient(transparent 55%,#ffd400 55% 92%,transparent 92%)}
+.tv-hero-cp{color:#3d3d3d;font-weight:600;font-size:14px;max-width:34em;margin-bottom:14px}
+.tv-hero-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.tv-hero-meta li{font-size:11.5px;font-weight:700;padding:3px 13px;border-radius:999px;background:#fff;border:2px solid #0d0d10}
+.tv-hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.tv-btn{
+  display:inline-flex;align-items:center;gap:9px;
+  font-size:14px;font-weight:800;padding:11px 26px;border-radius:999px;border:2.5px solid #0d0d10;
+  box-shadow:4px 4px 0 #0d0d10;transition:transform .16s ease,box-shadow .16s ease,background .16s ease;
+}
+.tv-btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #0d0d10}
+.tv-btn.p{background:#ffd400}
+.tv-btn.g{background:#fff}
+.tv-btn.g:hover{background:#ffe9f3}
+.tv-word{display:flex;align-items:center;flex-wrap:wrap;gap:7px;font-size:11px;font-weight:800}
+.tv-word dt{
+  background:#0d0d10;color:#fff;border-radius:5px;padding:1px 9px;letter-spacing:.12em;
+}
+.tv-word dd{
+  background:#fff;border:2px solid #0d0d10;border-radius:999px;padding:1px 11px;color:#0d0d10;
+}
+.tv-word dd b{color:#d81b6a}
+.tv-hero-art{
+  position:relative;aspect-ratio:16/10;border:3px solid #0d0d10;border-radius:18px;
+  transform:rotate(1.3deg);box-shadow:10px 10px 0 #ff2e88;overflow:hidden;
+  background:
+    radial-gradient(70% 110% at 76% 4%,rgba(180,232,255,.4),transparent 58%),
+    linear-gradient(140deg,#0e5470 0%,#187ba0 36%,#0b3057 72%,#071a30 100%);
+}
+.tv-hero-art .hat{
+  position:absolute;left:26px;bottom:20px;color:#fff;
+  font-size:27px;font-weight:800;line-height:1.34;letter-spacing:.05em;
+  text-shadow:0 2px 16px rgba(0,0,0,.5);
+}
+.tv-hero-art .hep{
+  position:absolute;right:-12px;top:18px;transform:rotate(6deg);
+  background:#ff2e88;color:#fff;border:2.5px solid #0d0d10;border-radius:10px;
+  padding:5px 20px 5px 15px;font-size:13px;font-weight:800;letter-spacing:.06em;
+  box-shadow:3px 3px 0 rgba(0,0,0,.35);
+}
+.tv-hero-art .hnum{
+  position:absolute;left:18px;top:10px;
+  font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.85);
+}
+.tv-hero-art .hviews{
+  position:absolute;right:14px;bottom:14px;
+  font-size:11px;font-weight:800;background:rgba(13,13,16,.82);color:#ffd400;
+  border-radius:6px;padding:2px 10px;
+}
+@media(max-width:920px){
+  .tv-hero{grid-template-columns:1fr;gap:26px}
+  .tv-hero-art{transform:rotate(0);box-shadow:7px 7px 0 #ff2e88}
+}
+/* --- 続きを見る帯 --- */
+.tv-resume{margin-top:34px}
+.tv-resume-in{
+  background:#0d0d10;border-radius:20px;padding:20px 22px 22px;color:#fff;
+  box-shadow:6px 6px 0 rgba(13,13,16,.22);
+}
+.tv-resume-h{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.tv-resume-h h2{font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:9px}
+.tv-resume-h h2 svg{flex:0 0 auto}
+.tv-resume-h .sub{font-size:11px;font-weight:600;color:#9a9aa8;letter-spacing:.06em}
+.tv-resume-h .more2{
+  margin-left:auto;font-size:12px;font-weight:800;color:#0d0d10;background:#ffd400;
+  border-radius:999px;padding:5px 16px;white-space:nowrap;
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.tv-resume-h .more2:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 rgba(255,212,0,.35)}
+.tv-rrow{display:flex;gap:14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.tv-rrow::-webkit-scrollbar{display:none}
+.tv-rcard{
+  flex:0 0 300px;display:flex;gap:12px;align-items:center;
+  background:#1b1b22;border:1px solid #34343e;border-radius:14px;padding:10px;
+  transition:transform .18s ease,border-color .18s ease;
+}
+.tv-rcard:hover{transform:translateY(-3px);border-color:#ffd400}
+.tv-rth{position:relative;flex:0 0 118px;aspect-ratio:16/9;border-radius:8px;overflow:hidden}
+.tv-rbar{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.25)}
+.tv-rbar i{display:block;height:100%;background:#ffd400}
+.tv-rmt{min-width:0}
+.tv-rmt h3{font-size:13px;font-weight:800;line-height:1.4;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv-rmt .ep{font-size:11px;color:#9a9aa8;font-weight:600}
+.tv-rmt .left{font-size:11px;color:#ffd400;font-weight:800}
+/* --- シェルフ --- */
+.tv-sec{margin:46px 0}
+.tv-sec.s-pink{--acc:#ff2e88;--mk:#ffd0e4}
+.tv-sec.s-yellow{--acc:#f5a300;--mk:#ffe89a}
+.tv-sec.s-blue{--acc:#0091d8;--mk:#bdedff}
+.tv-sec.s-purple{--acc:#6c2bd9;--mk:#e2d4ff}
+.tv-sec.s-orange{--acc:#ff5d1f;--mk:#ffd9c2}
+.tv-sech{display:flex;align-items:center;gap:14px;margin-bottom:4px;flex-wrap:wrap}
+.tv-sech h2{
+  font-size:26px;font-weight:800;font-style:italic;letter-spacing:.01em;line-height:1.3;
+  background:linear-gradient(transparent 58%,var(--mk,#ffd400) 58% 94%,transparent 94%);
+  padding-right:8px;
+}
+.tv-sech .tag{
+  font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:.2em;
+  background:#0d0d10;color:#fff;border-radius:6px;padding:3px 11px;transform:rotate(-2deg);
+}
+.tv-sech .upd{font-size:10.5px;font-weight:700;color:#8a8a8a;letter-spacing:.08em}
+.tv-more{
+  margin-left:auto;display:inline-flex;align-items:center;gap:5px;
+  background:#0d0d10;color:#fff;border-radius:999px;padding:7px 18px;border:2px solid #0d0d10;
+  font-size:12.5px;font-weight:800;white-space:nowrap;
+  transition:background .16s ease,transform .16s ease,box-shadow .16s ease;
+}
+.tv-more:hover{background:var(--acc,#ff2e88);transform:translate(-1px,-1px);box-shadow:3px 3px 0 #0d0d10}
+.tv-row{display:flex;gap:22px;overflow-x:auto;padding:20px 8px 26px 22px;margin-left:-22px;scroll-snap-type:x proximity}
+.tv-row::-webkit-scrollbar{height:9px}
+.tv-row::-webkit-scrollbar-thumb{background:#0d0d10;border-radius:5px;border:2px solid #fff7e9}
+.tv-row::-webkit-scrollbar-track{background:transparent}
+.tv-row{scrollbar-color:#0d0d10 transparent}
+.tv-card{flex:0 0 258px;scroll-snap-align:start}
+.tv-clk{
+  display:block;position:relative;height:100%;
+  background:#fff;border:2.5px solid #0d0d10;border-radius:16px;padding:10px 10px 12px;
+  box-shadow:5px 5px 0 var(--acc,#0d0d10);
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.tv-clk:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--acc,#0d0d10)}
+.tv-th{
+  position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:9px;border:2px solid #0d0d10;
+}
+.tv-th::before{
+  content:"";position:absolute;inset:0;z-index:1;
+  background:
+    radial-gradient(130% 95% at 84% -12%,rgba(255,255,255,.3),transparent 55%),
+    radial-gradient(150% 130% at 10% 115%,rgba(0,0,0,.42),transparent 62%);
+}
+.tv-tht{
+  position:absolute;left:12px;bottom:9px;right:12px;z-index:2;
+  color:#fff;font-weight:800;font-size:15px;line-height:1.34;letter-spacing:.04em;
+  text-shadow:0 2px 12px rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.4);
+}
+.tv-ep{
+  position:absolute;right:8px;top:8px;z-index:3;
+  font-size:10.5px;font-weight:800;line-height:1.5;letter-spacing:.04em;
+  background:#fff;color:#0d0d10;border:1.5px solid #0d0d10;padding:0 8px;border-radius:5px;
+}
+.tv-dur{
+  position:absolute;right:8px;bottom:8px;z-index:3;
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;line-height:1.5;
+  background:rgba(13,13,16,.85);color:#fff;padding:1px 8px;border-radius:4px;
+}
+.tv-rk{
+  position:absolute;top:-15px;left:-15px;z-index:5;width:44px;height:44px;border-radius:50%;
+  display:grid;place-items:center;transform:rotate(-9deg);
+  border:2.5px solid #0d0d10;font-size:19px;font-weight:800;line-height:1;color:#0d0d10;
+  box-shadow:2.5px 2.5px 0 rgba(13,13,16,.85);background:#fff;
+  transition:transform .2s ease;
+}
+.tv-clk:hover .tv-rk{transform:rotate(4deg) scale(1.08)}
+.tv-rk.r1{background:#ffd400;width:52px;height:52px;font-size:23px;top:-19px;left:-19px}
+.tv-rk.r2{background:#dbe2ea}
+.tv-rk.r3{background:#f4a261}
+.tv-hot{
+  position:absolute;right:-9px;top:-13px;z-index:6;transform:rotate(5deg);
+  background:#ff2e88;color:#fff;border:2px solid #0d0d10;border-radius:7px;
+  padding:1px 9px;font-size:10.5px;font-weight:800;letter-spacing:.08em;
+}
+.tv-hot.nw{background:#0091d8}
+.tv-hot.lst{background:#0d0d10;color:#ffd400}
+.tv-cm{padding:9px 4px 0}
+.tv-cm h3{font-size:14.5px;font-weight:800;line-height:1.42}
+.tv-st{font-size:11.5px;color:#5a5a5a;font-weight:600;line-height:1.55}
+.tv-mrow{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+.tv-lf{font-size:11px;font-weight:800;color:#d81b6a}
+.tv-gn{
+  font-size:10px;font-weight:800;letter-spacing:.06em;
+  border:1.5px solid #0d0d10;border-radius:999px;padding:0 8px;background:var(--mk,#ffe89a);
+}
+/* --- 本日終了帯 --- */
+.tv-last{margin:44px 0 8px}
+.tv-last-in{
+  background:#0d0d10;border-radius:20px;padding:18px 22px 20px;color:#fff;
+  border:2.5px solid #0d0d10;box-shadow:6px 6px 0 rgba(216,27,106,.5);
+}
+.tv-last-h{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.tv-last-h h2{font-size:17px;font-weight:800;display:flex;align-items:center;gap:9px}
+.tv-last-h .bl{
+  background:#ff2e88;border-radius:6px;font-size:10.5px;font-weight:800;letter-spacing:.12em;
+  padding:1px 10px;animation:tvBlink 1.6s ease infinite;
+}
+@keyframes tvBlink{0%,100%{opacity:1}50%{opacity:.5}}
+.tv-lrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tv-lite{
+  display:flex;gap:11px;align-items:center;min-width:0;
+  background:#1b1b22;border:1px solid #34343e;border-radius:12px;padding:9px;
+  transition:transform .16s ease,border-color .16s ease;
+}
+.tv-lite:hover{transform:translateY(-2px);border-color:#ff2e88}
+.tv-lth{flex:0 0 92px;aspect-ratio:16/9;border-radius:7px;overflow:hidden;position:relative}
+.tv-lmt{min-width:0}
+.tv-lmt h3{font-size:12.5px;font-weight:800;color:#fff;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv-lmt p{font-size:10.5px;color:#9a9aa8;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv-lmt b{font-size:10.5px;color:#ff7cb4;font-weight:800}
+@media(max-width:1100px){.tv-lrow{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.tv-lrow{grid-template-columns:1fr}}
+/* --- フッター --- */
+.tv-ft{background:#0d0d10;color:#b9b9c2;text-align:center;padding:38px 20px 46px;font-size:11px;line-height:2;margin-top:40px}
+.tv-ft nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;font-weight:700}
+.tv-ft nav a{color:#fff}
+.tv-ft nav a:hover{color:#ffd400}
+/* サムネ(TVER) */
+.tg1{background:linear-gradient(300deg,rgba(255,214,140,.24),transparent 42%),linear-gradient(140deg,#0e5470,#177a9e 36%,#0b3057 70%,#071a30)}
+.tg2{background:linear-gradient(135deg,#571325,#8c2038 46%,#230b14)}
+.tg3{background:linear-gradient(150deg,#8fb4e4,#a09cd6 48%,#5c6cae)}
+.tg4{background:linear-gradient(295deg,rgba(232,180,90,.34),transparent 38%),linear-gradient(120deg,#0c1626,#25354e 56%,#0b1120)}
+.tg5{background:linear-gradient(140deg,#c9681d,#8f4013 52%,#4c1d0b)}
+.tg6{background:radial-gradient(58% 82% at 72% 24%,rgba(226,232,255,.5),transparent 56%),linear-gradient(160deg,#26275e,#151538 56%,#05060f)}
+.tg7{background:linear-gradient(135deg,#ff8a00,#ffc400 58%,#ff5d3a)}
+.tg8{background:linear-gradient(140deg,#9130ad,#5c2cd2 54%,#241a52)}
+.tg9{background:linear-gradient(135deg,#12994f,#0a5c3c 60%,#08331f)}
+.tg10{background:linear-gradient(118deg,#0e93a8 0%,#0e93a8 45%,#e8a83c 55%,#c97e22 100%)}
+.tg11{background:linear-gradient(135deg,#1c48c8,#0aa2d8 58%,#063a75)}
+.tg12{background:linear-gradient(150deg,#e03a5e,#f07f3c 52%,#8a2040)}
+
+/* ============================================================
+   3. ABEMA 世界 — 生放送ファースト(緑 × 黒 / 局のマスター画面)
+   ============================================================ */
+#ab{
+  background:
+    radial-gradient(1000px 520px at 80% -180px,rgba(23,224,135,.12),transparent 65%),
+    repeating-linear-gradient(115deg,transparent 0 110px,rgba(23,224,135,.02) 110px 140px),
+    #02110a;
+  color:#e7f5ec;
+}
+#ab :focus-visible{outline:2px solid #17e087;outline-offset:3px;border-radius:6px}
+.ab-cnd{font-family:"Avenir Next Condensed","Arial Narrow",sans-serif}
+/* --- 生放送ティッカー --- */
+.ab-tick{background:#04190f;border-bottom:1px solid #0e3322;overflow:hidden}
+.ab-tick-in{display:flex;width:max-content;animation:abMarq 30s linear infinite}
+.ab-tick-seq{display:flex;align-items:center;gap:42px;padding:7px 21px;white-space:nowrap;font-size:12px;font-weight:600;color:#9fc7b1}
+.ab-tick-seq b{
+  display:inline-block;transform:skewX(-10deg);
+  background:#17e087;color:#02180d;border-radius:4px;
+  padding:0 9px;margin-right:9px;font-size:10.5px;font-weight:800;letter-spacing:.1em;
+}
+.ab-tick-seq b.rs{background:transparent;border:1px solid #17e087;color:#17e087}
+@keyframes abMarq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+/* --- 今放送中(ライブ枠 + このあと) --- */
+.ab-top{display:grid;grid-template-columns:1.72fr 1fr;gap:22px;padding-top:26px;align-items:stretch}
+.ab-live{
+  position:relative;border-radius:14px;overflow:hidden;
+  border:1px solid #0e3322;background:#04190f;
+  display:flex;flex-direction:column;
+}
+.ab-live-scr{
+  position:relative;aspect-ratio:16/8.2;
+  background:
+    radial-gradient(64% 100% at 80% 0%,rgba(23,224,135,.34),transparent 56%),
+    repeating-linear-gradient(115deg,transparent 0 70px,rgba(23,224,135,.06) 70px 74px),
+    linear-gradient(140deg,#04321e 0%,#0a5c38 32%,#03281c 66%,#020d08 100%);
+}
+.ab-live-scr::after{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 3px);
+}
+.ab-onair{
+  position:absolute;left:16px;top:14px;z-index:2;
+  display:inline-flex;align-items:center;gap:7px;
+  background:#e8123d;color:#fff;border-radius:5px;padding:2px 12px;
+  font-size:11.5px;font-weight:800;letter-spacing:.14em;
+}
+.ab-onair i{width:7px;height:7px;border-radius:50%;background:#fff;animation:abPulse 1.4s ease infinite}
+@keyframes abPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+.ab-ch-tag{
+  position:absolute;right:16px;top:14px;z-index:2;transform:skewX(-10deg);
+  background:rgba(2,17,10,.8);border:1px solid rgba(23,224,135,.5);color:#8ef0bd;
+  font-size:11px;font-weight:700;letter-spacing:.08em;padding:2px 12px;border-radius:5px;
+}
+.ab-live-tt{
+  position:absolute;left:18px;bottom:16px;right:18px;z-index:2;
+  color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.6);
+}
+.ab-live-tt .rd{font-size:11.5px;font-weight:800;letter-spacing:.18em;color:#7df0b6;margin-bottom:2px}
+.ab-live-tt h1{font-size:clamp(22px,2.6vw,34px);font-weight:800;line-height:1.28}
+.ab-live-tt p{font-size:12.5px;color:#c9e6d4;font-weight:600;max-width:40em}
+.ab-cmt{
+  position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none;
+}
+.ab-cmt span{
+  position:absolute;left:0;white-space:nowrap;width:max-content;
+  font-size:12.5px;font-weight:700;color:rgba(255,255,255,.5);
+  text-shadow:0 1px 6px rgba(0,0,0,.6);
+  animation:abFlow linear infinite;
+}
+.ab-cmt span:nth-child(1){top:12%;animation-duration:14s}
+.ab-cmt span:nth-child(2){top:26%;animation-duration:19s;animation-delay:-9s;color:rgba(125,240,182,.55)}
+.ab-cmt span:nth-child(3){top:40%;animation-duration:16s;animation-delay:-4s;font-size:11.5px;color:rgba(255,255,255,.36)}
+@keyframes abFlow{from{transform:translateX(102cqw)}to{transform:translateX(-100%)}}
+.ab-live-scr{container-type:inline-size}
+.ab-live-bar{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:13px 16px 14px;border-top:1px solid #0e3322;
+}
+.ab-live-bar .num{display:flex;align-items:baseline;gap:6px;color:#7df0b6}
+.ab-live-bar .num b{font-size:21px;font-weight:700;letter-spacing:.02em}
+.ab-live-bar .num span{font-size:11px;color:#6f9d85;font-weight:600}
+.ab-prg{flex:1 1 190px;min-width:150px}
+.ab-prg-t{display:flex;justify-content:space-between;font-size:10.5px;color:#6f9d85;font-weight:600;margin-bottom:3px}
+.ab-prg-bar{height:5px;border-radius:3px;background:#0e3322;overflow:hidden}
+.ab-prg-bar i{display:block;height:100%;width:38%;background:linear-gradient(90deg,#0fbf6e,#17e087);box-shadow:0 0 10px rgba(23,224,135,.6)}
+.ab-live-bar .go{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#17e087;color:#02180d;font-size:13px;font-weight:800;
+  border-radius:7px;padding:9px 20px;
+  transition:filter .16s ease,transform .16s ease;
+}
+.ab-live-bar .go:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.ab-live-bar .sub2{
+  display:inline-flex;align-items:center;gap:7px;
+  border:1px solid #17604040;border:1px solid #176040;color:#a5d8bd;
+  font-size:12px;font-weight:700;border-radius:7px;padding:8px 16px;
+  transition:border-color .16s ease,color .16s ease;
+}
+.ab-live-bar .sub2:hover{border-color:#17e087;color:#e7f5ec}
+/* このあとの注目 */
+.ab-next{
+  border:1px solid #0e3322;border-radius:14px;background:#04190f;
+  display:flex;flex-direction:column;min-width:0;
+}
+.ab-next-h{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 16px 11px;border-bottom:1px solid #0e3322;
+}
+.ab-next-h h2{font-size:14px;font-weight:800;letter-spacing:.04em}
+.ab-next-h .lv{font-size:10px;font-weight:800;letter-spacing:.16em;color:#7df0b6}
+.ab-next-h a{margin-left:auto;font-size:11px;font-weight:700;color:#6f9d85}
+.ab-next-h a:hover{color:#17e087}
+.ab-next ol{display:flex;flex-direction:column;padding:6px;flex:1}
+.ab-next li{border-bottom:1px dashed #0e3322}
+.ab-next li:last-child{border-bottom:none}
+.ab-next a.rw{
+  display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;
+  padding:9px 10px;border-radius:9px;
+  transition:background .15s ease;
+}
+.ab-next a.rw:hover{background:rgba(23,224,135,.06)}
+.ab-next .tm{font-size:14px;font-weight:700;color:#7df0b6;letter-spacing:.04em;line-height:1.3}
+.ab-next .tm em{display:block;font-style:normal;font-size:9px;letter-spacing:.14em;color:#6f9d85}
+.ab-next .nm{min-width:0}
+.ab-next .nm b{display:block;font-size:12.5px;font-weight:700;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ab-next .nm span{font-size:10.5px;color:#6f9d85;font-weight:600}
+.ab-next .rsv{
+  font-size:10.5px;font-weight:800;letter-spacing:.06em;white-space:nowrap;
+  border:1px solid #176040;color:#8ef0bd;border-radius:999px;padding:2px 11px;
+  transition:background .15s ease,color .15s ease;
+}
+.ab-next a.rw:hover .rsv{background:#17e087;color:#02180d;border-color:#17e087}
+.ab-next .rsv.on{background:#e8123d;border-color:#e8123d;color:#fff;animation:abPulse 1.8s ease infinite}
+@media(max-width:980px){.ab-top{grid-template-columns:1fr}}
+/* --- 番組表(チャンネル帯 × 時間軸) --- */
+.ab-epg{margin-top:34px}
+.ab-epg-h{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.ab-epg-h h2{
+  font-size:20px;font-weight:800;display:flex;align-items:center;gap:11px;
+}
+.ab-epg-h h2::before{content:"";width:8px;height:20px;background:linear-gradient(180deg,#17e087,#0a9a58);transform:skewX(-12deg);border-radius:2px}
+.ab-epg-h .now{font-size:11px;font-weight:700;color:#7df0b6;letter-spacing:.08em;display:flex;align-items:center;gap:7px}
+.ab-epg-h .now i{width:7px;height:7px;border-radius:50%;background:#e8123d;animation:abPulse 1.4s ease infinite}
+.ab-epg-h a{margin-left:auto;font-size:12px;font-weight:700;color:#6f9d85;white-space:nowrap}
+.ab-epg-h a:hover{color:#17e087}
+.ab-epg-sc{overflow-x:auto;border:1px solid #0e3322;border-radius:14px;background:#04190f;scrollbar-width:thin;scrollbar-color:#176040 transparent}
+.ab-epg-sc::-webkit-scrollbar{height:8px}
+.ab-epg-sc::-webkit-scrollbar-thumb{background:#176040;border-radius:4px}
+.ab-grid{min-width:920px;position:relative}
+.ab-trow{
+  display:grid;grid-template-columns:96px repeat(10,1fr);
+  border-bottom:1px solid #0e3322;
+}
+.ab-trow.hdr{background:rgba(23,224,135,.04)}
+.ab-tc{
+  grid-column:span 2;padding:7px 10px 5px;
+  font-size:11px;font-weight:700;letter-spacing:.14em;color:#7df0b6;
+  border-left:1px solid #0e3322;
+}
+.ab-chl{
+  display:flex;flex-direction:column;justify-content:center;gap:1px;
+  padding:10px 12px;border-right:1px solid #0e3322;min-height:66px;
+}
+.ab-chl b{font-size:12.5px;font-weight:800;line-height:1.35}
+.ab-chl span{font-size:9.5px;font-weight:700;letter-spacing:.12em;color:#6f9d85}
+.ab-pg{
+  position:relative;margin:7px 3px;padding:6px 10px 7px;min-width:0;
+  background:#07231a;border:1px solid #0e3322;border-radius:8px;
+  transition:border-color .15s ease,background .15s ease;
+}
+.ab-pg:hover{border-color:#17e087;background:#0a2f20}
+.ab-pg b{display:block;font-size:12px;font-weight:700;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ab-pg span{display:block;font-size:10px;color:#6f9d85;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ab-pg.on{
+  background:linear-gradient(160deg,rgba(23,224,135,.2),rgba(23,224,135,.07));
+  border-color:#17e087;box-shadow:0 0 18px rgba(23,224,135,.15);
+}
+.ab-pg.on::before{
+  content:"LIVE";position:absolute;right:7px;top:6px;
+  font-size:8.5px;font-weight:800;letter-spacing:.12em;
+  background:#e8123d;color:#fff;border-radius:3px;padding:0 5px;line-height:1.6;
+}
+.ab-pg .vw{color:#7df0b6;font-weight:700}
+.ab-nowln{
+  position:absolute;top:0;bottom:0;left:calc(96px + (100% - 96px)*.38);width:2px;z-index:3;
+  background:#e8123d;box-shadow:0 0 10px rgba(232,18,61,.8);pointer-events:none;
+}
+.ab-nowln::before{
+  content:"NOW";position:absolute;top:2px;left:-17px;
+  font-size:8.5px;font-weight:800;letter-spacing:.1em;
+  background:#e8123d;color:#fff;border-radius:3px;padding:0 5px;
+}
+/* --- VOD シェルフ --- */
+.ab-sec{margin:40px 0}
+.ab-sech{display:flex;align-items:center;gap:13px;margin-bottom:12px;flex-wrap:wrap}
+.ab-sech h2{font-size:19px;font-weight:800;display:flex;align-items:center;gap:11px}
+.ab-sech h2::before{content:"";width:8px;height:19px;background:linear-gradient(180deg,#17e087,#0a9a58);transform:skewX(-12deg);border-radius:2px}
+.ab-sech .cnt{font-size:11px;font-weight:600;letter-spacing:.22em;color:#5f8a74}
+.ab-more{
+  margin-left:auto;display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:700;color:#9fc7b1;white-space:nowrap;
+  border:1px solid #0e3322;border-radius:999px;padding:5px 15px;
+  transition:border-color .15s ease,color .15s ease;
+}
+.ab-more:hover{border-color:#17e087;color:#17e087}
+.ab-row{display:flex;gap:14px;overflow-x:auto;padding:6px 2px 16px;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#176040 transparent}
+.ab-row::-webkit-scrollbar{height:6px}
+.ab-row::-webkit-scrollbar-thumb{background:#176040;border-radius:3px}
+.ab-card{flex:0 0 236px;scroll-snap-align:start}
+.ab-clk{
+  display:block;height:100%;border-radius:10px;overflow:hidden;
+  background:#04190f;border:1px solid #0e3322;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.ab-clk:hover{transform:translateY(-4px);border-color:#17e087;box-shadow:0 14px 34px rgba(0,0,0,.5),0 4px 18px rgba(23,224,135,.15)}
+.ab-th{position:relative;aspect-ratio:16/9;overflow:hidden}
+.ab-th::before{
+  content:"";position:absolute;inset:0;z-index:1;
+  background:
+    radial-gradient(130% 95% at 84% -12%,rgba(255,255,255,.24),transparent 55%),
+    radial-gradient(150% 130% at 10% 115%,rgba(0,0,0,.46),transparent 62%);
+}
+.ab-tht{
+  position:absolute;left:12px;bottom:9px;right:12px;z-index:2;
+  color:#fff;font-weight:800;font-size:14.5px;line-height:1.36;letter-spacing:.04em;
+  text-shadow:0 2px 12px rgba(0,0,0,.55);
+}
+.ab-rk{
+  position:absolute;left:0;top:0;z-index:3;
+  min-width:34px;height:26px;padding:0 10px 0 8px;
+  display:grid;place-items:center;
+  clip-path:polygon(0 0,100% 0,calc(100% - 8px) 100%,0 100%);
+  font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:15px;font-weight:700;
+  background:#02110a;color:#8ef0bd;border-bottom:1px solid rgba(23,224,135,.4);
+}
+.ab-rk.r1{background:#17e087;color:#02180d}
+.ab-lv{
+  position:absolute;right:8px;top:8px;z-index:3;
+  display:inline-flex;align-items:center;gap:5px;
+  background:#e8123d;color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.12em;
+  border-radius:4px;padding:1px 8px;
+}
+.ab-lv i{width:5px;height:5px;border-radius:50%;background:#fff;animation:abPulse 1.4s ease infinite}
+.ab-dur{
+  position:absolute;right:8px;bottom:8px;z-index:3;
+  font-size:10px;font-weight:700;letter-spacing:.06em;
+  background:rgba(2,17,10,.8);color:#c9e6d4;padding:1px 8px;border-radius:4px;
+}
+.ab-cm{padding:10px 12px 12px}
+.ab-cm h3{font-size:13px;font-weight:700;line-height:1.45;color:#e7f5ec}
+.ab-clk:hover .ab-cm h3{color:#7df0b6}
+.ab-cm .st{font-size:10.5px;color:#6f9d85;font-weight:600;margin-top:1px}
+.ab-cm .au{
+  display:flex;align-items:center;gap:6px;margin-top:6px;
+  font-size:10.5px;font-weight:700;color:#8ef0bd;
+}
+.ab-cm .au i{width:6px;height:6px;border-radius:50%;background:#17e087;flex:0 0 auto}
+.ab-cm .au.mut{color:#5f8a74}
+.ab-cm .au.mut i{background:#176040}
+/* サムネ(ABEMA) */
+.ag1{background:linear-gradient(140deg,#05452a,#0ba25e 55%,#02351f)}
+.ag2{background:linear-gradient(135deg,#123a8c,#7a2fd8 55%,#160b3a)}
+.ag3{background:linear-gradient(150deg,#d8266e,#7a1f9e 55%,#2a0b3d)}
+.ag4{background:linear-gradient(135deg,#f25c1a,#8c2410 55%,#3a0d06)}
+.ag5{background:linear-gradient(145deg,#0b6f8a,#0a3a6e 55%,#061c36)}
+.ag6{background:linear-gradient(150deg,#f28bb4,#a05ad8 52%,#3c2070)}
+.ag7{background:linear-gradient(135deg,#9ad82a,#3f8c1f 48%,#123c0d)}
+.ag8{background:linear-gradient(118deg,#b8202c 0%,#b8202c 46%,#1f3a9e 54%,#101f5c 100%)}
+.ag9{background:linear-gradient(145deg,#3a4456,#1a212e 55%,#0c1018)}
+/* フッター */
+.ab-ft{
+  text-align:center;padding:38px 20px 46px;font-size:11px;line-height:2;color:#5f8a74;
+  border-top:1px solid #0e3322;margin-top:24px;
+}
+.ab-ft nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;font-weight:600}
+.ab-ft nav a{color:#9fc7b1}
+.ab-ft nav a:hover{color:#17e087}
+
+/* ============================================================
+   4. YouTube 世界 — レッド × チャコール(サイドバー + 多列グリッド)
+   ============================================================ */
+#yt{background:#0f0f0f;color:#f1f1f1;font-family:"Helvetica Neue","Hiragino Sans","Noto Sans JP",Arial,sans-serif}
+#yt :focus-visible{outline:2px solid #ff4d6a;outline-offset:2px;border-radius:8px}
+.yt-body{display:flex;max-width:1600px;margin:0 auto}
+/* --- サイドバー --- */
+.yt-side{
+  flex:0 0 208px;position:sticky;top:76px;align-self:flex-start;
+  max-height:calc(100vh - 76px);overflow-y:auto;
+  padding:12px 10px 24px;scrollbar-width:none;
+}
+.yt-side::-webkit-scrollbar{display:none}
+.yt-side a{
+  display:flex;align-items:center;gap:16px;
+  padding:9px 14px;border-radius:10px;
+  font-size:13.5px;color:#f1f1f1;
+  transition:background .14s ease;
+}
+.yt-side a:hover{background:#272727}
+.yt-side a[aria-current="page"]{background:#272727;font-weight:700}
+.yt-side a svg{flex:0 0 auto;stroke:currentColor}
+.yt-side hr{border:none;border-top:1px solid #2b2b2b;margin:10px 4px}
+.yt-side .cap{
+  padding:6px 14px 4px;font-size:12px;font-weight:700;color:#9b9b9b;letter-spacing:.04em;
+}
+.yt-side .chn{display:flex;align-items:center;gap:14px;padding:7px 14px;border-radius:10px;font-size:13px;color:#e6e6e6}
+.yt-side .chn:hover{background:#272727}
+.yt-side .chn .cav{width:24px;height:24px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff}
+.yt-side .chn .nw{margin-left:auto;width:6px;height:6px;border-radius:50%;background:#3ea6ff}
+@media(max-width:1140px){.yt-side{flex-basis:76px}.yt-side a{flex-direction:column;gap:5px;padding:12px 4px;font-size:9.5px}.yt-side .cap,.yt-side .chn,.yt-side hr{display:none}}
+@media(max-width:760px){.yt-side{display:none}}
+/* --- メイン --- */
+.yt-main{flex:1 1 auto;min-width:0;padding:0 24px 30px}
+@media(max-width:640px){.yt-main{padding:0 14px 24px}}
+.yt-chips{
+  position:sticky;top:calc(var(--yt-top,60px));z-index:20;
+  display:flex;gap:10px;overflow-x:auto;padding:13px 0 11px;
+  background:linear-gradient(180deg,#0f0f0f 82%,rgba(15,15,15,0));
+  scrollbar-width:none;
+}
+.yt-chips::-webkit-scrollbar{display:none}
+.yt-chips button{
+  flex:0 0 auto;font-size:13px;font-weight:600;
+  padding:6px 13px;border-radius:9px;
+  background:#272727;color:#f1f1f1;
+  transition:background .14s ease;
+}
+.yt-chips button:hover{background:#3d3d3d}
+.yt-chips button[aria-pressed="true"]{background:#f1f1f1;color:#0f0f0f}
+/* --- 動画グリッド --- */
+.yt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(262px,1fr));gap:26px 16px;padding-top:8px}
+.yt-v{min-width:0}
+.yt-v a{display:block}
+.yt-thumb{
+  position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;
+  transition:border-radius .18s ease,transform .18s ease;
+}
+.yt-v a:hover .yt-thumb{border-radius:4px;transform:scale(1.012)}
+.yt-thumb::before{
+  content:"";position:absolute;inset:0;z-index:1;
+  background:
+    radial-gradient(120% 90% at 82% -10%,rgba(255,255,255,.26),transparent 54%),
+    radial-gradient(150% 130% at 12% 118%,rgba(0,0,0,.4),transparent 60%);
+}
+.yt-tht{
+  position:absolute;left:12px;bottom:9px;right:12px;z-index:2;
+  color:#fff;font-weight:700;font-size:15px;line-height:1.32;letter-spacing:.02em;
+  text-shadow:0 2px 12px rgba(0,0,0,.55);
+}
+.yt-dur{
+  position:absolute;right:6px;bottom:6px;z-index:3;
+  font-size:11px;font-weight:600;letter-spacing:.04em;
+  background:rgba(0,0,0,.8);color:#fff;padding:1px 6px;border-radius:5px;
+}
+.yt-dur.live{background:#f03;font-weight:700;letter-spacing:.08em}
+.yt-rknum{
+  position:absolute;left:8px;top:8px;z-index:3;
+  min-width:30px;height:23px;padding:0 8px;display:grid;place-items:center;
+  font-size:12px;font-weight:700;border-radius:6px;
+  background:rgba(0,0,0,.78);color:#fff;
+}
+.yt-rknum.r1{background:#f03}
+.yt-meta{display:flex;gap:12px;padding:10px 2px 0}
+.yt-cav{
+  width:36px;height:36px;border-radius:50%;flex:0 0 auto;
+  display:grid;place-items:center;font-size:14px;font-weight:700;color:#fff;
+}
+.yt-txt{min-width:0}
+.yt-txt h3{
+  font-size:14.5px;font-weight:600;line-height:1.42;color:#f1f1f1;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  margin-bottom:3px;
+}
+.yt-ch{display:flex;align-items:center;gap:4px;font-size:12.5px;color:#a3a3a3;line-height:1.5}
+.yt-ch svg{flex:0 0 auto}
+.yt-vt{font-size:12.5px;color:#a3a3a3;line-height:1.5}
+.yt-badge{
+  display:inline-block;font-size:10.5px;font-weight:600;color:#a3a3a3;
+  border:1px solid #3d3d3d;border-radius:4px;padding:0 5px;margin-top:5px;
+}
+.yt-badge.new{color:#0f0f0f;background:#3ea6ff;border-color:#3ea6ff;font-weight:700}
+/* --- セクション見出し --- */
+.yt-h{
+  display:flex;align-items:center;gap:12px;
+  margin:34px 0 4px;padding-top:24px;border-top:1px solid #272727;
+}
+.yt-h .ic{
+  width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+  background:#272727;flex:0 0 auto;
+}
+.yt-h h2{font-size:19px;font-weight:700;letter-spacing:.01em}
+.yt-h .sub{font-size:12px;color:#9b9b9b;font-weight:500}
+.yt-h .all{
+  margin-left:auto;font-size:13px;font-weight:600;color:#3ea6ff;white-space:nowrap;
+  border-radius:999px;padding:6px 14px;
+  transition:background .14s ease;
+}
+.yt-h .all:hover{background:rgba(62,166,255,.15)}
+/* --- ショート風(縦型) --- */
+.yt-shorts{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:14px;padding-top:12px}
+.yt-s{min-width:0}
+.yt-s a{display:block}
+.yt-sth{
+  position:relative;aspect-ratio:9/15;border-radius:12px;overflow:hidden;
+  transition:transform .18s ease;
+}
+.yt-s a:hover .yt-sth{transform:translateY(-3px)}
+.yt-sth::before{
+  content:"";position:absolute;inset:0;z-index:1;
+  background:
+    radial-gradient(120% 60% at 80% -8%,rgba(255,255,255,.28),transparent 55%),
+    linear-gradient(0deg,rgba(0,0,0,.55),transparent 46%);
+}
+.yt-sth .t{
+  position:absolute;left:10px;right:10px;bottom:30px;z-index:2;
+  color:#fff;font-size:13px;font-weight:700;line-height:1.35;
+  text-shadow:0 2px 10px rgba(0,0,0,.6);
+}
+.yt-sth .v{
+  position:absolute;left:10px;bottom:9px;z-index:2;
+  font-size:11px;font-weight:600;color:#e6e6e6;
+}
+.yt-sth .sic{
+  position:absolute;right:8px;top:8px;z-index:2;
+}
+/* サムネ(YouTube — 明るめも混ぜる) */
+.yg1{background:linear-gradient(140deg,#d81f2f,#6e0f1c 55%,#26060a)}
+.yg2{background:linear-gradient(135deg,#8fd0ff,#3f9be8 52%,#1a5aa8)}
+.yg3{background:linear-gradient(145deg,#ffd23a,#f2882a 55%,#a04a0a)}
+.yg4{background:linear-gradient(140deg,#3ad8a0,#128a64 52%,#06392a)}
+.yg5{background:linear-gradient(135deg,#7a3ff2,#3c1f9e 55%,#150a3d)}
+.yg6{background:linear-gradient(145deg,#f2f0e8,#c9c4b4 55%,#8a8474)}
+.yg7{background:linear-gradient(135deg,#ff5da2,#c72562 52%,#4a0d26)}
+.yg8{background:linear-gradient(150deg,#274b8c,#152a5e 55%,#080f2a)}
+.yg9{background:linear-gradient(140deg,#ffe9b8,#f2b950 52%,#b87514)}
+.yg10{background:linear-gradient(150deg,#4a5568,#232b38 55%,#101620)}
+.yg11{background:linear-gradient(135deg,#12994f,#0a5c3c 60%,#08331f)}
+.yg12{background:linear-gradient(140deg,#e8f4ff,#9ecbf0 55%,#4a86c0)}
+/* アバター色 */
+.ca1{background:linear-gradient(150deg,#ff8a65,#d84315)}
+.ca2{background:linear-gradient(150deg,#4fc3f7,#0277bd)}
+.ca3{background:linear-gradient(150deg,#aed581,#558b2f)}
+.ca4{background:linear-gradient(150deg,#ba68c8,#6a1b9a)}
+.ca5{background:linear-gradient(150deg,#ffd54f,#ef6c00);color:#3a2200}
+.ca6{background:linear-gradient(150deg,#90a4ae,#37474f)}
+.ca7{background:linear-gradient(150deg,#f06292,#ad1457)}
+.ca8{background:linear-gradient(150deg,#7986cb,#283593)}
+/* フッター */
+.yt-ft{
+  text-align:center;padding:34px 20px 44px;font-size:11px;line-height:2;color:#7c7c7c;
+  border-top:1px solid #272727;margin-top:36px;
+}
+.yt-ft nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;font-weight:600}
+.yt-ft nav a{color:#a3a3a3}
+.yt-ft nav a:hover{color:#f1f1f1}
+
+/* ============================================================
+   5. niconico 世界 — オレンジ × 遊び心(紙 × 弾幕コメント)
+   ============================================================ */
+#nc{
+  background:
+    repeating-linear-gradient(90deg,rgba(214,178,120,.05) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(0deg,rgba(214,178,120,.05) 0 1px,transparent 1px 3px),
+    radial-gradient(rgba(190,140,70,.07) 1px,transparent 1.4px),
+    #fbf3e4;
+  background-size:auto,auto,17px 17px,auto;
+  color:#3a2712;overflow:hidden;
+  font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;
+}
+#nc :focus-visible{outline:3px solid #00b8a9;outline-offset:3px;border-radius:8px}
+/* --- 帯(お知らせテープ) --- */
+.nc-tape{background:#ff8c1a;border-bottom:3px dotted rgba(255,255,255,.55);overflow:hidden}
+.nc-tape-in{display:flex;width:max-content;animation:ncMarq 26s linear infinite}
+.nc-tape-seq{
+  display:flex;align-items:center;gap:38px;padding:7px 19px;white-space:nowrap;
+  font-size:12.5px;font-weight:700;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.12);
+}
+.nc-tape-seq b{
+  background:#fff;color:#e8650a;border-radius:999px;padding:0 10px;margin-right:8px;
+  font-size:10.5px;font-weight:800;letter-spacing:.08em;
+}
+@keyframes ncMarq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+/* --- ヒーロー(プレイヤー + コメントパネル) --- */
+.nc-hero{display:grid;grid-template-columns:1.78fr 1fr;gap:18px;padding-top:26px;align-items:stretch}
+.nc-player{
+  border-radius:14px;overflow:hidden;background:#221609;
+  border:3px solid #221609;box-shadow:0 10px 30px rgba(120,72,10,.25);
+  display:flex;flex-direction:column;
+}
+.nc-scr{
+  position:relative;aspect-ratio:16/8.4;overflow:hidden;
+  background:
+    radial-gradient(62% 98% at 78% 2%,rgba(57,208,196,.35),transparent 56%),
+    linear-gradient(140deg,#6e3608 0%,#c26c10 34%,#4c2606 68%,#1c0f05 100%);
+}
+.nc-dan{position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;container-type:inline-size}
+.nc-dan span{
+  position:absolute;left:0;width:max-content;white-space:nowrap;
+  font-weight:800;color:#fff;
+  text-shadow:0 0 4px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.5);
+  animation:ncFlow linear infinite;
+}
+.nc-dan .d1{top:8%;font-size:16px;animation-duration:11s}
+.nc-dan .d2{top:22%;font-size:13px;animation-duration:15s;animation-delay:-7s;color:#ffe27a}
+.nc-dan .d3{top:36%;font-size:14px;animation-duration:12.5s;animation-delay:-3s}
+.nc-dan .d4{top:52%;font-size:12px;animation-duration:17s;animation-delay:-11s;color:#8af0e4}
+.nc-dan .d5{top:66%;font-size:15px;animation-duration:13.5s;animation-delay:-5s}
+@keyframes ncFlow{from{transform:translateX(102cqw)}to{transform:translateX(-102%)}}
+.nc-new{
+  position:absolute;left:-38px;top:16px;z-index:4;transform:rotate(-38deg);
+  background:#e8452a;color:#fff;font-size:11px;font-weight:800;letter-spacing:.24em;
+  padding:3px 42px;box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+.nc-play{
+  position:absolute;left:50%;top:50%;z-index:3;transform:translate(-50%,-50%);
+  width:66px;height:66px;border-radius:50%;
+  background:rgba(255,140,26,.94);display:grid;place-items:center;
+  box-shadow:0 8px 26px rgba(0,0,0,.4),0 0 0 6px rgba(255,255,255,.25);
+  transition:transform .18s ease;
+}
+.nc-play:hover{transform:translate(-50%,-50%) scale(1.08)}
+.nc-scr .tt{
+  position:absolute;left:16px;bottom:12px;right:90px;z-index:3;
+  color:#fff;font-size:clamp(16px,1.8vw,22px);font-weight:800;line-height:1.35;
+  text-shadow:0 2px 14px rgba(0,0,0,.65);
+}
+.nc-scr .dur{
+  position:absolute;right:12px;bottom:12px;z-index:3;
+  font-size:11px;font-weight:700;background:rgba(20,12,4,.8);color:#ffd9a8;
+  padding:1px 9px;border-radius:5px;
+}
+.nc-pbar{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  background:#221609;color:#f0dfc4;padding:11px 16px 13px;
+}
+.nc-pbar .stat{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700}
+.nc-pbar .stat svg{flex:0 0 auto}
+.nc-pbar .stat b{color:#ffb45e;font-size:14px}
+.nc-pbar .tags{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.nc-pbar .tags a{
+  font-size:10.5px;font-weight:700;color:#ffd9a8;
+  border:1px solid #6e4a20;border-radius:999px;padding:0 10px;
+  transition:background .15s ease,color .15s ease;
+}
+.nc-pbar .tags a:hover{background:#ff8c1a;color:#2c1602;border-color:#ff8c1a}
+/* コメントパネル */
+.nc-cpanel{
+  display:flex;flex-direction:column;min-width:0;
+  background:#fff;border:2px solid #eadbba;border-radius:14px;overflow:hidden;
+  box-shadow:0 6px 20px rgba(120,72,10,.12);
+}
+.nc-cp-h{
+  display:flex;align-items:center;gap:9px;
+  background:#fff3dd;border-bottom:2px solid #eadbba;padding:10px 14px;
+}
+.nc-cp-h h2{font-size:13.5px;font-weight:800}
+.nc-cp-h .n{font-size:11px;font-weight:700;color:#c0651a}
+.nc-cp-h .spd{
+  margin-left:auto;font-size:10px;font-weight:800;color:#fff;
+  background:#ff8c1a;border-radius:999px;padding:1px 10px;
+}
+.nc-cp-l{flex:1;overflow:hidden;padding:6px 0;min-height:0}
+.nc-cp-l li{
+  display:grid;grid-template-columns:46px 1fr;gap:8px;align-items:baseline;
+  padding:4px 14px;font-size:11.5px;line-height:1.55;
+}
+.nc-cp-l li:nth-child(even){background:#fdf8ec}
+.nc-cp-l .tc{font-size:10px;font-weight:700;color:#b09468;letter-spacing:.02em}
+.nc-cp-l .tx{font-weight:600;color:#4a3518;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nc-cp-in{display:flex;gap:8px;border-top:2px solid #eadbba;padding:9px 10px;background:#fffdf6}
+.nc-cp-in input{
+  flex:1;min-width:0;border:2px solid #eadbba;border-radius:999px;
+  padding:5px 14px;font-size:12px;background:#fff;color:#3a2712;
+}
+.nc-cp-in input::placeholder{color:#c4a983}
+.nc-cp-in input:focus{outline:none;border-color:#ff8c1a}
+.nc-cp-in button{
+  flex:0 0 auto;background:#ff8c1a;color:#fff;font-size:12px;font-weight:800;
+  border-radius:999px;padding:5px 16px;
+  transition:filter .15s ease;
+}
+.nc-cp-in button:hover{filter:brightness(1.08)}
+@media(max-width:980px){.nc-hero{grid-template-columns:1fr}.nc-cpanel{max-height:300px}}
+/* --- ランキング(殿堂 / 急上昇) --- */
+.nc-rank{margin-top:38px}
+.nc-rk-h{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.nc-rk-h h2{
+  font-size:23px;font-weight:800;display:flex;align-items:center;gap:10px;
+}
+.nc-rk-h h2 .crown{transform:rotate(-8deg)}
+.nc-tabs{display:flex;gap:6px;background:#fff;border:2px solid #eadbba;border-radius:999px;padding:4px}
+.nc-tabs button{
+  font-size:12px;font-weight:800;border-radius:999px;padding:4px 16px;color:#a1876a;
+  transition:background .15s ease,color .15s ease;
+}
+.nc-tabs button[aria-pressed="true"]{background:#ff8c1a;color:#fff}
+.nc-tabs button:hover:not([aria-pressed="true"]){color:#3a2712}
+.nc-rk-h .upd{font-size:10.5px;font-weight:700;color:#b09468}
+.nc-rk-h .more3{
+  margin-left:auto;font-size:12px;font-weight:800;color:#fff;background:#3a2712;
+  border-radius:999px;padding:6px 18px;white-space:nowrap;
+  transition:background .15s ease,transform .15s ease;
+}
+.nc-rk-h .more3:hover{background:#ff8c1a;transform:translateY(-1px)}
+.nc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 16px}
+@media(max-width:1080px){.nc-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:780px){.nc-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.nc-grid{grid-template-columns:1fr}}
+.nc-card{position:relative}
+.nc-clk{
+  display:block;height:100%;
+  background:#fff;border:2px solid #eadbba;border-radius:14px;padding:9px 9px 11px;
+  box-shadow:0 4px 14px rgba(120,72,10,.1);
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.nc-clk:hover{transform:translateY(-4px) rotate(-.5deg);border-color:#ffb45e;box-shadow:0 12px 28px rgba(120,72,10,.2)}
+.nc-th{position:relative;aspect-ratio:16/9;border-radius:9px;overflow:hidden}
+.nc-th::before{
+  content:"";position:absolute;inset:0;z-index:1;
+  background:
+    radial-gradient(130% 95% at 84% -12%,rgba(255,255,255,.3),transparent 55%),
+    radial-gradient(150% 130% at 10% 115%,rgba(0,0,0,.4),transparent 62%);
+}
+.nc-tht{
+  position:absolute;left:11px;bottom:8px;right:11px;z-index:2;
+  color:#fff;font-weight:800;font-size:14px;line-height:1.36;
+  text-shadow:0 2px 10px rgba(0,0,0,.55);
+}
+.nc-th .dan2{position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none;container-type:inline-size}
+.nc-th .dan2 span{
+  position:absolute;left:0;top:12%;width:max-content;white-space:nowrap;
+  font-size:11.5px;font-weight:800;color:rgba(255,255,255,.88);
+  text-shadow:0 0 4px rgba(0,0,0,.6);
+  animation:ncFlow linear infinite;
+}
+.nc-th .dan2 span:nth-child(2){top:34%;font-size:10.5px;color:rgba(255,226,122,.85)}
+.nc-dur2{
+  position:absolute;right:7px;bottom:7px;z-index:4;
+  font-size:10px;font-weight:700;background:rgba(20,12,4,.8);color:#ffd9a8;
+  padding:0 8px;border-radius:4px;
+}
+.nc-seal{
+  position:absolute;top:-13px;left:-11px;z-index:5;
+  width:42px;height:42px;border-radius:50%;transform:rotate(-10deg);
+  display:grid;place-items:center;
+  font-size:15px;font-weight:800;line-height:1;
+  background:#fff;border:2.5px dashed #ff8c1a;color:#e8650a;
+  box-shadow:0 3px 10px rgba(120,72,10,.25);
+  transition:transform .2s ease;
+}
+.nc-clk:hover .nc-seal{transform:rotate(4deg) scale(1.1)}
+.nc-seal.s1{background:#ffd23a;border-style:solid;border-color:#c28a00;color:#5c3a00;width:48px;height:48px;font-size:17px;top:-16px;left:-14px}
+.nc-seal.s2{background:#e8ecf2;border-style:solid;border-color:#98a4b8;color:#4a5568}
+.nc-seal.s3{background:#f4b98a;border-style:solid;border-color:#b06a2a;color:#6e3a08}
+.nc-seal small{font-size:8px;display:block;letter-spacing:.06em}
+.nc-dou{
+  position:absolute;right:-8px;top:-11px;z-index:6;transform:rotate(6deg);
+  background:#e8452a;color:#fff;border-radius:7px;
+  padding:1px 9px;font-size:10px;font-weight:800;letter-spacing:.1em;
+  box-shadow:0 2px 6px rgba(0,0,0,.25);
+}
+.nc-dou.up{background:#00b8a9}
+.nc-cm2{padding:8px 3px 0}
+.nc-cm2 h3{
+  font-size:13px;font-weight:800;line-height:1.42;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.nc-au{font-size:10.5px;color:#a1876a;font-weight:700;margin-top:1px}
+.nc-nums{display:flex;gap:10px;margin-top:5px;flex-wrap:wrap}
+.nc-nums span{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:800;color:#8a6a42}
+.nc-nums svg{flex:0 0 auto}
+.nc-nums .pl{color:#e8650a}
+/* --- タグクラウド --- */
+.nc-tagc{margin:34px 0 6px}
+.nc-tagc-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.nc-tagc-h h2{font-size:16px;font-weight:800}
+.nc-tagc-h span{font-size:10.5px;font-weight:700;color:#b09468}
+.nc-tagc-l{display:flex;flex-wrap:wrap;gap:9px 8px;align-items:center}
+.nc-tagc-l a{
+  font-weight:800;background:#fff;border:2px solid #eadbba;border-radius:999px;
+  padding:2px 14px;color:#6e4a20;
+  transition:transform .15s ease,border-color .15s ease,background .15s ease;
+}
+.nc-tagc-l a:hover{transform:rotate(-2deg) scale(1.05);border-color:#ff8c1a;background:#fff3dd}
+.nc-tagc-l .t-lg{font-size:15px;color:#e8650a}
+.nc-tagc-l .t-md{font-size:12.5px}
+.nc-tagc-l .t-sm{font-size:11px;color:#a1876a}
+.nc-tagc-l .t-hot{background:#ff8c1a;border-color:#ff8c1a;color:#fff}
+/* --- ジャンルシェルフ --- */
+.nc-sec{margin:38px 0}
+.nc-sech{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.nc-sech h2{font-size:19px;font-weight:800;display:flex;align-items:center;gap:9px}
+.nc-sech h2 i{
+  width:12px;height:12px;border-radius:3px;background:#ff8c1a;transform:rotate(45deg);flex:0 0 auto;
+}
+.nc-sech h2 i.tq{background:#00b8a9}
+.nc-sech .cnt2{font-size:10.5px;font-weight:800;letter-spacing:.14em;color:#b09468}
+.nc-more2{
+  margin-left:auto;display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:800;color:#6e4a20;background:#fff;
+  border:2px solid #eadbba;border-radius:999px;padding:5px 15px;white-space:nowrap;
+  transition:border-color .15s ease,background .15s ease;
+}
+.nc-more2:hover{border-color:#ff8c1a;background:#fff3dd}
+.nc-row{display:flex;gap:16px;overflow-x:auto;padding:14px 4px 20px 18px;margin-left:-18px;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#d8b888 transparent}
+.nc-row::-webkit-scrollbar{height:8px}
+.nc-row::-webkit-scrollbar-thumb{background:#d8b888;border-radius:4px}
+.nc-row .nc-card{flex:0 0 246px;scroll-snap-align:start}
+/* サムネ(niconico) */
+.ng1{background:linear-gradient(140deg,#ff9a2a,#d86a0a 52%,#5c2a04)}
+.ng2{background:linear-gradient(145deg,#e8c46a,#b8862a 52%,#4c3208)}
+.ng3{background:linear-gradient(135deg,#39d0c4,#128a92 52%,#063a44)}
+.ng4{background:linear-gradient(150deg,#f28bb4,#c2477e 52%,#4c1230)}
+.ng5{background:linear-gradient(135deg,#7ac244,#3a8c2a 50%,#123c0d)}
+.ng6{background:linear-gradient(140deg,#3a6ed8,#1f3a8c 52%,#0c1436)}
+.ng7{background:linear-gradient(145deg,#a87848,#6e4423 52%,#2a1708)}
+.ng8{background:linear-gradient(140deg,#e8452a,#9e1f14 52%,#3a0c06)}
+.ng9{background:linear-gradient(150deg,#8a5ad8,#4a2a9e 55%,#180a3c)}
+/* フッター */
+.nc-ft{
+  text-align:center;padding:36px 20px 44px;font-size:11px;line-height:2;color:#a1876a;
+  border-top:3px dotted #e0c9a0;margin-top:36px;
+}
+.nc-ft .face{font-size:18px;font-weight:800;color:#ff8c1a;letter-spacing:.1em;margin-bottom:4px}
+.nc-ft nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;font-weight:700}
+.nc-ft nav a{color:#6e4a20}
+.nc-ft nav a:hover{color:#e8650a}
+
+/* ============================================================
+   6. 動きを減らす設定への配慮
+   ============================================================ */
+@media (prefers-reduced-motion: reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">本編へスキップ</a>
+<p class="vh" role="status" aria-live="polite" id="announce"></p>
+
+<!-- ============ 共通ヘッダー(ロゴ / サービスドック / 検索 / ユーザー) ============ -->
+<header class="hd">
+  <div class="hd-in">
+    <a class="lg" href="#" aria-label="TVapp ホーム">
+      <svg width="33" height="33" viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="lg-tile" x="1" y="1" width="30" height="30" rx="9"/>
+        <path class="lg-w" d="M6 13c2.6-3.2 5.2-3.2 7.8 0s5.2 3.2 7.8 0c1.3-1.6 2.8-2.3 4.7-1.5"/>
+        <path class="lg-w" d="M6 20.5c2.6-3.2 5.2-3.2 7.8 0s5.2 3.2 7.8 0c1.3-1.6 2.8-2.3 4.7-1.5" opacity=".45"/>
+      </svg>
+      <span class="lg-t"><span class="lg-wm">TVapp</span><span class="lg-sub">Multi Stream</span></span>
+    </a>
+    <nav class="dk" role="tablist" aria-label="視聴サービスの切替">
+      <button class="dk-b" role="tab" id="dk-tver" data-svc="tver" aria-selected="true" aria-controls="tv"><i aria-hidden="true"></i>TVER<span class="dk-k" aria-hidden="true">1</span></button>
+      <button class="dk-b" role="tab" id="dk-abema" data-svc="abema" aria-selected="false" aria-controls="ab" tabindex="-1"><i aria-hidden="true"></i>ABEMA<span class="dk-k" aria-hidden="true">2</span></button>
+      <button class="dk-b" role="tab" id="dk-youtube" data-svc="youtube" aria-selected="false" aria-controls="yt" tabindex="-1"><i aria-hidden="true"></i>YouTube<span class="dk-k" aria-hidden="true">3</span></button>
+      <button class="dk-b" role="tab" id="dk-niconico" data-svc="niconico" aria-selected="false" aria-controls="nc" tabindex="-1"><i aria-hidden="true"></i>niconico<span class="dk-k" aria-hidden="true">4</span></button>
+    </nav>
+    <div class="hd-sr" role="search">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.7"/><path d="m10.6 10.6 3.2 3.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <input id="q" type="search" placeholder="番組名・出演者・キーワードで検索" aria-label="検索">
+    </div>
+    <span class="hd-hint"><kbd>1</kbd>–<kbd>4</kbd> / <kbd>←</kbd><kbd>→</kbd> で切替</span>
+    <div class="hd-u">
+      <button class="hd-ub" id="ubtn" aria-haspopup="menu" aria-expanded="false" aria-label="アカウントメニュー(兒玉さん、ログイン中)">
+        <span class="hd-av" aria-hidden="true">兒</span>
+        <span class="hd-un">兒玉</span>
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="hd-um" id="umenu" role="menu" aria-label="アカウント" hidden>
+        <div class="hd-um-h"><b>兒玉 さん</b><span>kodama@example.com</span></div>
+        <a href="#" role="menuitem"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="5.2" r="2.7"/><path d="M2.8 13.4c.9-2.6 2.8-3.9 5.2-3.9s4.3 1.3 5.2 3.9"/></svg>アカウント設定</a>
+        <a href="#" role="menuitem"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke-width="1.5" aria-hidden="true"><path d="M3 3.5h10v10l-5-3-5 3v-10Z" stroke-linejoin="round"/></svg>マイリスト</a>
+        <a href="#" role="menuitem"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="5.8"/><path d="M8 4.8V8l2.3 1.6" stroke-linecap="round"/></svg>視聴履歴</a>
+        <a class="out" href="./login-design.html" role="menuitem"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke-width="1.5" aria-hidden="true"><path d="M6.5 2.5H3.8a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h2.7M10 5l3 3-3 3M13 8H6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>ログアウト</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ================================================================
+     世界 1 — TVER(ボールド・ビビッド)
+     ================================================================ -->
+<section class="world" id="tv" role="tabpanel" aria-labelledby="dk-tver" aria-label="TVER ホーム">
+
+  <div class="tv-tick" aria-hidden="true">
+    <div class="tv-tick-in">
+      <div class="tv-tick-seq"><span><b>急上昇</b>全力!リアクション王決定戦 2026夏 <span class="up">▲12</span></span><span>海辺のアンサンブル 第8話 <span class="up">▲5</span></span><span>緊急救命24時 密着SP <span class="up">▲3</span></span><span><b class="pk">まもなく終了</b>終点まで乗ってみた — 本日 23:59 まで</span><span>深夜のハシゴ酒 <span class="up">▲2</span></span><span>星屑のレヴアリー 第2話 <span class="up">▲8</span></span><span><b>新着</b>刑事一ノ瀬 最終章 最終回SP</span></div>
+      <div class="tv-tick-seq"><span><b>急上昇</b>全力!リアクション王決定戦 2026夏 <span class="up">▲12</span></span><span>海辺のアンサンブル 第8話 <span class="up">▲5</span></span><span>緊急救命24時 密着SP <span class="up">▲3</span></span><span><b class="pk">まもなく終了</b>終点まで乗ってみた — 本日 23:59 まで</span><span>深夜のハシゴ酒 <span class="up">▲2</span></span><span>星屑のレヴアリー 第2話 <span class="up">▲8</span></span><span><b>新着</b>刑事一ノ瀬 最終章 最終回SP</span></div>
+    </div>
+  </div>
+
+  <nav class="tv-cat wrap" aria-label="ジャンル">
+    <a href="#" aria-current="page">ホーム</a><a href="#">ドラマ</a><a href="#">バラエティ</a><a href="#">アニメ</a><a href="#">報道・ドキュメンタリー</a><a href="#">スポーツ</a><a href="#">映画</a><a href="#">音楽</a><a href="#">マイリスト</a>
+  </nav>
+
+  <div class="wrap tv-hero">
+    <div>
+      <p class="tv-hero-k">今週の爆推し</p>
+      <h1>見ないと、<br><em>乗り遅れる。</em></h1>
+      <p class="tv-hero-cp">「海辺のアンサンブル」第8話がついに配信。六つの秘密が重なる最終章、SNS の考察が止まらない。</p>
+      <ul class="tv-hero-meta">
+        <li>フジテレビ</li><li>金曜 21:00</li><li>第8話まで無料</li><li>字幕あり</li>
+      </ul>
+      <div class="tv-hero-cta">
+        <a class="tv-btn p" href="#"><svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.8v10.4L12 7 3 1.8Z" fill="currentColor"/></svg>いますぐ再生</a>
+        <a class="tv-btn g" href="#"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>マイリスト</a>
+      </div>
+      <dl class="tv-word">
+        <dt>いま検索されてる</dt>
+        <dd>#海辺のアンサンブル考察 <b>▲</b></dd><dd>#リアクション王 <b>▲</b></dd><dd>#一ノ瀬ロス</dd>
+      </dl>
+    </div>
+    <div class="tv-hero-art" aria-hidden="true">
+      <span class="hnum">EP. 08 / 10 — FINAL CHAPTER</span>
+      <span class="hep">第8話 配信中!</span>
+      <span class="hat">海辺の<br>アンサンブル</span>
+      <span class="hviews">今週 182万回再生</span>
+    </div>
+  </div>
+
+  <div class="tv-resume wrap">
+    <div class="tv-resume-in">
+      <div class="tv-resume-h">
+        <h2><svg width="17" height="17" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="7" stroke="#ffd400" stroke-width="2"/><path d="M9 5.4V9l2.6 1.8" stroke="#ffd400" stroke-width="2" stroke-linecap="round"/></svg>続きを見る</h2>
+        <span class="sub">兒玉さんの視聴中 4件</span>
+        <a class="more2" href="#">視聴履歴へ</a>
+      </div>
+      <div class="tv-rrow">
+        <a class="tv-rcard" href="#">
+          <span class="tv-rth tg4" aria-hidden="true"><span class="tv-rbar"><i style="width:78%"></i></span></span>
+          <span class="tv-rmt"><h3>刑事一ノ瀬 最終章</h3><span class="ep">最終回SP・テレビ朝日</span><br><span class="left">残り12分から再生</span></span>
+        </a>
+        <a class="tv-rcard" href="#">
+          <span class="tv-rth tg3" aria-hidden="true"><span class="tv-rbar"><i style="width:34%"></i></span></span>
+          <span class="tv-rmt"><h3>透明なわたしたち</h3><span class="ep">第5話・日本テレビ</span><br><span class="left">残り30分から再生</span></span>
+        </a>
+        <a class="tv-rcard" href="#">
+          <span class="tv-rth tg7" aria-hidden="true"><span class="tv-rbar"><i style="width:56%"></i></span></span>
+          <span class="tv-rmt"><h3>全力!リアクション王決定戦</h3><span class="ep">2026夏SP・日本テレビ</span><br><span class="left">残り28分から再生</span></span>
+        </a>
+        <a class="tv-rcard" href="#">
+          <span class="tv-rth tg5" aria-hidden="true"><span class="tv-rbar"><i style="width:12%"></i></span></span>
+          <span class="tv-rmt"><h3>まほろば食堂へようこそ</h3><span class="ep">第13話・読売テレビ</span><br><span class="left">残り31分から再生</span></span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <section class="tv-sec s-pink" aria-label="総合急上昇ランキング">
+      <div class="tv-sech">
+        <h2>いま急上昇</h2><span class="tag">TOP 8</span><span class="upd">10分ごと更新・21:05 時点</span>
+        <a class="tv-more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="tv-row">
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-hot">▲12 UP</span><span class="tv-rk r1" aria-label="1位">1</span><div class="tv-th tg7" aria-hidden="true"><span class="tv-tht">全力!リアクション王<br>決定戦 2026夏</span><span class="tv-ep">SP</span><span class="tv-dur">1:03:22</span></div><div class="tv-cm"><h3>全力!リアクション王決定戦 2026夏</h3><p class="tv-st">日本テレビ・7月5日(日)放送</p><div class="tv-mrow"><span class="tv-gn">バラエティ</span><span class="tv-lf">あと6日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-hot">▲5 UP</span><span class="tv-rk r2" aria-label="2位">2</span><div class="tv-th tg1" aria-hidden="true"><span class="tv-tht">海辺の<br>アンサンブル</span><span class="tv-ep">第8話</span><span class="tv-dur">45:58</span></div><div class="tv-cm"><h3>海辺のアンサンブル</h3><p class="tv-st">フジテレビ・7月3日(金)放送</p><div class="tv-mrow"><span class="tv-gn">ドラマ</span><span class="tv-lf">あと4日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk r3" aria-label="3位">3</span><div class="tv-th tg2" aria-hidden="true"><span class="tv-tht">緊急救命24時<br>密着SP</span><span class="tv-ep">SP</span><span class="tv-dur">1:48:00</span></div><div class="tv-cm"><h3>緊急救命24時 密着SP</h3><p class="tv-st">フジテレビ・7月5日(日)放送</p><div class="tv-mrow"><span class="tv-gn">ドキュメント</span><span class="tv-lf">あと6日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-hot nw">初登場</span><span class="tv-rk" aria-label="4位">4</span><div class="tv-th tg6" aria-hidden="true"><span class="tv-tht">星屑の<br>レヴアリー</span><span class="tv-ep">第2話</span><span class="tv-dur">23:40</span></div><div class="tv-cm"><h3>星屑のレヴアリー</h3><p class="tv-st">TBS・7月4日(土)放送</p><div class="tv-mrow"><span class="tv-gn">アニメ</span><span class="tv-lf">あと5日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="5位">5</span><div class="tv-th tg8" aria-hidden="true"><span class="tv-tht">深夜の<br>ハシゴ酒</span><span class="tv-dur">42:11</span></div><div class="tv-cm"><h3>深夜のハシゴ酒</h3><p class="tv-st">テレビ東京・7月2日(木)放送</p><div class="tv-mrow"><span class="tv-gn">バラエティ</span><span class="tv-lf">あと3日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="6位">6</span><div class="tv-th tg4" aria-hidden="true"><span class="tv-tht">刑事一ノ瀬<br>最終章</span><span class="tv-ep">最終回SP</span><span class="tv-dur">54:20</span></div><div class="tv-cm"><h3>刑事一ノ瀬 最終章</h3><p class="tv-st">テレビ朝日・7月2日(木)放送</p><div class="tv-mrow"><span class="tv-gn">ドラマ</span><span class="tv-lf">あと3日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-hot lst">今夜まで</span><span class="tv-rk" aria-label="7位">7</span><div class="tv-th tg12" aria-hidden="true"><span class="tv-tht">終点まで<br>乗ってみた</span><span class="tv-dur">58:30</span></div><div class="tv-cm"><h3>終点まで乗ってみた</h3><p class="tv-st">テレビ東京・6月29日(月)放送</p><div class="tv-mrow"><span class="tv-gn">旅</span><span class="tv-lf">本日 23:59 終了</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="8位">8</span><div class="tv-th tg3" aria-hidden="true"><span class="tv-tht">透明な<br>わたしたち</span><span class="tv-ep">第5話</span><span class="tv-dur">46:03</span></div><div class="tv-cm"><h3>透明なわたしたち</h3><p class="tv-st">日本テレビ・7月4日(土)放送</p><div class="tv-mrow"><span class="tv-gn">ドラマ</span><span class="tv-lf">あと5日</span></div></div></a></article>
+      </div>
+    </section>
+
+    <section class="tv-sec s-yellow" aria-label="ドラマランキング">
+      <div class="tv-sech">
+        <h2>ドラマランキング</h2><span class="tag">TOP 6</span><span class="upd">週間・7月5日集計</span>
+        <a class="tv-more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="tv-row">
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-hot">急上昇</span><span class="tv-rk r1" aria-label="1位">1</span><div class="tv-th tg1" aria-hidden="true"><span class="tv-tht">海辺の<br>アンサンブル</span><span class="tv-ep">第8話</span><span class="tv-dur">45:58</span></div><div class="tv-cm"><h3>海辺のアンサンブル</h3><p class="tv-st">フジテレビ・7月3日(金)放送</p><div class="tv-mrow"><span class="tv-gn">ヒューマン</span><span class="tv-lf">あと4日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk r2" aria-label="2位">2</span><div class="tv-th tg2" aria-hidden="true"><span class="tv-tht">偽装の家族、<br>本物の嘘</span><span class="tv-ep">第10話</span><span class="tv-dur">48:12</span></div><div class="tv-cm"><h3>偽装の家族、本物の嘘</h3><p class="tv-st">TBS・7月1日(水)放送</p><div class="tv-mrow"><span class="tv-gn">サスペンス</span><span class="tv-lf">あと2日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-hot">急上昇</span><span class="tv-rk r3" aria-label="3位">3</span><div class="tv-th tg3" aria-hidden="true"><span class="tv-tht">透明な<br>わたしたち</span><span class="tv-ep">第5話</span><span class="tv-dur">46:03</span></div><div class="tv-cm"><h3>透明なわたしたち</h3><p class="tv-st">日本テレビ・7月4日(土)放送</p><div class="tv-mrow"><span class="tv-gn">青春</span><span class="tv-lf">あと5日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="4位">4</span><div class="tv-th tg4" aria-hidden="true"><span class="tv-tht">刑事一ノ瀬<br>最終章</span><span class="tv-ep">最終回SP</span><span class="tv-dur">54:20</span></div><div class="tv-cm"><h3>刑事一ノ瀬 最終章</h3><p class="tv-st">テレビ朝日・7月2日(木)放送</p><div class="tv-mrow"><span class="tv-gn">刑事</span><span class="tv-lf">あと3日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="5位">5</span><div class="tv-th tg5" aria-hidden="true"><span class="tv-tht">まほろば食堂へ<br>ようこそ</span><span class="tv-ep">第13話</span><span class="tv-dur">34:45</span></div><div class="tv-cm"><h3>まほろば食堂へようこそ</h3><p class="tv-st">読売テレビ・6月30日(火)放送</p><div class="tv-mrow"><span class="tv-gn">グルメ</span><span class="tv-lf">あと1日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="6位">6</span><div class="tv-th tg6" aria-hidden="true"><span class="tv-tht">クジラの骨を<br>拾う夜</span><span class="tv-ep">第4話</span><span class="tv-dur">24:58</span></div><div class="tv-cm"><h3>クジラの骨を拾う夜</h3><p class="tv-st">カンテレ・7月4日(土)放送</p><div class="tv-mrow"><span class="tv-gn">深夜ドラマ</span><span class="tv-lf">あと5日</span></div></div></a></article>
+      </div>
+    </section>
+
+    <section class="tv-sec s-blue" aria-label="バラエティランキング">
+      <div class="tv-sech">
+        <h2>バラエティランキング</h2><span class="tag">TOP 6</span><span class="upd">週間・7月5日集計</span>
+        <a class="tv-more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="tv-row">
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-hot">急上昇</span><span class="tv-rk r1" aria-label="1位">1</span><div class="tv-th tg7" aria-hidden="true"><span class="tv-tht">全力!リアクション王<br>決定戦 2026夏</span><span class="tv-ep">SP</span><span class="tv-dur">1:03:22</span></div><div class="tv-cm"><h3>全力!リアクション王決定戦 2026夏</h3><p class="tv-st">日本テレビ・7月5日(日)放送</p><div class="tv-mrow"><span class="tv-gn">お笑い</span><span class="tv-lf">あと6日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk r2" aria-label="2位">2</span><div class="tv-th tg8" aria-hidden="true"><span class="tv-tht">深夜の<br>ハシゴ酒</span><span class="tv-dur">42:11</span></div><div class="tv-cm"><h3>深夜のハシゴ酒</h3><p class="tv-st">テレビ東京・7月2日(木)放送</p><div class="tv-mrow"><span class="tv-gn">街ブラ</span><span class="tv-lf">あと3日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk r3" aria-label="3位">3</span><div class="tv-th tg9" aria-hidden="true"><span class="tv-tht">芸人トーク<br>サミット</span><span class="tv-dur">46:40</span></div><div class="tv-cm"><h3>芸人トークサミット</h3><p class="tv-st">テレビ朝日・7月3日(金)放送</p><div class="tv-mrow"><span class="tv-gn">トーク</span><span class="tv-lf">あと4日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="4位">4</span><div class="tv-th tg10" aria-hidden="true"><span class="tv-tht">世界ふしぎ<br>食紀行</span><span class="tv-dur">52:08</span></div><div class="tv-cm"><h3>世界ふしぎ食紀行</h3><p class="tv-st">TBS・7月4日(土)放送</p><div class="tv-mrow"><span class="tv-gn">グルメ</span><span class="tv-lf">あと5日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="5位">5</span><div class="tv-th tg11" aria-hidden="true"><span class="tv-tht">マヂカルクイズ<br>研究所</span><span class="tv-dur">47:15</span></div><div class="tv-cm"><h3>マヂカルクイズ研究所</h3><p class="tv-st">フジテレビ・7月1日(水)放送</p><div class="tv-mrow"><span class="tv-gn">クイズ</span><span class="tv-lf">あと2日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-hot lst">今夜まで</span><span class="tv-rk" aria-label="6位">6</span><div class="tv-th tg12" aria-hidden="true"><span class="tv-tht">終点まで<br>乗ってみた</span><span class="tv-dur">58:30</span></div><div class="tv-cm"><h3>終点まで乗ってみた</h3><p class="tv-st">テレビ東京・6月29日(月)放送</p><div class="tv-mrow"><span class="tv-gn">旅</span><span class="tv-lf">本日 23:59 終了</span></div></div></a></article>
+      </div>
+    </section>
+
+    <section class="tv-sec s-orange" aria-label="アニメランキング">
+      <div class="tv-sech">
+        <h2>アニメランキング</h2><span class="tag">TOP 6</span><span class="upd">週間・7月5日集計</span>
+        <a class="tv-more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="tv-row">
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-hot nw">初登場</span><span class="tv-rk r1" aria-label="1位">1</span><div class="tv-th tg6" aria-hidden="true"><span class="tv-tht">星屑の<br>レヴアリー</span><span class="tv-ep">第2話</span><span class="tv-dur">23:40</span></div><div class="tv-cm"><h3>星屑のレヴアリー</h3><p class="tv-st">TBS・7月4日(土)放送</p><div class="tv-mrow"><span class="tv-gn">オリジナル</span><span class="tv-lf">あと5日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk r2" aria-label="2位">2</span><div class="tv-th tg8" aria-hidden="true"><span class="tv-tht">異界タクシー<br>ミッドナイト・ゲート</span><span class="tv-ep">第14話</span><span class="tv-dur">23:40</span></div><div class="tv-cm"><h3>異界タクシー『ミッドナイト・ゲート』</h3><p class="tv-st">テレビ東京・7月3日(金)放送</p><div class="tv-mrow"><span class="tv-gn">ダークファンタジー</span><span class="tv-lf">あと4日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk r3" aria-label="3位">3</span><div class="tv-th tg5" aria-hidden="true"><span class="tv-tht">機動歩兵<br>ヴァルカディア</span><span class="tv-ep">第22話</span><span class="tv-dur">24:10</span></div><div class="tv-cm"><h3>機動歩兵ヴァルカディア</h3><p class="tv-st">日本テレビ・7月1日(水)放送</p><div class="tv-mrow"><span class="tv-gn">ロボット</span><span class="tv-lf">あと2日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="4位">4</span><div class="tv-th tg3" aria-hidden="true"><span class="tv-tht">放課後<br>シネマ倶楽部</span><span class="tv-ep">第7話</span><span class="tv-dur">23:55</span></div><div class="tv-cm"><h3>放課後シネマ倶楽部</h3><p class="tv-st">フジテレビ・7月2日(木)放送</p><div class="tv-mrow"><span class="tv-gn">青春</span><span class="tv-lf">あと3日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="5位">5</span><div class="tv-th tg9" aria-hidden="true"><span class="tv-tht">ネクロマンスの<br>花嫁</span><span class="tv-ep">第9話</span><span class="tv-dur">23:45</span></div><div class="tv-cm"><h3>ネクロマンスの花嫁</h3><p class="tv-st">TBS・7月4日(土)放送</p><div class="tv-mrow"><span class="tv-gn">ファンタジー</span><span class="tv-lf">あと5日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="6位">6</span><div class="tv-th tg7" aria-hidden="true"><span class="tv-tht">ぷちっと<br>ドラゴンず</span><span class="tv-ep">第58話</span><span class="tv-dur">11:30</span></div><div class="tv-cm"><h3>ぷちっとドラゴンず</h3><p class="tv-st">テレビ東京・7月4日(土)放送</p><div class="tv-mrow"><span class="tv-gn">キッズ</span><span class="tv-lf">あと5日</span></div></div></a></article>
+      </div>
+    </section>
+
+    <section class="tv-sec s-purple" aria-label="報道・ドキュメンタリーランキング">
+      <div class="tv-sech">
+        <h2>報道・ドキュメンタリー</h2><span class="tag">TOP 6</span><span class="upd">週間・7月5日集計</span>
+        <a class="tv-more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="tv-row">
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-hot">急上昇</span><span class="tv-rk r1" aria-label="1位">1</span><div class="tv-th tg2" aria-hidden="true"><span class="tv-tht">緊急救命24時<br>密着SP</span><span class="tv-ep">SP</span><span class="tv-dur">1:48:00</span></div><div class="tv-cm"><h3>緊急救命24時 密着SP</h3><p class="tv-st">フジテレビ・7月5日(日)放送</p><div class="tv-mrow"><span class="tv-gn">密着</span><span class="tv-lf">あと6日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk r2" aria-label="2位">2</span><div class="tv-th tg4" aria-hidden="true"><span class="tv-tht">交差点の<br>48時間</span><span class="tv-dur">28:44</span></div><div class="tv-cm"><h3>交差点の48時間</h3><p class="tv-st">テレビ東京・7月2日(木)放送</p><div class="tv-mrow"><span class="tv-gn">定点観測</span><span class="tv-lf">あと3日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk r3" aria-label="3位">3</span><div class="tv-th tg11" aria-hidden="true"><span class="tv-tht">サンデー<br>深層NEWS</span><span class="tv-dur">55:00</span></div><div class="tv-cm"><h3>サンデー深層NEWS</h3><p class="tv-st">日本テレビ・7月5日(日)放送</p><div class="tv-mrow"><span class="tv-gn">報道</span><span class="tv-lf">あと6日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="4位">4</span><div class="tv-th tg5" aria-hidden="true"><span class="tv-tht">戦後81年<br>語り継ぐ声</span><span class="tv-dur">49:30</span></div><div class="tv-cm"><h3>戦後81年 語り継ぐ声</h3><p class="tv-st">TBS・7月4日(土)放送</p><div class="tv-mrow"><span class="tv-gn">歴史</span><span class="tv-lf">あと5日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="5位">5</span><div class="tv-th tg9" aria-hidden="true"><span class="tv-tht">気候クライシス<br>現場から</span><span class="tv-dur">44:12</span></div><div class="tv-cm"><h3>気候クライシス 現場から</h3><p class="tv-st">テレビ朝日・7月3日(金)放送</p><div class="tv-mrow"><span class="tv-gn">環境</span><span class="tv-lf">あと4日</span></div></div></a></article>
+        <article class="tv-card"><a class="tv-clk" href="#"><span class="tv-rk" aria-label="6位">6</span><div class="tv-th tg10" aria-hidden="true"><span class="tv-tht">ローカル鉄道と<br>生きる町</span><span class="tv-dur">47:50</span></div><div class="tv-cm"><h3>ローカル鉄道と生きる町</h3><p class="tv-st">読売テレビ・7月1日(水)放送</p><div class="tv-mrow"><span class="tv-gn">地方創生</span><span class="tv-lf">あと2日</span></div></div></a></article>
+      </div>
+    </section>
+
+    <section class="tv-last" aria-label="本日配信終了">
+      <div class="tv-last-in">
+        <div class="tv-last-h">
+          <h2><span class="bl">HURRY UP</span>本日 23:59 配信終了</h2>
+        </div>
+        <div class="tv-lrow">
+          <a class="tv-lite" href="#"><span class="tv-lth tg12" aria-hidden="true"></span><span class="tv-lmt"><h3>終点まで乗ってみた</h3><p>テレビ東京・58:30</p><b>残り 2時間54分</b></span></a>
+          <a class="tv-lite" href="#"><span class="tv-lth tg5" aria-hidden="true"></span><span class="tv-lmt"><h3>まほろば食堂へようこそ 第12話</h3><p>読売テレビ・34:40</p><b>残り 2時間54分</b></span></a>
+          <a class="tv-lite" href="#"><span class="tv-lth tg9" aria-hidden="true"></span><span class="tv-lmt"><h3>芸人トークサミット 先週回</h3><p>テレビ朝日・46:12</p><b>残り 2時間54分</b></span></a>
+          <a class="tv-lite" href="#"><span class="tv-lth tg2" aria-hidden="true"></span><span class="tv-lmt"><h3>偽装の家族、本物の嘘 第9話</h3><p>TBS・47:58</p><b>残り 2時間54分</b></span></a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="tv-ft">
+    <nav aria-label="フッター(TVER)"><a href="#">ヘルプ</a><a href="#">利用規約</a><a href="#">プライバシー</a><a href="#">対応サービスについて</a><a href="#">運営会社</a></nav>
+    <p>© 2026 TVapp — 本画面はビジュアル検討用モックです。番組・ランキング・人物・数値はすべて架空のものです。</p>
+  </footer>
+</section>
+
+<!-- ================================================================
+     世界 2 — ABEMA(生放送ファースト)
+     ================================================================ -->
+<section class="world" id="ab" role="tabpanel" aria-labelledby="dk-abema" aria-label="ABEMA ホーム" hidden>
+
+  <div class="ab-tick" aria-hidden="true">
+    <div class="ab-tick-in">
+      <div class="ab-tick-seq"><span><b>LIVE</b>REAL FIGHT 頂上決戦 2026 — メインカード進行中</span><span><b>LIVE</b>プロ雀士最強決定戦 準決勝 第1局</span><span><b class="rs">21:30</b>異界タクシー『ミッドナイト・ゲート』#14</span><span><b class="rs">あす19:00</b>藤崎九段 vs 早乙女五段 二日目</span><span><b>一挙</b>機動歩兵ヴァルカディア #20-22 今夜22:00</span><span><b class="rs">新作</b>星屑のレヴアリー 第2話 無料配信中</span></div>
+      <div class="ab-tick-seq"><span><b>LIVE</b>REAL FIGHT 頂上決戦 2026 — メインカード進行中</span><span><b>LIVE</b>プロ雀士最強決定戦 準決勝 第1局</span><span><b class="rs">21:30</b>異界タクシー『ミッドナイト・ゲート』#14</span><span><b class="rs">あす19:00</b>藤崎九段 vs 早乙女五段 二日目</span><span><b>一挙</b>機動歩兵ヴァルカディア #20-22 今夜22:00</span><span><b class="rs">新作</b>星屑のレヴアリー 第2話 無料配信中</span></div>
+    </div>
+  </div>
+
+  <div class="wrap ab-top">
+    <article class="ab-live">
+      <div class="ab-live-scr">
+        <span class="ab-onair"><i aria-hidden="true"></i>ON AIR</span>
+        <span class="ab-ch-tag">格闘チャンネル</span>
+        <div class="ab-cmt" aria-hidden="true">
+          <span>うおおおおお立ち上がった</span>
+          <span>王者のローキック効いてる</span>
+          <span>19歳とは思えない落ち着き…</span>
+        </div>
+        <div class="ab-live-tt">
+          <p class="rd">REAL FIGHT — メインカード 第2ラウンド</p>
+          <h1>REAL FIGHT 頂上決戦 2026</h1>
+          <p>無敗の王者に、19歳の挑戦者が挑む。伝説になる夜を、生で見届けろ。</p>
+        </div>
+      </div>
+      <div class="ab-live-bar">
+        <span class="num"><b>24,318</b><span>人が視聴中</span></span>
+        <div class="ab-prg">
+          <div class="ab-prg-t"><span>21:00</span><span>いま 21:57</span><span>23:30</span></div>
+          <div class="ab-prg-bar"><i></i></div>
+        </div>
+        <a class="go" href="#"><svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.8v10.4L12 7 3 1.8Z" fill="currentColor"/></svg>視聴する</a>
+        <a class="sub2" href="#"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h7" stroke-linecap="round"/></svg>追いかけ再生</a>
+      </div>
+    </article>
+
+    <aside class="ab-next" aria-label="このあとの注目">
+      <div class="ab-next-h"><span class="lv">UP NEXT</span><h2>このあとの注目</h2><a href="#">番組表へ</a></div>
+      <ol>
+        <li><a class="rw" href="#"><span class="tm">21:30<em>アニメ</em></span><span class="nm"><b>異界タクシー『ミッドナイト・ゲート』#14</b><span>アニメチャンネル・地上波同時</span></span><span class="rsv on">放送中</span></a></li>
+        <li><a class="rw" href="#"><span class="tm">22:00<em>アニメ</em></span><span class="nm"><b>機動歩兵ヴァルカディア #20-22 一挙</b><span>アニメチャンネル</span></span><span class="rsv">予約</span></a></li>
+        <li><a class="rw" href="#"><span class="tm">22:00<em>恋愛</em></span><span class="nm"><b>オトナの入学式 #3</b><span>恋愛チャンネル・オリジナル</span></span><span class="rsv">予約</span></a></li>
+        <li><a class="rw" href="#"><span class="tm">23:00<em>恋愛</em></span><span class="nm"><b>ふたりの温度差 #2</b><span>恋愛チャンネル</span></span><span class="rsv">予約</span></a></li>
+        <li><a class="rw" href="#"><span class="tm">あす<em>19:00</em></span><span class="nm"><b>藤崎九段 vs 早乙女五段 二日目</b><span>将棋チャンネル・二日制</span></span><span class="rsv">予約</span></a></li>
+      </ol>
+    </aside>
+  </div>
+
+  <div class="wrap">
+    <section class="ab-epg" aria-label="番組表">
+      <div class="ab-epg-h">
+        <h2>いま放送中 — 番組表</h2>
+        <span class="now"><i aria-hidden="true"></i>21:57 現在・23ch 生放送中</span>
+        <a href="#">すべてのチャンネル →</a>
+      </div>
+      <div class="ab-epg-sc">
+        <div class="ab-grid">
+          <div class="ab-nowln" aria-hidden="true"></div>
+          <div class="ab-trow hdr">
+            <div></div>
+            <div class="ab-tc ab-cnd">21:00</div><div class="ab-tc ab-cnd">21:30</div><div class="ab-tc ab-cnd">22:00</div><div class="ab-tc ab-cnd">22:30</div><div class="ab-tc ab-cnd">23:00</div>
+          </div>
+          <div class="ab-trow">
+            <div class="ab-chl"><b>格闘</b><span>FIGHT</span></div>
+            <a class="ab-pg on" href="#" style="grid-column:2/span 10"><b>REAL FIGHT 頂上決戦 2026</b><span><span class="vw">24,318人</span>・メインカード進行中</span></a>
+          </div>
+          <div class="ab-trow">
+            <div class="ab-chl"><b>アニメ</b><span>ANIME</span></div>
+            <a class="ab-pg" href="#" style="grid-column:2/span 2"><b>星屑のレヴアリー #2</b><span>再放送</span></a>
+            <a class="ab-pg on" href="#" style="grid-column:4/span 2"><b>異界タクシー #14</b><span><span class="vw">8,214人</span>・地上波同時</span></a>
+            <a class="ab-pg" href="#" style="grid-column:6/span 6"><b>機動歩兵ヴァルカディア #20-22 一挙</b><span>7月12日(日) 全話一挙の前夜祭</span></a>
+          </div>
+          <div class="ab-trow">
+            <div class="ab-chl"><b>恋愛</b><span>ROMANCE</span></div>
+            <a class="ab-pg on" href="#" style="grid-column:2/span 4"><b>真夏のシェアハウス 沖縄編 #6</b><span><span class="vw">15,082人</span>・オリジナル</span></a>
+            <a class="ab-pg" href="#" style="grid-column:6/span 4"><b>オトナの入学式 #3</b><span>オリジナル最新話</span></a>
+            <a class="ab-pg" href="#" style="grid-column:10/span 2"><b>ふたりの温度差 #2</b><span>先行放送</span></a>
+          </div>
+          <div class="ab-trow">
+            <div class="ab-chl"><b>麻雀</b><span>MAHJONG</span></div>
+            <a class="ab-pg on" href="#" style="grid-column:2/span 8"><b>プロ雀士最強決定戦 準決勝 第1局</b><span><span class="vw">6,930人</span>・実況解説つき</span></a>
+            <a class="ab-pg" href="#" style="grid-column:10/span 2"><b>雀荘のミッドナイト</b><span>講座</span></a>
+          </div>
+          <div class="ab-trow">
+            <div class="ab-chl"><b>ニュース</b><span>NEWS</span></div>
+            <a class="ab-pg" href="#" style="grid-column:2/span 2"><b>夜まとめニュース</b><span>21:00-21:30</span></a>
+            <a class="ab-pg on" href="#" style="grid-column:4/span 4"><b>世界のいまドキュメント</b><span><span class="vw">3,411人</span>・特集: 気候と都市</span></a>
+            <a class="ab-pg" href="#" style="grid-column:8/span 4"><b>明日の天気と経済</b><span>22:30-23:30</span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ab-sec" aria-label="アニメランキング">
+      <div class="ab-sech">
+        <h2>アニメランキング</h2><span class="cnt ab-cnd">WEEKLY TOP 6</span>
+        <a class="ab-more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="ab-row">
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag2" aria-hidden="true"><span class="ab-rk ab-cnd r1">1</span><span class="ab-lv"><i></i>LIVE</span><span class="ab-tht">異界タクシー<br>ミッドナイト・ゲート</span></div><div class="ab-cm"><h3>異界タクシー『ミッドナイト・ゲート』 #14</h3><p class="st">アニメチャンネル・日曜 22:00</p><p class="au"><i aria-hidden="true"></i>いま 8,214人が視聴中</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag6" aria-hidden="true"><span class="ab-rk ab-cnd">2</span><span class="ab-dur">23:40</span><span class="ab-tht">星屑の<br>レヴアリー</span></div><div class="ab-cm"><h3>星屑のレヴアリー #2</h3><p class="st">地上波先行・金曜 24:00</p><p class="au mut"><i aria-hidden="true"></i>最新話 無料配信中</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag5" aria-hidden="true"><span class="ab-rk ab-cnd">3</span><span class="ab-dur">24:10</span><span class="ab-tht">機動歩兵<br>ヴァルカディア</span></div><div class="ab-cm"><h3>機動歩兵ヴァルカディア #22</h3><p class="st">火曜 23:30</p><p class="au mut"><i aria-hidden="true"></i>7月12日(日) 一挙放送</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag3" aria-hidden="true"><span class="ab-rk ab-cnd">4</span><span class="ab-dur">23:55</span><span class="ab-tht">放課後<br>シネマ倶楽部</span></div><div class="ab-cm"><h3>放課後シネマ倶楽部 #7</h3><p class="st">水曜 22:30</p><p class="au mut"><i aria-hidden="true"></i>コメント 12,844件</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag9" aria-hidden="true"><span class="ab-rk ab-cnd">5</span><span class="ab-dur">23:45</span><span class="ab-tht">ネクロマンスの<br>花嫁</span></div><div class="ab-cm"><h3>ネクロマンスの花嫁 #9</h3><p class="st">土曜 23:00</p><p class="au mut"><i aria-hidden="true"></i>プレミアム先行</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag7" aria-hidden="true"><span class="ab-rk ab-cnd">6</span><span class="ab-dur">11:30</span><span class="ab-tht">ぷちっと<br>ドラゴンず</span></div><div class="ab-cm"><h3>ぷちっとドラゴンず #58</h3><p class="st">月〜金 朝 7:30</p><p class="au mut"><i aria-hidden="true"></i>全話無料</p></div></a></article>
+      </div>
+    </section>
+
+    <section class="ab-sec" aria-label="恋愛リアリティーショーランキング">
+      <div class="ab-sech">
+        <h2>恋愛リアリティーショー</h2><span class="cnt ab-cnd">WEEKLY TOP 6</span>
+        <a class="ab-more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="ab-row">
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag3" aria-hidden="true"><span class="ab-rk ab-cnd r1">1</span><span class="ab-lv"><i></i>LIVE</span><span class="ab-tht">真夏のシェアハウス<br>沖縄編</span></div><div class="ab-cm"><h3>真夏のシェアハウス 沖縄編 #6</h3><p class="st">オリジナル・毎週月曜</p><p class="au"><i aria-hidden="true"></i>いま 15,082人が視聴中</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag6" aria-hidden="true"><span class="ab-rk ab-cnd">2</span><span class="ab-dur">52:44</span><span class="ab-tht">オトナの<br>入学式</span></div><div class="ab-cm"><h3>オトナの入学式 #3</h3><p class="st">オリジナル・毎週火曜</p><p class="au mut"><i aria-hidden="true"></i>新エピソード配信中</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag1" aria-hidden="true"><span class="ab-rk ab-cnd">3</span><span class="ab-dur">1:01:05</span><span class="ab-tht">運命の<br>スリーデイズ</span></div><div class="ab-cm"><h3>運命のスリーデイズ #8</h3><p class="st">木曜 22:00</p><p class="au mut"><i aria-hidden="true"></i>コメント 9,310件</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag4" aria-hidden="true"><span class="ab-rk ab-cnd">4</span><span class="ab-dur">55:12</span><span class="ab-tht">恋する<br>城下町</span></div><div class="ab-cm"><h3>恋する城下町 #5</h3><p class="st">オリジナル・毎週土曜</p><p class="au mut"><i aria-hidden="true"></i>見逃し無料</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag2" aria-hidden="true"><span class="ab-rk ab-cnd">5</span><span class="ab-dur">49:58</span><span class="ab-tht">ふたりの<br>温度差</span></div><div class="ab-cm"><h3>ふたりの温度差 #2</h3><p class="st">金曜 21:00</p><p class="au mut"><i aria-hidden="true"></i>プレミアム限定回あり</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag9" aria-hidden="true"><span class="ab-rk ab-cnd">6</span><span class="ab-dur">1:03:40</span><span class="ab-tht">隣人は<br>まだ知らない</span></div><div class="ab-cm"><h3>隣人はまだ知らない #12(終)</h3><p class="st">オリジナル</p><p class="au mut"><i aria-hidden="true"></i>シーズン2 制作決定</p></div></a></article>
+      </div>
+    </section>
+
+    <section class="ab-sec" aria-label="格闘・スポーツランキング">
+      <div class="ab-sech">
+        <h2>格闘・スポーツ</h2><span class="cnt ab-cnd">WEEKLY TOP 6</span>
+        <a class="ab-more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="ab-row">
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag8" aria-hidden="true"><span class="ab-rk ab-cnd r1">1</span><span class="ab-lv"><i></i>LIVE</span><span class="ab-tht">REAL FIGHT<br>頂上決戦 2026</span></div><div class="ab-cm"><h3>REAL FIGHT 頂上決戦 2026</h3><p class="st">格闘チャンネル・生放送</p><p class="au"><i aria-hidden="true"></i>いま 24,318人が視聴中</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag4" aria-hidden="true"><span class="ab-rk ab-cnd">2</span><span class="ab-dur">3:12:40</span><span class="ab-tht">立ち技最強<br>トーナメント</span></div><div class="ab-cm"><h3>立ち技最強トーナメント 一回戦</h3><p class="st">格闘チャンネル・6月28日(日)</p><p class="au mut"><i aria-hidden="true"></i>アーカイブ無料</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag1" aria-hidden="true"><span class="ab-rk ab-cnd">3</span><span class="ab-lv"><i></i>LIVE</span><span class="ab-tht">プロ雀士<br>最強決定戦</span></div><div class="ab-cm"><h3>プロ雀士最強決定戦 準決勝 第1局</h3><p class="st">麻雀チャンネル・放送中</p><p class="au"><i aria-hidden="true"></i>いま 6,930人が視聴中</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag9" aria-hidden="true"><span class="ab-rk ab-cnd">4</span><span class="ab-dur">封じ手</span><span class="ab-tht">藤崎九段 vs<br>早乙女五段</span></div><div class="ab-cm"><h3>藤崎九段 vs 早乙女五段 二日制</h3><p class="st">将棋チャンネル・あす 19:00</p><p class="au mut"><i aria-hidden="true"></i>封じ手予想 受付中</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag5" aria-hidden="true"><span class="ab-rk ab-cnd">5</span><span class="ab-dur">44:18</span><span class="ab-tht">世界卓球<br>日本代表密着</span></div><div class="ab-cm"><h3>世界卓球 日本代表密着 #4</h3><p class="st">スポーツチャンネル・7月3日(金)</p><p class="au mut"><i aria-hidden="true"></i>見逃し配信中</p></div></a></article>
+        <article class="ab-card"><a class="ab-clk" href="#"><div class="ab-th ag7" aria-hidden="true"><span class="ab-rk ab-cnd">6</span><span class="ab-dur">58:02</span><span class="ab-tht">ロードバイク<br>耐久24h</span></div><div class="ab-cm"><h3>ロードバイク耐久24h 総集編</h3><p class="st">スポーツチャンネル・6月30日(火)</p><p class="au mut"><i aria-hidden="true"></i>ハイライト公開中</p></div></a></article>
+      </div>
+    </section>
+  </div>
+
+  <footer class="ab-ft">
+    <nav aria-label="フッター(ABEMA)"><a href="#">ヘルプ</a><a href="#">利用規約</a><a href="#">プライバシー</a><a href="#">対応サービスについて</a><a href="#">運営会社</a></nav>
+    <p>© 2026 TVapp — 本画面はビジュアル検討用モックです。番組・チャンネル・人物・数値はすべて架空のものです。</p>
+  </footer>
+</section>
+
+<!-- ================================================================
+     世界 3 — YouTube(レッド × チャコール / グリッド主体)
+     ================================================================ -->
+<section class="world" id="yt" role="tabpanel" aria-labelledby="dk-youtube" aria-label="YouTube ホーム" hidden>
+  <div class="yt-body">
+
+    <aside class="yt-side" aria-label="ナビゲーション">
+      <a href="#" aria-current="page"><svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3.5 9.5 11 3l7.5 6.5V19h-5v-5.5h-5V19h-5V9.5Z" stroke-linejoin="round"/></svg>ホーム</a>
+      <a href="#"><svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="6.5" y="2.5" width="9" height="17" rx="4.5"/><path d="M9.5 8.5v5l4.2-2.5Z" fill="currentColor" stroke="none"/></svg>ショート</a>
+      <a href="#"><svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="2.5" y="6.5" width="17" height="12" rx="3"/><path d="m7 3 4 3 4-3" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 10.5v4l3.6-2Z" fill="currentColor" stroke="none"/></svg>登録チャンネル</a>
+      <hr>
+      <a href="#"><svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 4.5h14M4 8h14M4 11.5h8" stroke-linecap="round"/><path d="M14.5 12.5v6l4.5-3Z" fill="currentColor" stroke="none"/></svg>ライブラリ</a>
+      <a href="#"><svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="7.5"/><path d="M11 6.8V11l3 2" stroke-linecap="round"/></svg>履歴</a>
+      <a href="#"><svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="7.5"/><path d="M11 7.5v7M7.5 11h7" stroke-linecap="round"/></svg>後で見る</a>
+      <hr>
+      <p class="cap">登録チャンネル</p>
+      <a class="chn" href="#"><span class="cav ca1" aria-hidden="true">ハ</span>ハルカ研究室<span class="nw" aria-label="新着あり"></span></a>
+      <a class="chn" href="#"><span class="cav ca2" aria-hidden="true">ぐ</span>ぐらたん実況ch<span class="nw" aria-label="新着あり"></span></a>
+      <a class="chn" href="#"><span class="cav ca4" aria-hidden="true">ヨ</span>ヨルノヒカリ Official</a>
+      <a class="chn" href="#"><span class="cav ca3" aria-hidden="true">研</span>研ぎ師カワセ</a>
+      <a class="chn" href="#"><span class="cav ca7" aria-hidden="true">し</span>詩音しおん</a>
+    </aside>
+
+    <div class="yt-main">
+      <div class="yt-chips" role="group" aria-label="フィルタ">
+        <button aria-pressed="true">すべて</button><button aria-pressed="false">音楽</button><button aria-pressed="false">ゲーム実況</button><button aria-pressed="false">ライブ</button><button aria-pressed="false">料理</button><button aria-pressed="false">ポッドキャスト</button><button aria-pressed="false">建築</button><button aria-pressed="false">DIY</button><button aria-pressed="false">お笑い</button><button aria-pressed="false">最近アップロードされた動画</button><button aria-pressed="false">新しい発見</button>
+      </div>
+
+      <div class="yt-grid">
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg1" aria-hidden="true"><span class="yt-tht">無人島×自販機<br>72時間サバイバル</span><span class="yt-dur">24:18</span></div><div class="yt-meta"><span class="yt-cav ca1" aria-hidden="true">ハ</span><div class="yt-txt"><h3>【検証】無人島で自販機だけは使っていい72時間サバイバル</h3><p class="yt-ch">ハルカ研究室 <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.5" fill="#a3a3a3"/><path d="m3.6 6.2 1.6 1.6 3.2-3.4" stroke="#0f0f0f" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></p><p class="yt-vt">32万 回視聴・6時間前</p><span class="yt-badge new">新着</span></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg3" aria-hidden="true"><span class="yt-tht">巨大クレープ<br>チャレンジ</span><span class="yt-dur">12:44</span></div><div class="yt-meta"><span class="yt-cav ca5" aria-hidden="true">ま</span><div class="yt-txt"><h3>都庁前で巨大クレープを焼いてみた</h3><p class="yt-ch">まちかどグルメ部</p><p class="yt-vt">58万 回視聴・1日前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg12" aria-hidden="true"><span class="yt-tht">引っ越し報告と<br>これからの話</span><span class="yt-dur">9:32</span></div><div class="yt-meta"><span class="yt-cav ca6" aria-hidden="true">ゆ</span><div class="yt-txt"><h3>引っ越し報告と、これからの話</h3><p class="yt-ch">ゆるねこ夫婦</p><p class="yt-vt">41万 回視聴・18時間前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg6" aria-hidden="true"><span class="yt-tht">100均包丁を<br>本気で研ぐ</span><span class="yt-dur">15:06</span></div><div class="yt-meta"><span class="yt-cav ca3" aria-hidden="true">研</span><div class="yt-txt"><h3>プロが100均の包丁を本気で研いだら</h3><p class="yt-ch">研ぎ師カワセ <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.5" fill="#a3a3a3"/><path d="m3.6 6.2 1.6 1.6 3.2-3.4" stroke="#0f0f0f" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></p><p class="yt-vt">87万 回視聴・2日前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg8" aria-hidden="true"><span class="yt-tht">3坪の家、<br>住めるのか</span><span class="yt-dur">18:22</span></div><div class="yt-meta"><span class="yt-cav ca8" aria-hidden="true">ア</span><div class="yt-txt"><h3>【解説】3坪の家、住めるのか — 極小住宅の間取りを建築士が読む</h3><p class="yt-ch">アーキ塾</p><p class="yt-vt">29万 回視聴・1日前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg5" aria-hidden="true"><span class="yt-tht">深夜ラジオ風<br>トーク #47</span><span class="yt-dur">52:10</span></div><div class="yt-meta"><span class="yt-cav ca4" aria-hidden="true">オ</span><div class="yt-txt"><h3>深夜ラジオ風トーク #47 — 夏フェスの思い出と失敗談</h3><p class="yt-ch">オールナイトずんだ</p><p class="yt-vt">12万 回視聴・8時間前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg4" aria-hidden="true"><span class="yt-tht">星海クラフト<br>Part1</span><span class="yt-dur">34:52</span></div><div class="yt-meta"><span class="yt-cav ca2" aria-hidden="true">ぐ</span><div class="yt-txt"><h3>【新作】星海クラフト 実況 Part1 — まずは拠点づくりから</h3><p class="yt-ch">ぐらたん実況ch <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.5" fill="#a3a3a3"/><path d="m3.6 6.2 1.6 1.6 3.2-3.4" stroke="#0f0f0f" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></p><p class="yt-vt">45万 回視聴・12時間前</p><span class="yt-badge new">新着</span></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg2" aria-hidden="true"><span class="yt-tht">STREET LIVE<br>渋谷 弾き語り</span><span class="yt-dur live">● LIVE</span></div><div class="yt-meta"><span class="yt-cav ca7" aria-hidden="true">街</span><div class="yt-txt"><h3>THE STREET LIVE 渋谷 弾き語り — 金曜夜の生配信</h3><p class="yt-ch">街角セッションズ</p><p class="yt-vt">視聴者 8,412人がライブ視聴中</p></div></div></a></article>
+      </div>
+
+      <div class="yt-h">
+        <span class="ic" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M11 2.5c.3 3-1 4.4-2.4 5.9C7.2 9.9 6 11.3 6 13.4a4.6 4.6 0 0 0 9.2 0c0-1.4-.5-2.6-1.2-3.8-.4.9-1 1.4-1.8 1.7.5-2.6-.2-6.5-1.2-8.8Z" stroke="#ff4d4d" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+        <h2>急上昇ランキング</h2><span class="sub">日本・1時間ごと更新</span>
+        <a class="all" href="#">すべて表示</a>
+      </div>
+      <div class="yt-grid">
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg1" aria-hidden="true"><span class="yt-rknum r1">#1</span><span class="yt-tht">無人島×自販機<br>72時間</span><span class="yt-dur">24:18</span></div><div class="yt-meta"><span class="yt-cav ca1" aria-hidden="true">ハ</span><div class="yt-txt"><h3>【検証】無人島で自販機だけは使っていい72時間サバイバル</h3><p class="yt-ch">ハルカ研究室</p><p class="yt-vt">32万 回視聴・6時間前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg9" aria-hidden="true"><span class="yt-rknum">#2</span><span class="yt-tht">群青リフレイン<br>MV</span><span class="yt-dur">4:12</span></div><div class="yt-meta"><span class="yt-cav ca4" aria-hidden="true">ヨ</span><div class="yt-txt"><h3>ヨルノヒカリ「群青リフレイン」Official MV</h3><p class="yt-ch">ヨルノヒカリ Official <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.5" fill="#a3a3a3"/><path d="m3.6 6.2 1.6 1.6 3.2-3.4" stroke="#0f0f0f" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></p><p class="yt-vt">142万 回視聴・3日前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg7" aria-hidden="true"><span class="yt-rknum">#3</span><span class="yt-tht">世界大会<br>決勝ハイライト</span><span class="yt-dur">28:44</span></div><div class="yt-meta"><span class="yt-cav ca8" aria-hidden="true">格</span><div class="yt-txt"><h3>対戦格闘 世界大会 決勝ハイライト — 22年ぶりの日本人王者</h3><p class="yt-ch">格ゲー戦線</p><p class="yt-vt">52万 回視聴・2日前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg6" aria-hidden="true"><span class="yt-rknum">#4</span><span class="yt-tht">100均包丁を<br>本気で研ぐ</span><span class="yt-dur">15:06</span></div><div class="yt-meta"><span class="yt-cav ca3" aria-hidden="true">研</span><div class="yt-txt"><h3>プロが100均の包丁を本気で研いだら</h3><p class="yt-ch">研ぎ師カワセ</p><p class="yt-vt">87万 回視聴・2日前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg4" aria-hidden="true"><span class="yt-rknum">#5</span><span class="yt-tht">星海クラフト<br>Part1</span><span class="yt-dur">34:52</span></div><div class="yt-meta"><span class="yt-cav ca2" aria-hidden="true">ぐ</span><div class="yt-txt"><h3>【新作】星海クラフト 実況 Part1</h3><p class="yt-ch">ぐらたん実況ch</p><p class="yt-vt">45万 回視聴・12時間前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg3" aria-hidden="true"><span class="yt-rknum">#6</span><span class="yt-tht">巨大クレープ<br>チャレンジ</span><span class="yt-dur">12:44</span></div><div class="yt-meta"><span class="yt-cav ca5" aria-hidden="true">ま</span><div class="yt-txt"><h3>都庁前で巨大クレープを焼いてみた</h3><p class="yt-ch">まちかどグルメ部</p><p class="yt-vt">58万 回視聴・1日前</p></div></div></a></article>
+      </div>
+
+      <div class="yt-h">
+        <span class="ic" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="5.5" y="2" width="9" height="16" rx="4.5" stroke="#ff4d4d" stroke-width="1.6"/><path d="M8.6 7.6v4.8l4-2.4Z" fill="#ff4d4d"/></svg></span>
+        <h2>ショート</h2><span class="sub">60秒でわかる</span>
+        <a class="all" href="#">すべて表示</a>
+      </div>
+      <div class="yt-shorts">
+        <article class="yt-s"><a href="#" aria-label="ショート: 30秒で作る朝ごはん"><div class="yt-sth yg3" aria-hidden="true"><span class="sic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="5.5" y="2" width="9" height="16" rx="4.5" stroke="#fff" stroke-width="1.6"/><path d="M8.6 7.6v4.8l4-2.4Z" fill="#fff"/></svg></span><span class="t">30秒で作る朝ごはん</span><span class="v">210万回視聴</span></div></a></article>
+        <article class="yt-s"><a href="#" aria-label="ショート: 猫、初めての雪"><div class="yt-sth yg2" aria-hidden="true"><span class="sic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="5.5" y="2" width="9" height="16" rx="4.5" stroke="#fff" stroke-width="1.6"/><path d="M8.6 7.6v4.8l4-2.4Z" fill="#fff"/></svg></span><span class="t">猫、初めての雪</span><span class="v">480万回視聴</span></div></a></article>
+        <article class="yt-s"><a href="#" aria-label="ショート: 駅の連続ジャンプ芸"><div class="yt-sth yg5" aria-hidden="true"><span class="sic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="5.5" y="2" width="9" height="16" rx="4.5" stroke="#fff" stroke-width="1.6"/><path d="M8.6 7.6v4.8l4-2.4Z" fill="#fff"/></svg></span><span class="t">乗換案内より速い男</span><span class="v">96万回視聴</span></div></a></article>
+        <article class="yt-s"><a href="#" aria-label="ショート: 1分で分かる台風対策"><div class="yt-sth yg8" aria-hidden="true"><span class="sic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="5.5" y="2" width="9" height="16" rx="4.5" stroke="#fff" stroke-width="1.6"/><path d="M8.6 7.6v4.8l4-2.4Z" fill="#fff"/></svg></span><span class="t">1分で分かる台風対策</span><span class="v">64万回視聴</span></div></a></article>
+        <article class="yt-s"><a href="#" aria-label="ショート: ペン回し世界チャンプ"><div class="yt-sth yg7" aria-hidden="true"><span class="sic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="5.5" y="2" width="9" height="16" rx="4.5" stroke="#fff" stroke-width="1.6"/><path d="M8.6 7.6v4.8l4-2.4Z" fill="#fff"/></svg></span><span class="t">ペン回し世界チャンプの30秒</span><span class="v">150万回視聴</span></div></a></article>
+        <article class="yt-s"><a href="#" aria-label="ショート: 段ボールで作る秘密基地"><div class="yt-sth yg4" aria-hidden="true"><span class="sic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="5.5" y="2" width="9" height="16" rx="4.5" stroke="#fff" stroke-width="1.6"/><path d="M8.6 7.6v4.8l4-2.4Z" fill="#fff"/></svg></span><span class="t">段ボール秘密基地、完成</span><span class="v">88万回視聴</span></div></a></article>
+      </div>
+
+      <div class="yt-h">
+        <span class="ic" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7 15.5V5l8-2v10.5" stroke="#ff4d4d" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5" cy="15.5" r="2.4" stroke="#ff4d4d" stroke-width="1.6"/><circle cx="13" cy="13.5" r="2.4" stroke="#ff4d4d" stroke-width="1.6"/></svg></span>
+        <h2>音楽ランキング</h2><span class="sub">週間 TOP 6</span>
+        <a class="all" href="#">すべて表示</a>
+      </div>
+      <div class="yt-grid">
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg9" aria-hidden="true"><span class="yt-rknum r1">#1</span><span class="yt-tht">群青リフレイン<br>MV</span><span class="yt-dur">4:12</span></div><div class="yt-meta"><span class="yt-cav ca4" aria-hidden="true">ヨ</span><div class="yt-txt"><h3>ヨルノヒカリ「群青リフレイン」Official MV</h3><p class="yt-ch">ヨルノヒカリ Official</p><p class="yt-vt">142万 回視聴・3日前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg7" aria-hidden="true"><span class="yt-rknum">#2</span><span class="yt-tht">カレイドスコープ・<br>ナイト cover</span><span class="yt-dur">3:58</span></div><div class="yt-meta"><span class="yt-cav ca7" aria-hidden="true">し</span><div class="yt-txt"><h3>【歌ってみた】カレイドスコープ・ナイト</h3><p class="yt-ch">詩音しおん</p><p class="yt-vt">68万 回視聴・1日前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg10" aria-hidden="true"><span class="yt-rknum">#3</span><span class="yt-tht">雨の日の<br>ローファイ 1時間</span><span class="yt-dur">1:00:00</span></div><div class="yt-meta"><span class="yt-cav ca6" aria-hidden="true">R</span><div class="yt-txt"><h3>作業用BGM 雨の日のローファイ 1時間</h3><p class="yt-ch">Rainy Loop Records</p><p class="yt-vt">96万 回視聴・1週間前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg2" aria-hidden="true"><span class="yt-rknum">#4</span><span class="yt-tht">STREET LIVE<br>渋谷</span><span class="yt-dur">16:40</span></div><div class="yt-meta"><span class="yt-cav ca7" aria-hidden="true">街</span><div class="yt-txt"><h3>THE STREET LIVE 渋谷 弾き語り</h3><p class="yt-ch">街角セッションズ</p><p class="yt-vt">25万 回視聴・4日前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg3" aria-hidden="true"><span class="yt-rknum">#5</span><span class="yt-tht">夏祭りメドレー<br>吹奏楽</span><span class="yt-dur">12:24</span></div><div class="yt-meta"><span class="yt-cav ca3" aria-hidden="true">青</span><div class="yt-txt"><h3>吹奏楽で「夏祭りメドレー」演ってみた</h3><p class="yt-ch">市立青風高校OB楽団</p><p class="yt-vt">33万 回視聴・5日前</p></div></div></a></article>
+        <article class="yt-v"><a href="#"><div class="yt-thumb yg5" aria-hidden="true"><span class="yt-rknum">#6</span><span class="yt-tht">叩いてみた<br>群青リフレイン</span><span class="yt-dur">5:03</span></div><div class="yt-meta"><span class="yt-cav ca8" aria-hidden="true">だ</span><div class="yt-txt"><h3>ドラム叩いてみた「群青リフレイン」</h3><p class="yt-ch">だんだんドラムス</p><p class="yt-vt">18万 回視聴・2日前</p></div></div></a></article>
+      </div>
+
+      <footer class="yt-ft">
+        <nav aria-label="フッター(YouTube)"><a href="#">ヘルプ</a><a href="#">利用規約</a><a href="#">プライバシー</a><a href="#">対応サービスについて</a><a href="#">運営会社</a></nav>
+        <p>© 2026 TVapp — 本画面はビジュアル検討用モックです。動画・チャンネル・人物・数値はすべて架空のものです。</p>
+      </footer>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     世界 4 — niconico(オレンジ × 遊び心 / 弾幕が主役)
+     ================================================================ -->
+<section class="world" id="nc" role="tabpanel" aria-labelledby="dk-niconico" aria-label="niconico ホーム" hidden>
+
+  <div class="nc-tape" aria-hidden="true">
+    <div class="nc-tape-in">
+      <div class="nc-tape-seq"><span><b>速報</b>「カレイドスコープ・ナイト」がミリオン達成!</span><span><b>殿堂入り</b>押入れプラネタリウム — コメ7,240件ありがとう</span><span><b>イベント</b>夏のボカロ祭 2026 エントリー受付中</span><span><b>急上昇</b>TAS 8分でクリアする伝説のRPG</span><span><b>生放送</b>今夜24:00 くらげシンセP 新曲プレミア</span></div>
+      <div class="nc-tape-seq"><span><b>速報</b>「カレイドスコープ・ナイト」がミリオン達成!</span><span><b>殿堂入り</b>押入れプラネタリウム — コメ7,240件ありがとう</span><span><b>イベント</b>夏のボカロ祭 2026 エントリー受付中</span><span><b>急上昇</b>TAS 8分でクリアする伝説のRPG</span><span><b>生放送</b>今夜24:00 くらげシンセP 新曲プレミア</span></div>
+    </div>
+  </div>
+
+  <div class="wrap nc-hero">
+    <article class="nc-player">
+      <div class="nc-scr">
+        <span class="nc-new" aria-hidden="true">ミリオン</span>
+        <div class="nc-dan" aria-hidden="true">
+          <span class="d1">うぽつ!!</span>
+          <span class="d2">888888888</span>
+          <span class="d3">サビの転調やばい</span>
+          <span class="d4">2年待ってた…</span>
+          <span class="d5">ここのミクかわいい</span>
+        </div>
+        <button class="nc-play" aria-label="コメント付きで再生">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15L20 12 7 4.5Z" fill="#fff"/></svg>
+        </button>
+        <span class="tt">【初音ミク】カレイドスコープ・ナイト【オリジナルMV】</span>
+        <span class="dur">4:12</span>
+      </div>
+      <div class="nc-pbar">
+        <span class="stat"><svg width="11" height="11" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="#ffb45e"/></svg>再生 <b>102.4万</b></span>
+        <span class="stat"><svg width="11" height="11" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="#ffb45e"/></svg>コメ <b>2.4万</b></span>
+        <span class="stat"><svg width="11" height="11" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3l3.2.5-2.3 2.2.5 3.2L5 7.7 2.2 9.2l.5-3.2L.4 3.8l3.2-.5L5 .4Z" fill="#ffb45e"/></svg>マイリス <b>3.1万</b></span>
+        <span class="tags"><a href="#">#VOCALOID</a><a href="#">#初音ミク</a><a href="#">#くらげシンセP</a><a href="#">#ミリオン動画</a></span>
+      </div>
+    </article>
+
+    <aside class="nc-cpanel" aria-label="コメントパネル">
+      <div class="nc-cp-h">
+        <h2>コメント</h2><span class="n">24,081件</span><span class="spd">184コメ/分</span>
+      </div>
+      <ul class="nc-cp-l">
+        <li><span class="tc">00:04</span><span class="tx">うぽつです!</span></li>
+        <li><span class="tc">00:11</span><span class="tx">イントロから天才</span></li>
+        <li><span class="tc">00:32</span><span class="tx">この電子音たまらん</span></li>
+        <li><span class="tc">00:58</span><span class="tx">歌詞考察班はよ</span></li>
+        <li><span class="tc">01:24</span><span class="tx">ここすき</span></li>
+        <li><span class="tc">01:47</span><span class="tx">万華鏡のイラスト神すぎる</span></li>
+        <li><span class="tc">02:10</span><span class="tx">サビの転調で鳥肌立った</span></li>
+        <li><span class="tc">02:31</span><span class="tx">888888888</span></li>
+        <li><span class="tc">03:02</span><span class="tx">作業用に無限ループ中</span></li>
+        <li><span class="tc">03:28</span><span class="tx">ラスサビの畳みかけえぐい</span></li>
+        <li><span class="tc">03:55</span><span class="tx">ミリオンおめでとう!!</span></li>
+        <li><span class="tc">04:08</span><span class="tx">初見です。伝説に立ち会えた</span></li>
+      </ul>
+      <div class="nc-cp-in">
+        <input type="text" placeholder="コメントを入力(モック)" aria-label="コメントを入力">
+        <button type="button">投稿</button>
+      </div>
+    </aside>
+  </div>
+
+  <div class="wrap">
+    <section class="nc-rank" aria-label="総合ランキング">
+      <div class="nc-rk-h">
+        <h2><svg class="crown" width="26" height="22" viewBox="0 0 26 22" aria-hidden="true"><path d="M2 7.5 7 12l6-8 6 8 5-4.5-2 12H4l-2-12Z" fill="#ffd23a" stroke="#c28a00" stroke-width="1.5" stroke-linejoin="round"/></svg>週刊ランキング</h2>
+        <div class="nc-tabs" role="group" aria-label="ランキング種別">
+          <button aria-pressed="true">殿堂入り</button><button aria-pressed="false">急上昇</button><button aria-pressed="false">毎時</button>
+        </div>
+        <span class="upd">7月6日(月) 更新</span>
+        <a class="more3" href="#">TOP100 を見る</a>
+      </div>
+      <div class="nc-grid">
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal s1" aria-label="1位"><span>1<small>位</small></span></span><span class="nc-dou">殿堂入り</span><div class="nc-th ng3" aria-hidden="true"><span class="dan2"><span style="animation-duration:9s">神曲の予感しかない</span><span style="animation-duration:13s;animation-delay:-6s">うぽつ</span></span><span class="nc-tht">カレイドスコープ・<br>ナイト</span><span class="nc-dur2">4:12</span></div><div class="nc-cm2"><h3>【初音ミク】カレイドスコープ・ナイト【オリジナルMV】</h3><p class="nc-au">くらげシンセP・7月3日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>102.4万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>24,081</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3l3.2.5-2.3 2.2.5 3.2L5 7.7 2.2 9.2l.5-3.2L.4 3.8l3.2-.5L5 .4Z" fill="currentColor"/></svg>3.1万</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal s2" aria-label="2位"><span>2<small>位</small></span></span><span class="nc-dou up">▲ 急上昇</span><div class="nc-th ng9" aria-hidden="true"><span class="dan2"><span style="animation-duration:10s">は?8分??</span><span style="animation-duration:14s;animation-delay:-8s">理論値それな</span></span><span class="nc-tht">TAS 8分クリア<br>伝説のRPG</span><span class="nc-dur2">8:02</span></div><div class="nc-cm2"><h3>TAS 8分でクリアする伝説のRPG</h3><p class="nc-au">TASさん見習い・7月2日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>51.3万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>9,120</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3l3.2.5-2.3 2.2.5 3.2L5 7.7 2.2 9.2l.5-3.2L.4 3.8l3.2-.5L5 .4Z" fill="currentColor"/></svg>1.8万</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal s3" aria-label="3位"><span>3<small>位</small></span></span><span class="nc-dou">殿堂入り</span><div class="nc-th ng6" aria-hidden="true"><span class="dan2"><span style="animation-duration:11s">押入れの本気を見た</span><span style="animation-duration:15s;animation-delay:-9s">星きれい…</span></span><span class="nc-tht">押入れ<br>プラネタリウム</span><span class="nc-dur2">12:40</span></div><div class="nc-cm2"><h3>押入れにプラネタリウムを作ってみた</h3><p class="nc-au">週末工房かんな・7月4日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>32.8万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>7,240</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3l3.2.5-2.3 2.2.5 3.2L5 7.7 2.2 9.2l.5-3.2L.4 3.8l3.2-.5L5 .4Z" fill="currentColor"/></svg>9,850</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal" aria-label="4位"><span>4<small>位</small></span></span><div class="nc-th ng1" aria-hidden="true"><span class="dan2"><span style="animation-duration:10.5s">むぎとろの声すき</span></span><span class="nc-tht">星海クラフト<br>縛り旅 #1</span><span class="nc-dur2">28:44</span></div><div class="nc-cm2"><h3>ゆっくり実況 星海クラフト縛り旅 #1</h3><p class="nc-au">むぎとろ・7月4日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>24.1万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>3,842</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3l3.2.5-2.3 2.2.5 3.2L5 7.7 2.2 9.2l.5-3.2L.4 3.8l3.2-.5L5 .4Z" fill="currentColor"/></svg>6,120</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal" aria-label="5位"><span>5<small>位</small></span></span><span class="nc-dou up">▲ 急上昇</span><div class="nc-th ng4" aria-hidden="true"><span class="dan2"><span style="animation-duration:9.5s">歌い出しで泣いた</span><span style="animation-duration:13.5s;animation-delay:-7s">高音つよ</span></span><span class="nc-tht">歌ってみた<br>カレイドスコープ</span><span class="nc-dur2">4:10</span></div><div class="nc-cm2"><h3>【歌ってみた】カレイドスコープ・ナイト</h3><p class="nc-au">詩音しおん・7月4日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>29.2万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>5,630</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3l3.2.5-2.3 2.2.5 3.2L5 7.7 2.2 9.2l.5-3.2L.4 3.8l3.2-.5L5 .4Z" fill="currentColor"/></svg>4,480</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal" aria-label="6位"><span>6<small>位</small></span></span><div class="nc-th ng8" aria-hidden="true"><span class="dan2"><span style="animation-duration:12s">人狼まじ心理戦</span></span><span class="nc-tht">実況者4人で<br>人狼 完全版</span><span class="nc-dur2">1:22:10</span></div><div class="nc-cm2"><h3>実況者4人で人狼ゲーム 完全版</h3><p class="nc-au">夜更かし人狼村・7月3日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>18.8万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>6,455</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3l3.2.5-2.3 2.2.5 3.2L5 7.7 2.2 9.2l.5-3.2L.4 3.8l3.2-.5L5 .4Z" fill="currentColor"/></svg>3,910</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal" aria-label="7位"><span>7<small>位</small></span></span><div class="nc-th ng5" aria-hidden="true"><span class="dan2"><span style="animation-duration:11.5s">ねこ様専用ドアwww</span></span><span class="nc-tht">猫用<br>全自動ドア</span><span class="nc-dur2">6:47</span></div><div class="nc-cm2"><h3>猫用の全自動ドアを発明した</h3><p class="nc-au">ねこメカニクス・7月3日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>21.7万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>5,671</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3l3.2.5-2.3 2.2.5 3.2L5 7.7 2.2 9.2l.5-3.2L.4 3.8l3.2-.5L5 .4Z" fill="currentColor"/></svg>2,890</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal" aria-label="8位"><span>8<small>位</small></span></span><div class="nc-th ng2" aria-hidden="true"><span class="dan2"><span style="animation-duration:10s">転調で鳥肌</span></span><span class="nc-tht">真夜中<br>トランジット</span><span class="nc-dur2">3:47</span></div><div class="nc-cm2"><h3>【オリジナル】真夜中トランジット</h3><p class="nc-au">硝子瓶P・7月1日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>38.6万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>8,754</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .4 6.4 3.3l3.2.5-2.3 2.2.5 3.2L5 7.7 2.2 9.2l.5-3.2L.4 3.8l3.2-.5L5 .4Z" fill="currentColor"/></svg>7,020</span></div></div></a></article>
+      </div>
+    </section>
+
+    <div class="nc-tagc">
+      <div class="nc-tagc-h"><h2>タグで探す</h2><span>みんなが付けた人気タグ</span></div>
+      <div class="nc-tagc-l">
+        <a class="t-hot" href="#">#夏のボカロ祭2026</a><a class="t-lg" href="#">#VOCALOID</a><a class="t-md" href="#">#ゆっくり実況</a><a class="t-lg" href="#">#作ってみた</a><a class="t-sm" href="#">#TAS</a><a class="t-md" href="#">#歌ってみた</a><a class="t-md" href="#">#ニコニコ技術部</a><a class="t-sm" href="#">#猫</a><a class="t-lg" href="#">#ゲーム実況</a><a class="t-sm" href="#">#描いてみた</a><a class="t-md" href="#">#人狼</a><a class="t-sm" href="#">#料理</a><a class="t-md" href="#">#初音ミク</a><a class="t-sm" href="#">#レトロゲー</a>
+      </div>
+    </div>
+
+    <section class="nc-sec" aria-label="ボカロ・歌ってみたランキング">
+      <div class="nc-sech">
+        <h2><i aria-hidden="true"></i>ボカロ・歌ってみた</h2><span class="cnt2">TOP 6</span>
+        <a class="nc-more2" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="nc-row">
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal s1" aria-label="1位"><span>1<small>位</small></span></span><div class="nc-th ng3" aria-hidden="true"><span class="dan2"><span style="animation-duration:9s">ミリオンおめ!!</span></span><span class="nc-tht">カレイドスコープ・<br>ナイト</span><span class="nc-dur2">4:12</span></div><div class="nc-cm2"><h3>【初音ミク】カレイドスコープ・ナイト</h3><p class="nc-au">くらげシンセP・7月3日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>102.4万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>24,081</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal s2" aria-label="2位"><span>2<small>位</small></span></span><div class="nc-th ng2" aria-hidden="true"><span class="dan2"><span style="animation-duration:11s">深夜に沁みる</span></span><span class="nc-tht">真夜中<br>トランジット</span><span class="nc-dur2">3:47</span></div><div class="nc-cm2"><h3>【オリジナル】真夜中トランジット</h3><p class="nc-au">硝子瓶P・7月1日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>38.6万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>8,754</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal s3" aria-label="3位"><span>3<small>位</small></span></span><div class="nc-th ng4" aria-hidden="true"><span class="dan2"><span style="animation-duration:10s">しおんちゃん最高</span></span><span class="nc-tht">歌ってみた<br>カレイドスコープ</span><span class="nc-dur2">4:10</span></div><div class="nc-cm2"><h3>【歌ってみた】カレイドスコープ・ナイト</h3><p class="nc-au">詩音しおん・7月4日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>29.2万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>5,630</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal" aria-label="4位"><span>4<small>位</small></span></span><div class="nc-th ng9" aria-hidden="true"><span class="dan2"><span style="animation-duration:12s">調声の教科書</span></span><span class="nc-tht">調声解説<br>歌わせる技術</span><span class="nc-dur2">14:28</span></div><div class="nc-cm2"><h3>【調声解説】ミクを人間らしく歌わせる技術</h3><p class="nc-au">ボカロ調声研究会・6月30日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>15.7万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>3,322</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal" aria-label="5位"><span>5<small>位</small></span></span><div class="nc-th ng8" aria-hidden="true"><span class="dan2"><span style="animation-duration:9.5s">タイトル回収きた</span></span><span class="nc-tht">ハレーション<br>ガール</span><span class="nc-dur2">3:33</span></div><div class="nc-cm2"><h3>【オリジナル曲】ハレーションガール</h3><p class="nc-au">まぐろ缶P・7月2日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>11.9万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>2,014</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal" aria-label="6位"><span>6<small>位</small></span></span><div class="nc-th ng7" aria-hidden="true"><span class="dan2"><span style="animation-duration:13s">10年分の思い出</span></span><span class="nc-tht">ボカロ10年<br>メドレー</span><span class="nc-dur2">10:24</span></div><div class="nc-cm2"><h3>ボカロ10年メドレー 描いてみた</h3><p class="nc-au">筆ペン星人・6月28日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>8.4万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>1,988</span></div></div></a></article>
+      </div>
+    </section>
+
+    <section class="nc-sec" aria-label="技術部・作ってみたランキング">
+      <div class="nc-sech">
+        <h2><i class="tq" aria-hidden="true"></i>技術部・作ってみた</h2><span class="cnt2">TOP 6</span>
+        <a class="nc-more2" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </div>
+      <div class="nc-row">
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal s1" aria-label="1位"><span>1<small>位</small></span></span><div class="nc-th ng6" aria-hidden="true"><span class="dan2"><span style="animation-duration:10s">技術部の本気</span></span><span class="nc-tht">押入れ<br>プラネタリウム</span><span class="nc-dur2">12:40</span></div><div class="nc-cm2"><h3>押入れにプラネタリウムを作ってみた</h3><p class="nc-au">週末工房かんな・7月4日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>32.8万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>7,240</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal s2" aria-label="2位"><span>2<small>位</small></span></span><div class="nc-th ng5" aria-hidden="true"><span class="dan2"><span style="animation-duration:11s">ねこ勝手口www</span></span><span class="nc-tht">猫用<br>全自動ドア</span><span class="nc-dur2">6:47</span></div><div class="nc-cm2"><h3>猫用の全自動ドアを発明した</h3><p class="nc-au">ねこメカニクス・7月3日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>21.7万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>5,671</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal s3" aria-label="3位"><span>3<small>位</small></span></span><div class="nc-th ng1" aria-hidden="true"><span class="dan2"><span style="animation-duration:12s">配信環境が渋い</span></span><span class="nc-tht">自作キーボード<br>配信環境</span><span class="nc-dur2">16:05</span></div><div class="nc-cm2"><h3>自作キーボードで小説を書く配信環境</h3><p class="nc-au">しろくま電子・7月1日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>14.2万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>2,133</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal" aria-label="4位"><span>4<small>位</small></span></span><div class="nc-th ng7" aria-hidden="true"><span class="dan2"><span style="animation-duration:10.5s">歯車が美しい</span></span><span class="nc-tht">3Dプリンタで<br>動く城 #4</span><span class="nc-dur2">22:18</span></div><div class="nc-cm2"><h3>3Dプリンタで動く城を作る #4</h3><p class="nc-au">歯車仕掛けP・6月30日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>11.6万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>3,410</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal" aria-label="5位"><span>5<small>位</small></span></span><div class="nc-th ng3" aria-hidden="true"><span class="dan2"><span style="animation-duration:11.5s">空撮きれいすぎ</span></span><span class="nc-tht">田んぼアート<br>空撮記録</span><span class="nc-dur2">8:56</span></div><div class="nc-cm2"><h3>田んぼアートをドローンで記録した</h3><p class="nc-au">米どころ研究部・6月29日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>9.3万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>1,255</span></div></div></a></article>
+        <article class="nc-card"><a class="nc-clk" href="#"><span class="nc-seal" aria-label="6位"><span>6<small>位</small></span></span><div class="nc-th ng8" aria-hidden="true"><span class="dan2"><span style="animation-duration:9.5s">音が意外と良い件</span></span><span class="nc-tht">廃材エレキ<br>ギター製作</span><span class="nc-dur2">25:33</span></div><div class="nc-cm2"><h3>廃材だけでエレキギター製作</h3><p class="nc-au">音工房ざらめ・6月28日投稿</p><div class="nc-nums"><span class="pl"><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1v8l6-4Z" fill="currentColor"/></svg>8.1万</span><span><svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 1h8v5.5H4.2L1 9.4V1Z" fill="currentColor"/></svg>2,908</span></div></div></a></article>
+      </div>
+    </section>
+  </div>
+
+  <footer class="nc-ft">
+    <p class="face">(・∀・) ニコニコしていってね!</p>
+    <nav aria-label="フッター(niconico)"><a href="#">ヘルプ</a><a href="#">利用規約</a><a href="#">プライバシー</a><a href="#">対応サービスについて</a><a href="#">運営会社</a></nav>
+    <p>© 2026 TVapp — 本画面はビジュアル検討用モックです。動画・投稿者・コメント・数値はすべて架空のものです。</p>
+  </footer>
+</section>
+
+</main>
+
+<script>
+(function () {
+"use strict";
+
+var ORDER = ["tver", "abema", "youtube", "niconico"];
+var NAMES = { tver: "TVER", abema: "ABEMA", youtube: "YouTube", niconico: "niconico" };
+var PANEL = { tver: "tv", abema: "ab", youtube: "yt", niconico: "nc" };
+var PLACE = {
+  tver: "番組名・出演者・キーワードで検索",
+  abema: "番組・チャンネル・シリーズを検索",
+  youtube: "検索",
+  niconico: "キーワード・タグで検索"
+};
+var root = document.documentElement;
+var tabs = Array.prototype.slice.call(document.querySelectorAll(".dk-b"));
+var current = null;
+
+/* ---------- サービス切替(世界の総入れ替え) ---------- */
+function select(svc, focusTab) {
+  if (!PANEL[svc] || svc === current) return;
+  current = svc;
+  root.setAttribute("data-svc", svc);
+  tabs.forEach(function (t) {
+    var on = t.getAttribute("data-svc") === svc;
+    t.setAttribute("aria-selected", on ? "true" : "false");
+    t.tabIndex = on ? 0 : -1;
+    if (on && focusTab) t.focus();
+  });
+  ORDER.forEach(function (k) {
+    document.getElementById(PANEL[k]).hidden = (k !== svc);
+  });
+  document.getElementById("q").placeholder = PLACE[svc];
+  document.getElementById("announce").textContent = NAMES[svc] + " に切り替えました";
+  window.scrollTo(0, 0);
+  measureHeader();
+  try {
+    localStorage.setItem("tvapp-svc-v2", svc);
+    history.replaceState(null, "", "#" + svc);
+  } catch (e) { /* file:// 等では無視 */ }
+}
+
+tabs.forEach(function (t) {
+  t.addEventListener("click", function () { select(t.getAttribute("data-svc")); });
+  t.addEventListener("keydown", function (e) {
+    var i = tabs.indexOf(t), n = null;
+    if (e.key === "ArrowRight") n = (i + 1) % tabs.length;
+    if (e.key === "ArrowLeft") n = (i - 1 + tabs.length) % tabs.length;
+    if (n !== null) {
+      e.preventDefault();
+      select(tabs[n].getAttribute("data-svc"), true);
+    }
+  });
+});
+
+/* 1〜4 キーで切替(入力中は無効) */
+document.addEventListener("keydown", function (e) {
+  var el = document.activeElement;
+  if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+  var i = ["1", "2", "3", "4"].indexOf(e.key);
+  if (i >= 0) select(ORDER[i]);
+});
+
+/* ---------- ヘッダー高さ(YouTube チップの sticky 位置) ---------- */
+function measureHeader() {
+  var hd = document.querySelector(".hd");
+  if (hd) root.style.setProperty("--yt-top", hd.offsetHeight + "px");
+}
+window.addEventListener("resize", measureHeader);
+
+/* ---------- ユーザーメニュー ---------- */
+var ubtn = document.getElementById("ubtn");
+var umenu = document.getElementById("umenu");
+function closeMenu() { umenu.hidden = true; ubtn.setAttribute("aria-expanded", "false"); }
+ubtn.addEventListener("click", function (e) {
+  e.stopPropagation();
+  var open = umenu.hidden;
+  umenu.hidden = !open;
+  ubtn.setAttribute("aria-expanded", open ? "true" : "false");
+});
+document.addEventListener("click", function (e) {
+  if (!umenu.hidden && !umenu.contains(e.target)) closeMenu();
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape" && !umenu.hidden) { closeMenu(); ubtn.focus(); }
+});
+
+/* ---------- aria-pressed トグル(YouTube チップ / niconico タブ) ---------- */
+document.addEventListener("click", function (e) {
+  var b = e.target && e.target.closest ? e.target.closest('[role="group"] button[aria-pressed]') : null;
+  if (!b) return;
+  b.closest('[role="group"]').querySelectorAll("button[aria-pressed]").forEach(function (x) {
+    x.setAttribute("aria-pressed", "false");
+  });
+  b.setAttribute("aria-pressed", "true");
+});
+
+/* ---------- ダミーリンク保護 ---------- */
+document.addEventListener("click", function (e) {
+  var a = e.target && e.target.closest ? e.target.closest('a[href="#"]') : null;
+  if (a) e.preventDefault();
+});
+
+/* ---------- 初期化(URL ハッシュ > localStorage > TVER) ---------- */
+var initial = (location.hash || "").replace("#", "");
+if (!PANEL[initial]) {
+  try { initial = localStorage.getItem("tvapp-svc-v2") || ""; } catch (e) { initial = ""; }
+}
+if (!PANEL[initial]) initial = "tver";
+select(initial);
+measureHeader();
+window.addEventListener("hashchange", function () {
+  var h = (location.hash || "").replace("#", "");
+  if (PANEL[h]) select(h);
+});
+})();
+</script>
+</body>
+</html>
