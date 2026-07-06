@@ -43,10 +43,15 @@ if [ -z "$URL" ]; then
   exit 1
 fi
 
-# 4) デプロイ後の鮮度照合
+# 4) デプロイ後の鮮度照合(エッジ反映待ちのため最大~48s リトライ)
 echo "== 鮮度照合: $URL/api/health =="
-sleep 4
-LIVE=$(curl -s --max-time 20 "$URL/api/health" | python3 -c "import sys,json;print(json.load(sys.stdin).get('build_sha','?'))" 2>/dev/null || echo "?")
+LIVE="?"
+for i in $(seq 1 12); do
+  sleep 4
+  LIVE=$(curl -s --max-time 20 "$URL/api/health" | python3 -c "import sys,json;print(json.load(sys.stdin).get('build_sha','?'))" 2>/dev/null || echo "?")
+  [ "$LIVE" = "$SHA" ] && break
+  echo "  ...反映待ち(${i}) 現状 build_sha=$LIVE"
+done
 echo "  本番 build_sha: $LIVE / 期待(HEAD): $SHA"
 if [ "$LIVE" = "$SHA" ]; then
   echo "✓ 最新コミットが本番に反映されました($SHA)"
