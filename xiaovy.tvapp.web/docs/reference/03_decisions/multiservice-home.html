@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="ja" data-svc="tver">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp — 統合ビューア ホーム(TVER / ABEMA / YouTube / niconico 切替モック)</title>
+<!--
+  TVapp 統合ビューア ホーム — マルチサービス・テーマ切替モック
+  対象: tvapp-web / docs/reference/03_decisions
+  骨格は 4 サービス共通、data-svc 属性でアクセント・雰囲気・コンテンツが切り替わる。
+  自己完結(外部 CSS / CDN / JS フレームワーク不使用)。番組・チャンネル・人物はすべて架空。
+-->
+<style>
+/* ============================================================
+   0. リセット & 共通トークン
+   ============================================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+  font-feature-settings:"palt" 1;
+  line-height:1.7;letter-spacing:.02em;
+  background:var(--bg);color:var(--tx);
+  -webkit-font-smoothing:antialiased;
+  transition:background-color .5s ease,color .5s ease;
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font:inherit}
+ul{list-style:none}
+img,svg{display:block}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:6px}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{
+  position:fixed;left:14px;top:-60px;z-index:300;
+  background:var(--acc);color:var(--acc-ink);font-size:12.5px;font-weight:700;
+  padding:8px 16px;border-radius:8px;transition:top .2s ease;
+}
+.skip:focus-visible{top:12px}
+
+/* ============================================================
+   1. サービス別テーマ変数(data-svc で切替)
+   ============================================================ */
+:root,
+[data-svc="tver"]{
+  --bg:#06080f; --bg-up:#0b0e18;
+  --panel:rgba(255,255,255,.05); --panel-up:rgba(255,255,255,.09);
+  --line:rgba(255,255,255,.1); --line-soft:rgba(255,255,255,.06);
+  --tx:#e9edf5; --tx2:#8e98ac; --tx3:#677184;
+  --acc:#e9b862; --acc2:#c8912e; --acc-ink:#251604;
+  --acc-soft:rgba(233,184,98,.13); --glow:rgba(233,184,98,.32);
+  --r:10px; --r-lg:14px;
+  --dock:rgba(9,12,20,.82);
+}
+[data-svc="abema"]{
+  --bg:#030a08; --bg-up:#071410;
+  --panel:rgba(120,255,190,.05); --panel-up:rgba(120,255,190,.1);
+  --line:rgba(120,255,190,.14); --line-soft:rgba(120,255,190,.07);
+  --tx:#e7f5ee; --tx2:#8aa79a; --tx3:#5f7d70;
+  --acc:#1fe887; --acc2:#00b868; --acc-ink:#02170c;
+  --acc-soft:rgba(31,232,135,.12); --glow:rgba(31,232,135,.3);
+  --r:8px; --r-lg:12px;
+  --dock:rgba(4,13,10,.84);
+}
+[data-svc="youtube"]{
+  --bg:#0f0f0f; --bg-up:#181818;
+  --panel:#1e1e1e; --panel-up:#2a2a2a;
+  --line:#303030; --line-soft:#262626;
+  --tx:#f1f1f1; --tx2:#a3a3a3; --tx3:#7c7c7c;
+  --acc:#ff4d4d; --acc2:#e02b2b; --acc-ink:#ffffff;
+  --acc-soft:rgba(255,77,77,.12); --glow:rgba(255,77,77,.3);
+  --r:14px; --r-lg:18px;
+  --dock:rgba(18,18,18,.88);
+}
+[data-svc="niconico"]{
+  --bg:#16100a; --bg-up:#1f160d;
+  --panel:rgba(255,190,110,.06); --panel-up:rgba(255,190,110,.12);
+  --line:rgba(255,190,110,.16); --line-soft:rgba(255,190,110,.08);
+  --tx:#f4ede1; --tx2:#af9f89; --tx3:#83745e;
+  --acc:#ff9327; --acc2:#ef7404; --acc-ink:#2b1602;
+  --acc-soft:rgba(255,147,39,.13); --glow:rgba(255,147,39,.32);
+  --r:12px; --r-lg:16px;
+  --dock:rgba(23,16,9,.86);
+}
+
+/* 空気(サービスごとの背景グロー。クロスフェード) */
+.atmo{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.atmo span{position:absolute;inset:0;opacity:0;transition:opacity .7s ease}
+.atmo .a-tver{background:
+  radial-gradient(900px 480px at 72% -160px,rgba(46,84,140,.38),transparent 70%),
+  radial-gradient(700px 420px at 8% 30%,rgba(233,184,98,.06),transparent 65%)}
+.atmo .a-abema{background:
+  radial-gradient(900px 500px at 78% -140px,rgba(31,232,135,.14),transparent 68%),
+  radial-gradient(760px 460px at 4% 42%,rgba(0,150,120,.12),transparent 62%),
+  repeating-linear-gradient(115deg,transparent 0 90px,rgba(31,232,135,.016) 90px 120px)}
+.atmo .a-youtube{background:
+  radial-gradient(820px 440px at 78% -160px,rgba(255,77,77,.1),transparent 66%),
+  linear-gradient(180deg,#141414,transparent 320px)}
+.atmo .a-niconico{background:
+  radial-gradient(880px 480px at 74% -150px,rgba(255,147,39,.14),transparent 68%),
+  radial-gradient(4px 4px at 50% 50%,transparent,transparent),
+  radial-gradient(rgba(255,190,110,.05) 1px,transparent 1.4px)}
+.atmo .a-niconico{background-size:auto,auto,26px 26px}
+[data-svc="tver"] .atmo .a-tver,
+[data-svc="abema"] .atmo .a-abema,
+[data-svc="youtube"] .atmo .a-youtube,
+[data-svc="niconico"] .atmo .a-niconico{opacity:1}
+
+.wrap{max-width:1280px;margin:0 auto;padding:0 28px}
+@media(max-width:640px){.wrap{padding:0 16px}}
+
+/* ============================================================
+   2. トップバー(ロゴ / 検索 / ユーザー)
+   ============================================================ */
+.top{border-bottom:1px solid var(--line-soft)}
+.bar{display:flex;align-items:center;gap:20px;padding:13px 0}
+.logo{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.lg-tile{fill:var(--acc);transition:fill .5s ease}
+.lg-w{stroke:var(--acc-ink);stroke-width:2.4;fill:none;stroke-linecap:round;transition:stroke .5s ease}
+.wm{
+  font-family:"Avenir Next","Segoe UI",sans-serif;
+  font-size:21px;font-weight:800;letter-spacing:.015em;line-height:1;color:var(--tx);
+}
+.wm-sub{
+  display:block;font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:8.5px;font-weight:600;letter-spacing:.34em;color:var(--tx3);
+  text-transform:uppercase;margin-top:3px;
+}
+.search{flex:1 1 160px;min-width:0;max-width:480px;position:relative;margin:0 auto}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);stroke:var(--tx3);pointer-events:none}
+.search input{
+  width:100%;border:1px solid var(--line);border-radius:999px;
+  background:var(--panel);color:var(--tx);
+  padding:9px 18px 9px 42px;font-size:13px;line-height:1.4;
+  transition:border-color .2s ease,background .2s ease,box-shadow .2s ease;
+}
+.search input::placeholder{color:var(--tx3)}
+.search input:focus{outline:none;border-color:var(--acc);background:var(--bg-up);box-shadow:0 0 0 3px var(--acc-soft)}
+.hact{display:flex;align-items:center;gap:10px;flex:0 0 auto;margin-left:auto}
+.icb{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;color:var(--tx2);transition:background .18s ease,color .18s ease}
+.icb:hover{background:var(--panel-up);color:var(--tx)}
+.uwrap{position:relative}
+.user{
+  display:flex;align-items:center;gap:9px;border-radius:999px;
+  padding:4px 12px 4px 4px;border:1px solid var(--line);background:var(--panel);color:var(--tx);
+  transition:background .18s ease,border-color .18s ease;
+}
+.user:hover{background:var(--panel-up);border-color:var(--acc)}
+.avt{
+  display:grid;place-items:center;width:32px;height:32px;border-radius:50%;
+  font-size:14px;font-weight:700;flex:0 0 auto;
+  background:linear-gradient(155deg,var(--acc),var(--acc2));color:var(--acc-ink);
+  transition:background .5s ease;
+}
+.unm{font-size:13px;font-weight:600;white-space:nowrap}
+.user svg{transition:transform .2s ease}
+.user[aria-expanded="true"] svg{transform:rotate(180deg)}
+.umenu{
+  position:absolute;right:0;top:calc(100% + 10px);z-index:210;
+  min-width:230px;padding:6px;
+  background:var(--bg-up);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 18px 50px rgba(0,0,0,.55);
+  animation:menuIn .16s ease both;
+}
+@keyframes menuIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.uhead{padding:10px 14px 9px;border-bottom:1px solid var(--line-soft);margin-bottom:5px}
+.uhead b{display:block;font-size:13.5px}
+.uhead span{font-size:11px;color:var(--tx3)}
+.umenu a{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;border-radius:9px;font-size:13px;color:var(--tx2);
+  transition:background .15s ease,color .15s ease;
+}
+.umenu a:hover{background:var(--panel-up);color:var(--tx)}
+.umenu a svg{stroke:currentColor;flex:0 0 auto}
+.umenu .out{color:var(--acc)}
+@media(max-width:760px){.unm{display:none}.user{padding-right:9px}}
+@media(max-width:470px){.bar{gap:10px}.icb{display:none}.search input{padding-left:36px;font-size:12.5px}.search svg{left:12px}}
+
+/* ============================================================
+   3. サービス切替ドック(このアプリの主役)
+   ============================================================ */
+.dockbar{
+  position:sticky;top:0;z-index:200;
+  background:var(--dock);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line-soft);
+  transition:background-color .5s ease;
+}
+.dock-in{max-width:1280px;margin:0 auto;padding:10px 28px;display:flex;align-items:center;gap:18px}
+.dock-k{
+  flex:0 0 auto;
+  font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:10px;font-weight:600;letter-spacing:.3em;color:var(--tx3);
+  text-transform:uppercase;writing-mode:horizontal-tb;
+  border-right:1px solid var(--line);padding-right:16px;line-height:1.5;
+}
+.dock{
+  position:relative;flex:1 1 auto;max-width:780px;
+  display:flex;gap:4px;padding:5px;
+  background:var(--panel);border:1px solid var(--line);border-radius:16px;
+}
+.ind{
+  position:absolute;top:5px;bottom:5px;left:0;width:0;z-index:0;
+  border-radius:12px;
+  background:linear-gradient(160deg,var(--acc),var(--acc2));
+  box-shadow:0 6px 22px var(--glow),inset 0 1px 0 rgba(255,255,255,.28);
+  transition:transform .34s cubic-bezier(.55,.1,.25,1.2),width .34s cubic-bezier(.55,.1,.25,1.2),background .5s ease;
+}
+.svc{
+  position:relative;z-index:1;flex:1 1 0;min-width:0;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  padding:9px 10px;border-radius:12px;color:var(--tx2);
+  transition:color .25s ease;
+}
+.svc:hover{color:var(--tx)}
+.svc[aria-selected="true"]{color:var(--acc-ink)}
+.svc svg{flex:0 0 auto;transition:transform .3s ease}
+.svc[aria-selected="true"] svg{transform:scale(1.12)}
+.svc-tx{display:flex;flex-direction:column;align-items:flex-start;line-height:1.25;min-width:0}
+.svc-n{font-size:14.5px;font-weight:800;letter-spacing:.03em;white-space:nowrap}
+.svc-d{font-size:9.5px;font-weight:600;letter-spacing:.06em;opacity:.72;white-space:nowrap}
+.dock-live{
+  flex:0 0 auto;display:flex;align-items:center;gap:7px;
+  font-size:11px;font-weight:700;color:var(--tx2);white-space:nowrap;
+}
+.dock-live i{
+  width:7px;height:7px;border-radius:50%;background:var(--acc);
+  box-shadow:0 0 10px var(--glow);animation:pulse 1.8s ease infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media(max-width:1020px){.dock-k,.dock-live{display:none}.dock{max-width:none}}
+@media(max-width:720px){
+  .dock-in{padding:8px 12px}
+  .svc{flex-direction:column;gap:3px;padding:7px 4px}
+  .svc-tx{align-items:center}
+  .svc-n{font-size:11px}
+  .svc-d{display:none}
+  .svc svg{width:18px;height:18px}
+}
+
+/* ============================================================
+   4. フレーバー枠(サービス固有の帯: ABEMA ティッカー / YouTube チップ)
+   ============================================================ */
+.tick{background:var(--bg-up);border-bottom:1px solid var(--line-soft);overflow:hidden}
+.tick-in{display:flex;width:max-content;animation:tick 30s linear infinite}
+.tick-seq{display:flex;align-items:center;gap:42px;padding:8px 21px;white-space:nowrap;font-size:12px;font-weight:600;color:var(--tx2)}
+.tick-seq b{
+  color:var(--acc-ink);background:var(--acc);border-radius:5px;
+  padding:0 8px;margin-right:8px;font-size:10.5px;font-weight:800;letter-spacing:.08em;
+}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.chips{display:flex;gap:9px;overflow-x:auto;padding:14px 28px 4px;max-width:1280px;margin:0 auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{
+  flex:0 0 auto;font-size:12.5px;font-weight:600;
+  padding:6px 15px;border-radius:9px;
+  background:var(--panel);border:1px solid var(--line-soft);color:var(--tx2);
+  transition:background .15s ease,color .15s ease;
+}
+.chips button:hover{background:var(--panel-up);color:var(--tx)}
+.chips button[aria-pressed="true"]{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+@media(max-width:640px){.chips{padding:12px 16px 2px}}
+
+/* ============================================================
+   5. ジャンルナビ
+   ============================================================ */
+.gnav{display:flex;gap:6px;overflow-x:auto;padding:13px 0 4px;scrollbar-width:none}
+.gnav::-webkit-scrollbar{display:none}
+.gnav a{
+  flex:0 0 auto;font-size:13px;font-weight:600;
+  padding:6px 16px;border-radius:999px;color:var(--tx2);
+  border:1px solid transparent;
+  transition:background .16s ease,color .16s ease,border-color .16s ease;
+}
+.gnav a:hover{background:var(--panel);color:var(--tx)}
+.gnav a[aria-current="page"]{background:var(--acc-soft);border-color:var(--acc);color:var(--acc)}
+[data-svc="youtube"] .gnav a[aria-current="page"]{background:var(--tx);border-color:var(--tx);color:var(--bg)}
+
+/* ============================================================
+   6. ヒーロー
+   ============================================================ */
+.hero{position:relative;min-height:440px;display:flex;align-items:flex-end;overflow:hidden;isolation:isolate}
+.hero-art{position:absolute;inset:0;z-index:-2}
+[data-svc="tver"] .hero-art{background:
+  linear-gradient(90deg,var(--bg) 4%,rgba(6,8,15,.6) 44%,rgba(6,8,15,0) 74%),
+  linear-gradient(0deg,var(--bg) 2%,rgba(6,8,15,0) 46%),
+  radial-gradient(70% 100% at 78% 6%,rgba(126,206,244,.32),transparent 58%),
+  linear-gradient(140deg,#0e5470 0%,#187ba0 34%,#0b3057 68%,#06182c 100%)}
+[data-svc="tver"] .hero-art::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.016) 0 1px,transparent 1px 3px)}
+[data-svc="abema"] .hero-art{background:
+  linear-gradient(90deg,var(--bg) 4%,rgba(3,10,8,.58) 46%,rgba(3,10,8,0) 76%),
+  linear-gradient(0deg,var(--bg) 2%,rgba(3,10,8,0) 44%),
+  repeating-linear-gradient(115deg,transparent 0 70px,rgba(31,232,135,.05) 70px 74px),
+  radial-gradient(64% 100% at 80% 0%,rgba(31,232,135,.3),transparent 56%),
+  linear-gradient(140deg,#04321e 0%,#0a5c38 32%,#03281c 66%,#020d08 100%)}
+[data-svc="youtube"] .hero-art{background:
+  linear-gradient(90deg,var(--bg) 4%,rgba(15,15,15,.62) 46%,rgba(15,15,15,0) 76%),
+  linear-gradient(0deg,var(--bg) 2%,rgba(15,15,15,0) 44%),
+  radial-gradient(60% 96% at 80% 4%,rgba(255,77,77,.34),transparent 58%),
+  linear-gradient(140deg,#3a1114 0%,#701a22 34%,#26090c 70%,#120608 100%)}
+[data-svc="niconico"] .hero-art{background:
+  linear-gradient(90deg,var(--bg) 4%,rgba(22,16,10,.6) 46%,rgba(22,16,10,0) 76%),
+  linear-gradient(0deg,var(--bg) 2%,rgba(22,16,10,0) 44%),
+  radial-gradient(62% 98% at 78% 2%,rgba(57,208,196,.24),transparent 56%),
+  linear-gradient(140deg,#6e3608 0%,#b0620e 34%,#4c2606 68%,#1c0f05 100%)}
+.hero-deco{
+  position:absolute;right:-10px;bottom:16px;z-index:-1;
+  font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:700;
+  font-size:120px;line-height:1;letter-spacing:.04em;color:rgba(255,255,255,.05);
+  user-select:none;white-space:nowrap;pointer-events:none;
+}
+[data-svc="abema"] .hero-deco{font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;font-style:normal;letter-spacing:.14em}
+/* niconico: 流れるコメント */
+.flow{position:absolute;inset:0;z-index:-1;overflow:hidden;display:none;pointer-events:none}
+[data-svc="niconico"] .flow{display:block}
+.flow p{
+  position:absolute;left:0;width:max-content;white-space:nowrap;
+  font-size:15px;font-weight:700;color:rgba(255,255,255,.5);
+  text-shadow:0 1px 6px rgba(0,0,0,.5);
+  animation:flow linear infinite;
+}
+.flow p:nth-child(1){top:11%;animation-duration:26s}
+.flow p:nth-child(2){top:26%;animation-duration:34s;animation-delay:-14s;font-size:13px;color:rgba(255,255,255,.34)}
+.flow p:nth-child(3){top:42%;animation-duration:29s;animation-delay:-7s;font-size:14px;color:rgba(255,255,255,.42)}
+.flow p span{margin-right:64px}
+@keyframes flow{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+.hero-in{position:relative;z-index:1;width:100%;padding:104px 0 52px}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:11px;font-weight:800;letter-spacing:.1em;
+  background:var(--acc);color:var(--acc-ink);
+  border-radius:6px;padding:3px 12px;margin-bottom:12px;
+  box-shadow:0 6px 20px var(--glow);
+  animation:heroUp .55s ease both;
+}
+.hero-badge i{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1.6s ease infinite}
+.hero-k{font-size:12px;font-weight:700;letter-spacing:.2em;color:var(--acc);animation:heroUp .55s .05s ease both}
+.hero h1{
+  font-size:clamp(27px,3.6vw,44px);font-weight:800;line-height:1.28;color:var(--tx);
+  margin:8px 0 10px;max-width:21em;text-shadow:0 4px 30px rgba(0,0,0,.45);
+  text-wrap:balance;animation:heroUp .55s .1s ease both;
+}
+.hero-cp{font-size:14px;color:var(--tx2);max-width:37em;margin-bottom:16px;animation:heroUp .55s .16s ease both}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;animation:heroUp .55s .22s ease both}
+.hero-meta li{
+  font-size:11.5px;font-weight:600;padding:3px 12px;border-radius:999px;
+  color:var(--tx);border:1px solid var(--line);background:rgba(0,0,0,.3);
+}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px;animation:heroUp .55s .28s ease both}
+@keyframes heroUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.btn{
+  display:inline-flex;align-items:center;gap:9px;
+  font-size:14px;font-weight:700;padding:11px 26px;border-radius:var(--r);
+  transition:transform .18s ease,box-shadow .18s ease,filter .18s ease,background .18s ease;
+}
+.btn-p{background:linear-gradient(160deg,var(--acc),var(--acc2));color:var(--acc-ink);box-shadow:0 8px 28px var(--glow)}
+.btn-p:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-g{background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--tx)}
+.btn-g:hover{background:rgba(255,255,255,.15);transform:translateY(-1px)}
+@media(max-width:760px){.hero{min-height:380px}.hero-in{padding-top:72px}.hero-deco{font-size:64px}}
+
+/* ============================================================
+   7. ランキングセクション & カード
+   ============================================================ */
+.sec{margin:38px 0}
+.sech{display:flex;align-items:baseline;gap:14px;margin-bottom:12px}
+.sech h2{font-size:20px;font-weight:800;line-height:1.3;color:var(--tx);display:flex;align-items:center;gap:11px}
+.sech h2::before{content:"";width:4px;height:19px;border-radius:2px;background:linear-gradient(180deg,var(--acc),var(--acc2));flex:0 0 auto;transition:background .5s ease}
+[data-svc="abema"] .sech h2::before{transform:skewX(-12deg);width:7px;border-radius:2px}
+[data-svc="youtube"] .sech h2::before{display:none}
+[data-svc="niconico"] .sech h2::before{width:11px;height:11px;border-radius:3px;transform:rotate(45deg);align-self:center}
+.sech .cnt{
+  font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:11px;font-weight:600;letter-spacing:.22em;color:var(--tx3);align-self:center;
+}
+.more{
+  margin-left:auto;display:inline-flex;align-items:center;gap:5px;
+  font-size:12.5px;font-weight:700;color:var(--tx2);white-space:nowrap;
+  padding:5px 14px;border-radius:999px;border:1px solid transparent;
+  transition:color .16s ease,border-color .16s ease,background .16s ease;
+}
+.more:hover{color:var(--acc);border-color:var(--line);background:var(--panel)}
+.more svg{transition:transform .18s ease}
+.more:hover svg{transform:translateX(2px)}
+
+.row{display:flex;gap:18px;overflow-x:auto;padding:14px 4px 18px;scroll-snap-type:x proximity}
+.row::-webkit-scrollbar{height:6px}
+.row::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+.row::-webkit-scrollbar-track{background:transparent}
+.row{scrollbar-color:var(--line) transparent;scrollbar-width:thin}
+.card{flex:0 0 256px;scroll-snap-align:start;animation:cardUp .5s ease both;animation-delay:calc(var(--i,0)*45ms)}
+@keyframes cardUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+[data-svc="tver"] .card{flex-basis:294px;padding-left:44px}
+.clk{display:block;position:relative;transition:transform .22s ease}
+.clk:hover{transform:translateY(-4px)}
+.thw{position:relative}
+.th{
+  position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:var(--r);
+  border:1px solid var(--line-soft);
+  transition:border-color .22s ease,box-shadow .22s ease,filter .22s ease;
+}
+.th::before{
+  content:"";position:absolute;inset:0;z-index:1;
+  background:
+    radial-gradient(130% 95% at 84% -12%,rgba(255,255,255,.28),transparent 55%),
+    radial-gradient(150% 130% at 10% 115%,rgba(0,0,0,.4),transparent 62%);
+}
+.clk:hover .th{border-color:var(--acc);box-shadow:0 14px 38px rgba(0,0,0,.5),0 4px 22px var(--glow);filter:brightness(1.07)}
+[data-svc="youtube"] .th{border:none}
+.tht{
+  position:absolute;left:13px;bottom:10px;right:13px;z-index:2;
+  color:#fff;font-weight:800;font-size:15px;line-height:1.36;letter-spacing:.04em;
+  text-shadow:0 2px 12px rgba(0,0,0,.55),0 1px 2px rgba(0,0,0,.4);
+}
+.dur{
+  position:absolute;right:8px;bottom:8px;z-index:3;
+  font-size:10.5px;font-weight:600;letter-spacing:.06em;line-height:1.5;
+  background:rgba(0,0,0,.68);color:#fff;padding:1px 8px;border-radius:4px;
+}
+.dur.live{background:var(--acc);color:var(--acc-ink);font-weight:800;display:inline-flex;align-items:center;gap:5px}
+.dur.live::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1.5s ease infinite}
+.ep{
+  position:absolute;right:8px;top:8px;z-index:3;
+  font-size:10.5px;font-weight:700;line-height:1.5;letter-spacing:.04em;
+  background:rgba(0,0,0,.55);color:#fff;padding:1px 8px;border-radius:4px;
+}
+.cm{padding:10px 2px 0}
+.cm h3{font-size:14.5px;font-weight:700;line-height:1.45;margin-bottom:1px;color:var(--tx)}
+.clk:hover .cm h3{color:var(--acc)}
+.st{font-size:11.5px;line-height:1.55;color:var(--tx3)}
+.lf{font-size:11px;font-weight:600;line-height:1.55;margin-top:2px;color:var(--acc)}
+[data-svc="youtube"] .lf{color:var(--tx2);font-weight:500}
+
+/* ランクバッジ(サービスごとに人格を変える) */
+.rank{position:absolute;z-index:4}
+[data-svc="tver"] .rank{
+  left:-47px;bottom:-8px;
+  font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:700;
+  font-size:82px;line-height:.82;letter-spacing:-.05em;
+  background:linear-gradient(180deg,#e9eef8 0%,#97a2ba 52%,#414c63 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 5px 14px rgba(0,0,0,.6));
+}
+[data-svc="tver"] .rank.r1{background:linear-gradient(180deg,#ffe4a6 0%,#e0a648 52%,#7c5013 100%);-webkit-background-clip:text;background-clip:text}
+[data-svc="abema"] .rank{
+  top:-9px;left:-8px;min-width:31px;height:27px;padding:0 9px;
+  display:grid;place-items:center;transform:skewX(-10deg);
+  font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:15px;font-weight:700;border-radius:6px;
+  background:#0a1a12;border:1px solid rgba(31,232,135,.45);color:#8ef0bd;
+}
+[data-svc="abema"] .rank.r1{background:linear-gradient(160deg,var(--acc),var(--acc2));border-color:transparent;color:var(--acc-ink);box-shadow:0 5px 18px var(--glow)}
+[data-svc="youtube"] .rank{
+  top:8px;left:8px;min-width:27px;height:22px;padding:0 7px;
+  display:grid;place-items:center;border-radius:6px;
+  font-size:11.5px;font-weight:700;background:rgba(0,0,0,.75);color:#fff;
+}
+[data-svc="youtube"] .rank::before{content:"#"}
+[data-svc="youtube"] .rank.r1{background:var(--acc)}
+[data-svc="niconico"] .rank{
+  top:-13px;left:-10px;width:38px;height:38px;border-radius:50%;
+  display:grid;place-items:center;transform:rotate(-8deg);
+  font-size:17px;font-weight:800;
+  background:#241708;border:2px solid var(--acc);color:var(--acc);
+  box-shadow:0 4px 14px rgba(0,0,0,.4);
+}
+[data-svc="niconico"] .rank.r1{background:var(--acc);color:var(--acc-ink);box-shadow:0 6px 18px var(--glow)}
+[data-svc="niconico"] .rank.r2,[data-svc="niconico"] .rank.r3{border-color:rgba(255,147,39,.55)}
+
+/* ============================================================
+   8. サムネイル・グラデ(サービス別 9 種)
+   ============================================================ */
+[data-svc="tver"] .g1{background:linear-gradient(300deg,rgba(255,214,140,.24),transparent 42%),linear-gradient(140deg,#0e5470,#177a9e 36%,#0b3057 70%,#071a30)}
+[data-svc="tver"] .g2{background:linear-gradient(135deg,#571325,#8c2038 46%,#230b14)}
+[data-svc="tver"] .g3{background:linear-gradient(150deg,#8fb4e4,#a09cd6 48%,#5c6cae)}
+[data-svc="tver"] .g4{background:linear-gradient(295deg,rgba(232,180,90,.34),transparent 38%),linear-gradient(120deg,#0c1626,#25354e 56%,#0b1120)}
+[data-svc="tver"] .g5{background:linear-gradient(140deg,#c9681d,#8f4013 52%,#4c1d0b)}
+[data-svc="tver"] .g6{background:radial-gradient(58% 82% at 72% 24%,rgba(226,232,255,.5),transparent 56%),linear-gradient(160deg,#26275e,#151538 56%,#05060f)}
+[data-svc="tver"] .g7{background:linear-gradient(135deg,#ff8a00,#ffc400 58%,#ff5d3a)}
+[data-svc="tver"] .g8{background:linear-gradient(135deg,#12994f,#0a5c3c 60%,#08331f)}
+[data-svc="tver"] .g9{background:linear-gradient(145deg,#5c6b80,#2c3648 55%,#141b26)}
+[data-svc="abema"] .g1{background:linear-gradient(140deg,#05452a,#0ba25e 55%,#02351f)}
+[data-svc="abema"] .g2{background:linear-gradient(135deg,#123a8c,#7a2fd8 55%,#160b3a)}
+[data-svc="abema"] .g3{background:linear-gradient(150deg,#d8266e,#7a1f9e 55%,#2a0b3d)}
+[data-svc="abema"] .g4{background:linear-gradient(135deg,#f25c1a,#8c2410 55%,#3a0d06)}
+[data-svc="abema"] .g5{background:linear-gradient(145deg,#0b6f8a,#0a3a6e 55%,#061c36)}
+[data-svc="abema"] .g6{background:linear-gradient(150deg,#f28bb4,#a05ad8 52%,#3c2070)}
+[data-svc="abema"] .g7{background:linear-gradient(135deg,#9ad82a,#3f8c1f 48%,#123c0d)}
+[data-svc="abema"] .g8{background:linear-gradient(118deg,#b8202c 0%,#b8202c 46%,#1f3a9e 54%,#101f5c 100%)}
+[data-svc="abema"] .g9{background:linear-gradient(145deg,#3a4456,#1a212e 55%,#0c1018)}
+[data-svc="youtube"] .g1{background:linear-gradient(140deg,#d81f2f,#6e0f1c 55%,#26060a)}
+[data-svc="youtube"] .g2{background:linear-gradient(135deg,#3fa9f5,#2a6ad4 52%,#123059)}
+[data-svc="youtube"] .g3{background:linear-gradient(145deg,#f2a63a,#c25c14 52%,#4c2306)}
+[data-svc="youtube"] .g4{background:linear-gradient(140deg,#3ad8a0,#128a64 52%,#06392a)}
+[data-svc="youtube"] .g5{background:linear-gradient(135deg,#7a3ff2,#3c1f9e 55%,#150a3d)}
+[data-svc="youtube"] .g6{background:linear-gradient(145deg,#4a5568,#232b38 55%,#101620)}
+[data-svc="youtube"] .g7{background:linear-gradient(135deg,#ffd23a,#f2882a 52%,#7a3a0a)}
+[data-svc="youtube"] .g8{background:linear-gradient(140deg,#ff5da2,#c72562 52%,#4a0d26)}
+[data-svc="youtube"] .g9{background:linear-gradient(150deg,#274b8c,#152a5e 55%,#080f2a)}
+[data-svc="niconico"] .g1{background:linear-gradient(140deg,#ff9a2a,#d86a0a 52%,#5c2a04)}
+[data-svc="niconico"] .g2{background:linear-gradient(145deg,#e8c46a,#b8862a 52%,#4c3208)}
+[data-svc="niconico"] .g3{background:linear-gradient(135deg,#39d0c4,#128a92 52%,#063a44)}
+[data-svc="niconico"] .g4{background:linear-gradient(150deg,#f28bb4,#c2477e 52%,#4c1230)}
+[data-svc="niconico"] .g5{background:linear-gradient(135deg,#7ac244,#3a8c2a 50%,#123c0d)}
+[data-svc="niconico"] .g6{background:linear-gradient(140deg,#3a6ed8,#1f3a8c 52%,#0c1436)}
+[data-svc="niconico"] .g7{background:linear-gradient(145deg,#a87848,#6e4423 52%,#2a1708)}
+[data-svc="niconico"] .g8{background:linear-gradient(140deg,#e8452a,#9e1f14 52%,#3a0c06)}
+[data-svc="niconico"] .g9{background:linear-gradient(150deg,#8a5ad8,#4a2a9e 55%,#180a3c)}
+
+/* ============================================================
+   9. フッター & 切替トランジション
+   ============================================================ */
+.ft{text-align:center;padding:40px 20px 46px;font-size:11px;line-height:2;color:var(--tx3);border-top:1px solid var(--line-soft);margin-top:26px}
+.ft nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 22px;font-weight:600}
+.ft nav a{color:var(--tx2)}
+.ft nav a:hover{color:var(--acc)}
+.ft .note{margin-top:6px}
+
+#stage{transition:opacity .18s ease,transform .18s ease}
+#stage.sw{opacity:0;transform:translateY(6px)}
+
+@media (prefers-reduced-motion: reduce){
+  *{transition:none!important;animation:none!important}
+  #stage.sw{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">本編へスキップ</a>
+<div class="atmo" aria-hidden="true"><span class="a-tver"></span><span class="a-abema"></span><span class="a-youtube"></span><span class="a-niconico"></span></div>
+<p class="vh" role="status" aria-live="polite" id="announce"></p>
+
+<!-- ============ トップバー ============ -->
+<header class="top">
+  <div class="wrap bar">
+    <a class="logo" href="#" aria-label="TVapp ホーム">
+      <svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="lg-tile" x="1" y="1" width="30" height="30" rx="9"/>
+        <path class="lg-w" d="M6 13c2.6-3.2 5.2-3.2 7.8 0s5.2 3.2 7.8 0c1.3-1.6 2.8-2.3 4.7-1.5"/>
+        <path class="lg-w" d="M6 20.5c2.6-3.2 5.2-3.2 7.8 0s5.2 3.2 7.8 0c1.3-1.6 2.8-2.3 4.7-1.5" opacity=".45"/>
+      </svg>
+      <span><span class="wm">TVapp</span><span class="wm-sub">Multi Stream Viewer</span></span>
+    </a>
+    <div class="search" role="search">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.6" stroke="currentColor" stroke-width="1.7"/><path d="m10.6 10.6 3.2 3.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      <input id="q" type="search" placeholder="番組名・出演者・キーワードで検索" aria-label="検索">
+    </div>
+    <div class="hact">
+      <button class="icb" aria-label="お知らせ">
+        <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.8a5 5 0 0 0-5 5v3.2l-1.4 2.6a.6.6 0 0 0 .5.9h11.8a.6.6 0 0 0 .5-.9L15 11V7.8a5 5 0 0 0-5-5Z"/><path d="M8.2 16.5a1.9 1.9 0 0 0 3.6 0"/></svg>
+      </button>
+      <div class="uwrap">
+        <button class="user" id="ubtn" aria-haspopup="menu" aria-expanded="false" aria-label="アカウントメニュー(兒玉さん、ログイン中)">
+          <span class="avt" aria-hidden="true">兒</span>
+          <span class="unm">兒玉</span>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="umenu" id="umenu" role="menu" aria-label="アカウント" hidden>
+          <div class="uhead"><b>兒玉 さん</b><span>kodama@example.com</span></div>
+          <a href="#" role="menuitem"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="5.2" r="2.7"/><path d="M2.8 13.4c.9-2.6 2.8-3.9 5.2-3.9s4.3 1.3 5.2 3.9"/></svg>アカウント設定</a>
+          <a href="#" role="menuitem"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke-width="1.5" aria-hidden="true"><path d="M3 3.5h10v10l-5-3-5 3v-10Z" stroke-linejoin="round"/></svg>マイリスト</a>
+          <a href="#" role="menuitem"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="5.8"/><path d="M8 4.8V8l2.3 1.6" stroke-linecap="round"/></svg>視聴履歴</a>
+          <a class="out" href="./login-design.html" role="menuitem"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke-width="1.5" aria-hidden="true"><path d="M6.5 2.5H3.8a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h2.7M10 5l3 3-3 3M13 8H6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>ログアウト</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ サービス切替ドック(主役) ============ -->
+<div class="dockbar">
+  <div class="dock-in">
+    <span class="dock-k">Service</span>
+    <nav class="dock" role="tablist" aria-label="視聴サービスの切替">
+      <span class="ind" aria-hidden="true"></span>
+      <button class="svc" role="tab" id="tab-tver" data-svc="tver" aria-selected="true" aria-controls="stage">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="13" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M10 8.6v4.8l4.4-2.4Z" fill="currentColor"/><path d="M8.5 20.5h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span class="svc-tx"><span class="svc-n">TVER</span><span class="svc-d">テレビ見逃し</span></span>
+      </button>
+      <button class="svc" role="tab" id="tab-abema" data-svc="abema" aria-selected="false" aria-controls="stage" tabindex="-1">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.2 21 20.8h-4.3L12 11l-4.7 9.8H3Z" fill="currentColor"/></svg>
+        <span class="svc-tx"><span class="svc-n">ABEMA</span><span class="svc-d">生放送・オリジナル</span></span>
+      </button>
+      <button class="svc" role="tab" id="tab-youtube" data-svc="youtube" aria-selected="false" aria-controls="stage" tabindex="-1">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M10.3 9.2v5.6l4.8-2.8Z" fill="currentColor"/></svg>
+        <span class="svc-tx"><span class="svc-n">YouTube</span><span class="svc-d">世界中の動画</span></span>
+      </button>
+      <button class="svc" role="tab" id="tab-niconico" data-svc="niconico" aria-selected="false" aria-controls="stage" tabindex="-1">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="m8 3.5 4 3.5 4-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.2" cy="12" r="1.1" fill="currentColor"/><circle cx="14.8" cy="12" r="1.1" fill="currentColor"/><path d="M9.5 15.4c1.6 1.2 3.4 1.2 5 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span class="svc-tx"><span class="svc-n">niconico</span><span class="svc-d">コメントで見る</span></span>
+      </button>
+    </nav>
+    <span class="dock-live" id="docklive"><i aria-hidden="true"></i><span id="docklive-t">見逃し配信 更新中</span></span>
+  </div>
+</div>
+
+<!-- ============ サービス連動ステージ ============ -->
+<div id="stage">
+  <div id="flavor"></div>
+
+  <div class="wrap">
+    <nav class="gnav" id="gnav" aria-label="ジャンル"></nav>
+  </div>
+
+  <section class="hero" aria-label="注目コンテンツ">
+    <div class="hero-art" aria-hidden="true"></div>
+    <span class="hero-deco" id="hero-deco" aria-hidden="true"></span>
+    <div class="flow" id="flow" aria-hidden="true"></div>
+    <div class="wrap hero-in" id="hero-in"></div>
+  </section>
+
+  <main class="wrap" id="main"></main>
+</div>
+
+<footer class="ft">
+  <nav aria-label="フッター"><a href="#">ヘルプ</a><a href="#">利用規約</a><a href="#">プライバシー</a><a href="#">対応サービスについて</a><a href="#">運営会社</a></nav>
+  <p class="note">© 2026 TVapp — 本画面はビジュアル検討用モックです。番組・チャンネル・ランキング・人物はすべて架空のものです。<br>TVER / ABEMA / YouTube / niconico の名称は切替コンセプト確認のための表記です。</p>
+</footer>
+
+<script>
+(function () {
+"use strict";
+
+/* ============================================================
+   コンテンツデータ(サービス別・すべて架空)
+   ============================================================ */
+var DATA = {
+  tver: {
+    name: "TVER",
+    searchPh: "番組名・出演者・キーワードで検索",
+    dockLive: "見逃し配信 更新中",
+    nav: ["ホーム","ドラマ","バラエティ","アニメ","報道・ドキュメンタリー","スポーツ","マイリスト"],
+    flavor: null,
+    hero: {
+      badge: "見逃し無料",
+      k: "今夜の一本 — 見逃し配信中",
+      title: "海辺のアンサンブル",
+      cp: "潮騒の町に集まった、他人同士の“家族”。六つの秘密が、最終章で静かに重なりはじめる。",
+      meta: ["フジテレビ","金曜 21:00","全10話・第8話まで配信中","字幕あり"],
+      cta1: "第8話を再生", cta2: "マイリストに追加",
+      deco: "PRIME TIME"
+    },
+    secs: [
+      { t: "ドラマランキング", items: [
+        {n:"海辺のアンサンブル", th:"海辺の<br>アンサンブル", st:"フジテレビ・7月3日(金)放送", lf:"配信終了まで あと4日", ep:"第8話", dur:"45:58", g:1},
+        {n:"偽装の家族、本物の嘘", th:"偽装の家族、<br>本物の嘘", st:"TBS・7月1日(水)放送", lf:"配信終了まで あと2日", ep:"第10話", dur:"48:12", g:2},
+        {n:"透明なわたしたち", th:"透明な<br>わたしたち", st:"日本テレビ・7月4日(土)放送", lf:"配信終了まで あと5日", ep:"第5話", dur:"46:03", g:3},
+        {n:"刑事一ノ瀬 最終章", th:"刑事一ノ瀬<br>最終章", st:"テレビ朝日・7月2日(木)放送", lf:"配信終了まで あと3日", ep:"最終回SP", dur:"54:20", g:4},
+        {n:"まほろば食堂へようこそ", th:"まほろば食堂へ<br>ようこそ", st:"読売テレビ・6月30日(火)放送", lf:"配信終了まで あと1日", ep:"第13話", dur:"34:45", g:5},
+        {n:"クジラの骨を拾う夜", th:"クジラの骨を<br>拾う夜", st:"カンテレ・7月4日(土)放送", lf:"配信終了まで あと5日", ep:"第4話", dur:"24:58", g:6}
+      ]},
+      { t: "バラエティランキング", items: [
+        {n:"全力!リアクション王決定戦 2026夏", th:"全力!リアクション王<br>決定戦 2026夏", st:"日本テレビ・7月5日(日)放送", lf:"配信終了まで あと6日", ep:"SP", dur:"1:03:22", g:7},
+        {n:"深夜のハシゴ酒", th:"深夜の<br>ハシゴ酒", st:"テレビ東京・7月2日(木)放送", lf:"配信終了まで あと3日", ep:"", dur:"42:11", g:2},
+        {n:"芸人トークサミット", th:"芸人トーク<br>サミット", st:"テレビ朝日・7月3日(金)放送", lf:"配信終了まで あと4日", ep:"", dur:"46:40", g:8},
+        {n:"世界ふしぎ食紀行", th:"世界ふしぎ<br>食紀行", st:"TBS・7月4日(土)放送", lf:"配信終了まで あと5日", ep:"", dur:"52:08", g:5},
+        {n:"マヂカルクイズ研究所", th:"マヂカルクイズ<br>研究所", st:"フジテレビ・7月1日(水)放送", lf:"配信終了まで あと2日", ep:"", dur:"47:15", g:6},
+        {n:"終点まで乗ってみた", th:"終点まで<br>乗ってみた", st:"テレビ東京・6月29日(月)放送", lf:"本日 23:59 配信終了", ep:"", dur:"58:30", g:9}
+      ]},
+      { t: "報道・ドキュメンタリー", items: [
+        {n:"緊急救命24時 密着SP", th:"緊急救命24時<br>密着SP", st:"フジテレビ・7月5日(日)放送", lf:"配信終了まで あと6日", ep:"SP", dur:"1:48:00", g:2},
+        {n:"交差点の48時間", th:"交差点の<br>48時間", st:"テレビ東京・7月2日(木)放送", lf:"配信終了まで あと3日", ep:"", dur:"28:44", g:9},
+        {n:"サンデー深層NEWS", th:"サンデー<br>深層NEWS", st:"日本テレビ・7月5日(日)放送", lf:"配信終了まで あと6日", ep:"", dur:"55:00", g:4},
+        {n:"戦後81年 語り継ぐ声", th:"戦後81年<br>語り継ぐ声", st:"TBS・7月4日(土)放送", lf:"配信終了まで あと5日", ep:"", dur:"49:30", g:5},
+        {n:"気候クライシス 現場から", th:"気候クライシス<br>現場から", st:"テレビ朝日・7月3日(金)放送", lf:"配信終了まで あと4日", ep:"", dur:"44:12", g:8},
+        {n:"ローカル鉄道と生きる町", th:"ローカル鉄道と<br>生きる町", st:"読売テレビ・7月1日(水)放送", lf:"配信終了まで あと2日", ep:"", dur:"47:50", g:1}
+      ]}
+    ]
+  },
+
+  abema: {
+    name: "ABEMA",
+    searchPh: "番組・チャンネル・シリーズを検索",
+    dockLive: "23ch が生放送中",
+    nav: ["ホーム","アニメ","恋愛番組","格闘","麻雀","将棋","釣り","マイリスト"],
+    flavor: { type: "tick", items: [
+      ["LIVE","REAL FIGHT 頂上決戦 2026 — 今夜 21:00"],
+      ["配信中","真夏のシェアハウス 沖縄編 #6"],
+      ["あす 19:00","プロ雀士最強決定戦 準決勝"],
+      ["一挙","機動歩兵ヴァルカディア 7月12日(日)"],
+      ["新作","星屑のレヴアリー 第2話 無料配信中"]
+    ]},
+    hero: {
+      badge: "LIVE 今夜 21:00", live: true,
+      k: "生放送 — 見るなら今夜",
+      title: "REAL FIGHT 頂上決戦 2026",
+      cp: "無敗の王者に、19歳の挑戦者が挑む。伝説になる夜を、生で見届けろ。",
+      meta: ["格闘チャンネル","今夜 21:00 開始","基本無料","実況・解説つき"],
+      cta1: "視聴予約する", cta2: "対戦カードを見る",
+      deco: "ON AIR"
+    },
+    secs: [
+      { t: "アニメランキング", items: [
+        {n:"異界タクシー『ミッドナイト・ゲート』", th:"異界タクシー<br>ミッドナイト・ゲート", st:"ABEMAアニメ・日曜 22:00", lf:"いま 8,214人が視聴中", ep:"第14話", dur:"23:40", g:2},
+        {n:"星屑のレヴアリー", th:"星屑の<br>レヴアリー", st:"地上波先行・金曜 24:00", lf:"最新話 無料配信中", ep:"第2話", dur:"23:40", g:6},
+        {n:"機動歩兵ヴァルカディア", th:"機動歩兵<br>ヴァルカディア", st:"火曜 23:30", lf:"7月12日(日) 一挙放送", ep:"第22話", dur:"24:10", g:5},
+        {n:"放課後シネマ倶楽部", th:"放課後<br>シネマ倶楽部", st:"水曜 22:30", lf:"コメント 12,844件", ep:"第7話", dur:"23:55", g:3},
+        {n:"ネクロマンスの花嫁", th:"ネクロマンスの<br>花嫁", st:"土曜 23:00", lf:"プレミアム先行", ep:"第9話", dur:"23:45", g:9},
+        {n:"ぷちっとドラゴンず", th:"ぷちっと<br>ドラゴンず", st:"月〜金 朝 7:30", lf:"全話無料", ep:"第58話", dur:"11:30", g:7}
+      ]},
+      { t: "恋愛リアリティーショー", items: [
+        {n:"真夏のシェアハウス 沖縄編", th:"真夏のシェアハウス<br>沖縄編", st:"ABEMAオリジナル・毎週月曜", lf:"いま 15,082人が視聴中", ep:"#6", dur:"58:20", g:3},
+        {n:"オトナの入学式", th:"オトナの<br>入学式", st:"ABEMAオリジナル・毎週火曜", lf:"新エピソード配信中", ep:"#3", dur:"52:44", g:6},
+        {n:"運命のスリーデイズ", th:"運命の<br>スリーデイズ", st:"木曜 22:00", lf:"コメント 9,310件", ep:"#8", dur:"1:01:05", g:1},
+        {n:"恋する城下町", th:"恋する<br>城下町", st:"ABEMAオリジナル・毎週土曜", lf:"見逃し無料", ep:"#5", dur:"55:12", g:4},
+        {n:"ふたりの温度差", th:"ふたりの<br>温度差", st:"金曜 21:00", lf:"プレミアム限定回あり", ep:"#2", dur:"49:58", g:2},
+        {n:"隣人はまだ知らない", th:"隣人は<br>まだ知らない", st:"ABEMAオリジナル", lf:"シーズン2 制作決定", ep:"#12(終)", dur:"1:03:40", g:9}
+      ]},
+      { t: "格闘・スポーツ", items: [
+        {n:"REAL FIGHT 頂上決戦 直前SP", th:"REAL FIGHT<br>直前SP", st:"格闘チャンネル・生放送", lf:"今夜 21:00 本戦へ", ep:"生放送", dur:"LIVE", g:8},
+        {n:"立ち技最強トーナメント 一回戦", th:"立ち技最強<br>トーナメント", st:"格闘チャンネル・6月28日(日)", lf:"アーカイブ無料", ep:"全試合", dur:"3:12:40", g:4},
+        {n:"プロ雀士最強決定戦 2026", th:"プロ雀士<br>最強決定戦", st:"麻雀チャンネル・あす 19:00", lf:"準決勝 第2局", ep:"第2局", dur:"1:48:33", g:1},
+        {n:"藤崎九段 vs 早乙女五段", th:"藤崎九段<br>vs 早乙女五段", st:"将棋チャンネル・二日制", lf:"封じ手予想 受付中", ep:"二日目", dur:"LIVE", g:9},
+        {n:"世界卓球 日本代表密着", th:"世界卓球<br>日本代表密着", st:"スポーツチャンネル・7月3日(金)", lf:"見逃し配信中", ep:"#4", dur:"44:18", g:5},
+        {n:"ロードバイク耐久24h 総集編", th:"ロードバイク<br>耐久24h", st:"スポーツチャンネル・6月30日(火)", lf:"ハイライト公開中", ep:"総集編", dur:"58:02", g:7}
+      ]}
+    ]
+  },
+
+  youtube: {
+    name: "YouTube",
+    searchPh: "検索",
+    dockLive: "登録チャンネル 12件の新着",
+    nav: ["ホーム","急上昇","ゲーム","音楽","ライブ","学び","登録チャンネル","ライブラリ"],
+    flavor: { type: "chips", items: ["すべて","音楽","ゲーム実況","ライブ","料理","ポッドキャスト","建築","最近アップロードされた動画","新しい発見"] },
+    hero: {
+      badge: "新着",
+      k: "登録チャンネルの新着",
+      title: "【検証】無人島で自販機だけは使っていい72時間サバイバル",
+      cp: "チャンネル史上最大の企画。電源も水道もない島に、なぜか自販機が一台だけ。",
+      meta: ["ハルカ研究室","登録者 218万人","6時間前","32万 回視聴"],
+      cta1: "今すぐ再生", cta2: "後で見る",
+      deco: ""
+    },
+    secs: [
+      { t: "急上昇", items: [
+        {n:"【検証】無人島で自販機だけは使っていい72時間サバイバル", th:"無人島×自販機<br>72時間", st:"ハルカ研究室", lf:"32万 回視聴・6時間前", ep:"新着", dur:"24:18", g:2},
+        {n:"都庁前で巨大クレープを焼いてみた", th:"巨大クレープ<br>チャレンジ", st:"まちかどグルメ部", lf:"58万 回視聴・1日前", ep:"", dur:"12:44", g:7},
+        {n:"引っ越し報告と、これからの話", th:"引っ越し報告と<br>これからの話", st:"ゆるねこ夫婦", lf:"41万 回視聴・18時間前", ep:"", dur:"9:32", g:4},
+        {n:"プロが100均の包丁を本気で研いだら", th:"100均包丁を<br>本気で研ぐ", st:"研ぎ師カワセ", lf:"87万 回視聴・2日前", ep:"", dur:"15:06", g:6},
+        {n:"【解説】3坪の家、住めるのか", th:"3坪の家、<br>住めるのか", st:"アーキ塾", lf:"29万 回視聴・1日前", ep:"", dur:"18:22", g:3},
+        {n:"深夜ラジオ風トーク #47", th:"深夜ラジオ風<br>トーク #47", st:"オールナイトずんだ", lf:"12万 回視聴・8時間前", ep:"#47", dur:"52:10", g:9}
+      ]},
+      { t: "ゲーム実況", items: [
+        {n:"【新作】星海クラフト 実況 Part1", th:"星海クラフト<br>Part1", st:"ぐらたん実況ch", lf:"45万 回視聴・12時間前", ep:"Part1", dur:"34:52", g:5},
+        {n:"縛りプレイでラスボスに挑む(最終回)", th:"縛りプレイ<br>最終回", st:"しじみのゲーム部屋", lf:"38万 回視聴・1日前", ep:"最終回", dur:"41:20", g:1},
+        {n:"対戦格闘 世界大会 決勝ハイライト", th:"世界大会<br>決勝ハイライト", st:"格ゲー戦線", lf:"52万 回視聴・2日前", ep:"大会", dur:"28:44", g:8},
+        {n:"ホラゲー同時実況、心臓に悪い", th:"ホラゲー<br>同時実況", st:"ノラとカラス", lf:"22万 回視聴・9時間前", ep:"", dur:"58:31", g:6},
+        {n:"マイクラ風建築で新宿駅を再現する #12", th:"新宿駅を<br>再現する #12", st:"建築勢トロ", lf:"19万 回視聴・1日前", ep:"#12", dur:"26:15", g:4},
+        {n:"レトロゲー発掘、倉庫で神ゲーを見つけた", th:"レトロゲー<br>発掘記", st:"中古ゲーム探検隊", lf:"15万 回視聴・3日前", ep:"", dur:"21:08", g:3}
+      ]},
+      { t: "音楽", items: [
+        {n:"ヨルノヒカリ「群青リフレイン」MV", th:"群青リフレイン<br>MV", st:"ヨルノヒカリ Official", lf:"142万 回視聴・3日前", ep:"MV", dur:"4:12", g:9},
+        {n:"【歌ってみた】カレイドスコープ・ナイト", th:"カレイドスコープ・<br>ナイト cover", st:"詩音しおん", lf:"68万 回視聴・1日前", ep:"Cover", dur:"3:58", g:8},
+        {n:"THE STREET LIVE 渋谷 弾き語り", th:"STREET LIVE<br>渋谷", st:"街角セッションズ", lf:"25万 回視聴・4日前", ep:"LIVE", dur:"16:40", g:6},
+        {n:"作業用BGM 雨の日のローファイ 1時間", th:"雨の日の<br>ローファイ", st:"Rainy Loop Records", lf:"96万 回視聴・1週間前", ep:"", dur:"1:00:00", g:2},
+        {n:"吹奏楽で「夏祭りメドレー」演ってみた", th:"夏祭りメドレー<br>吹奏楽", st:"市立青風高校OB楽団", lf:"33万 回視聴・5日前", ep:"", dur:"12:24", g:7},
+        {n:"ドラム叩いてみた「群青リフレイン」", th:"叩いてみた<br>群青リフレイン", st:"だんだんドラムス", lf:"18万 回視聴・2日前", ep:"", dur:"5:03", g:1}
+      ]}
+    ]
+  },
+
+  niconico: {
+    name: "niconico",
+    searchPh: "キーワード・タグで検索",
+    dockLive: "週刊ランキング 更新",
+    nav: ["ホーム","ランキング","ゲーム","ボカロ","実況","技術部","料理","マイリスト"],
+    flavor: null,
+    hero: {
+      badge: "週刊ボカロランキング 第1位",
+      k: "みんなのコメントと見る",
+      title: "【初音ミク】カレイドスコープ・ナイト【オリジナルMV】",
+      cp: "くらげシンセP、2年ぶりの新曲。万華鏡のように回る夜を、ミクが駆け抜ける。",
+      meta: ["くらげシンセP","再生 102万","コメント 2.4万","マイリスト 3.1万"],
+      cta1: "コメント付きで再生", cta2: "マイリスト登録",
+      deco: ""
+    },
+    flow: [
+      "うぽつ|888888888|神曲の予感|イントロ天才|2年待ってた|ここすき|伸びろおおお",
+      "wwww|サビの転調やばい|初見です|ミリオンおめでとう|ここのミクかわいい|えぐい|うぽつです",
+      "作業用に無限ループ中|888888|転調で鳥肌|イラストも神|コメ弾幕失礼します|待ってた"
+    ],
+    secs: [
+      { t: "ゲームランキング", items: [
+        {n:"ゆっくり実況 星海クラフト縛り旅 #1", th:"星海クラフト<br>縛り旅 #1", st:"むぎとろ・7月4日投稿", lf:"再生 24.1万・コメ 3,842", ep:"Part1", dur:"28:44", g:6},
+        {n:"TAS 8分でクリアする伝説のRPG", th:"TAS 8分クリア<br>伝説のRPG", st:"TASさん見習い・7月2日投稿", lf:"再生 51.3万・コメ 9,120", ep:"TAS", dur:"8:02", g:9},
+        {n:"実況者4人で人狼ゲーム 完全版", th:"実況者4人で<br>人狼 完全版", st:"夜更かし人狼村・7月3日投稿", lf:"再生 18.8万・コメ 6,455", ep:"完全版", dur:"1:22:10", g:8},
+        {n:"バグ技だけでエンディングへ", th:"バグ技だけで<br>エンディングへ", st:"かえるのしっぽ・7月1日投稿", lf:"再生 12.4万・コメ 2,208", ep:"検証", dur:"19:56", g:5},
+        {n:"自作の鬼畜コースを作者が泣きながらクリア", th:"自作鬼畜コース<br>作者クリア", st:"いばら道工房・6月30日投稿", lf:"再生 9.8万・コメ 4,913", ep:"", dur:"24:30", g:1},
+        {n:"レトロゲー雑学 50連発", th:"レトロゲー雑学<br>50連発", st:"資料室のぬし・6月29日投稿", lf:"再生 7.6万・コメ 1,340", ep:"雑学", dur:"32:15", g:7}
+      ]},
+      { t: "ボカロ・歌ってみた", items: [
+        {n:"【初音ミク】カレイドスコープ・ナイト", th:"カレイドスコープ・<br>ナイト", st:"くらげシンセP・7月3日投稿", lf:"再生 102.4万・コメ 24,081", ep:"NEW", dur:"4:12", g:3},
+        {n:"【オリジナル】真夜中トランジット", th:"真夜中<br>トランジット", st:"硝子瓶P・7月1日投稿", lf:"再生 38.6万・コメ 8,754", ep:"", dur:"3:47", g:6},
+        {n:"【歌ってみた】カレイドスコープ・ナイト", th:"歌ってみた<br>カレイドスコープ", st:"詩音しおん・7月4日投稿", lf:"再生 29.2万・コメ 5,630", ep:"Cover", dur:"4:10", g:4},
+        {n:"【調声解説】ミクを人間らしく歌わせる技術", th:"調声解説<br>歌わせる技術", st:"ボカロ調声研究会・6月30日投稿", lf:"再生 15.7万・コメ 3,322", ep:"解説", dur:"14:28", g:9},
+        {n:"【オリジナル曲】ハレーションガール", th:"ハレーション<br>ガール", st:"まぐろ缶P・7月2日投稿", lf:"再生 11.9万・コメ 2,014", ep:"", dur:"3:33", g:8},
+        {n:"ボカロ10年メドレー 描いてみた", th:"ボカロ10年<br>メドレー", st:"筆ペン星人・6月28日投稿", lf:"再生 8.4万・コメ 1,988", ep:"合作", dur:"10:24", g:2}
+      ]},
+      { t: "技術部・作ってみた", items: [
+        {n:"押入れにプラネタリウムを作ってみた", th:"押入れ<br>プラネタリウム", st:"週末工房かんな・7月4日投稿", lf:"再生 32.8万・コメ 7,240", ep:"力作", dur:"12:40", g:6},
+        {n:"猫用の全自動ドアを発明した", th:"猫用<br>全自動ドア", st:"ねこメカニクス・7月3日投稿", lf:"再生 21.7万・コメ 5,671", ep:"発明", dur:"6:47", g:1},
+        {n:"自作キーボードで小説を書く配信環境", th:"自作キーボード<br>配信環境", st:"しろくま電子・7月1日投稿", lf:"再生 14.2万・コメ 2,133", ep:"", dur:"16:05", g:9},
+        {n:"3Dプリンタで動く城を作る #4", th:"3Dプリンタで<br>動く城 #4", st:"歯車仕掛けP・6月30日投稿", lf:"再生 11.6万・コメ 3,410", ep:"#4", dur:"22:18", g:7},
+        {n:"田んぼアートをドローンで記録した", th:"田んぼアート<br>空撮記録", st:"米どころ研究部・6月29日投稿", lf:"再生 9.3万・コメ 1,255", ep:"空撮", dur:"8:56", g:5},
+        {n:"廃材だけでエレキギター製作", th:"廃材エレキ<br>ギター製作", st:"音工房ざらめ・6月28日投稿", lf:"再生 8.1万・コメ 2,908", ep:"完成", dur:"25:33", g:4}
+      ]}
+    ]
+  }
+};
+
+var ORDER = ["tver","abema","youtube","niconico"];
+var root = document.documentElement;
+var tabs = Array.prototype.slice.call(document.querySelectorAll(".svc"));
+var ind = document.querySelector(".ind");
+var stage = document.getElementById("stage");
+var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var current = null;
+
+function esc(s){
+  return String(s).replace(/[&<>"]/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];
+  });
+}
+
+/* ---------- カード ---------- */
+function cardHTML(item, i){
+  var rank = i + 1;
+  var durCls = item.dur === "LIVE" ? "dur live" : "dur";
+  var epHTML = item.ep ? '<span class="ep">' + esc(item.ep) + '</span>' : "";
+  return '<article class="card" style="--i:' + i + '">' +
+    '<a class="clk" href="#">' +
+      '<div class="thw">' +
+        '<span class="rank r' + rank + '" aria-label="' + rank + '位">' + rank + '</span>' +
+        '<div class="th g' + item.g + '" aria-hidden="true">' +
+          '<span class="tht">' + item.th + '</span>' + epHTML +
+          '<span class="' + durCls + '">' + esc(item.dur) + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="cm"><h3>' + esc(item.n) + '</h3>' +
+        '<p class="st">' + esc(item.st) + '</p>' +
+        '<p class="lf">' + esc(item.lf) + '</p></div>' +
+    '</a></article>';
+}
+
+function secHTML(sec){
+  var cards = sec.items.map(cardHTML).join("");
+  return '<section class="sec" aria-label="' + esc(sec.t) + '">' +
+    '<div class="sech"><h2>' + esc(sec.t) + '</h2><span class="cnt">TOP 6</span>' +
+      '<a class="more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>' +
+    '</div><div class="row">' + cards + '</div></section>';
+}
+
+/* ---------- ヒーロー ---------- */
+function heroHTML(h){
+  var badge = h.badge
+    ? '<span class="hero-badge">' + (h.live ? '<i aria-hidden="true"></i>' : "") + esc(h.badge) + '</span>'
+    : "";
+  var meta = h.meta.map(function(m){ return "<li>" + esc(m) + "</li>"; }).join("");
+  return badge +
+    '<p class="hero-k">' + esc(h.k) + '</p>' +
+    '<h1>' + esc(h.title) + '</h1>' +
+    '<p class="hero-cp">' + esc(h.cp) + '</p>' +
+    '<ul class="hero-meta">' + meta + '</ul>' +
+    '<div class="hero-cta">' +
+      '<a class="btn btn-p" href="#"><svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.8v10.4L12 7 3 1.8Z" fill="currentColor"/></svg>' + esc(h.cta1) + '</a>' +
+      '<a class="btn btn-g" href="#"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>' + esc(h.cta2) + '</a>' +
+    '</div>';
+}
+
+/* ---------- フレーバー帯 ---------- */
+function flavorHTML(f){
+  if (!f) return "";
+  if (f.type === "tick") {
+    var seq = f.items.map(function(it){
+      return "<span><b>" + esc(it[0]) + "</b>" + esc(it[1]) + "</span>";
+    }).join("");
+    var row = '<div class="tick-seq">' + seq + '</div>';
+    return '<div class="tick" aria-hidden="true"><div class="tick-in">' + row + row + '</div></div>';
+  }
+  if (f.type === "chips") {
+    var chips = f.items.map(function(c, i){
+      return '<button aria-pressed="' + (i === 0 ? "true" : "false") + '">' + esc(c) + "</button>";
+    }).join("");
+    return '<div class="chips" role="group" aria-label="フィルタ">' + chips + '</div>';
+  }
+  return "";
+}
+
+/* ---------- 描画 ---------- */
+function render(svc){
+  var d = DATA[svc];
+  root.setAttribute("data-svc", svc);
+  document.getElementById("q").placeholder = d.searchPh;
+  document.getElementById("docklive-t").textContent = d.dockLive;
+  document.getElementById("flavor").innerHTML = flavorHTML(d.flavor);
+  document.getElementById("gnav").innerHTML = d.nav.map(function(n, i){
+    return '<a href="#"' + (i === 0 ? ' aria-current="page"' : "") + ">" + esc(n) + "</a>";
+  }).join("");
+  document.getElementById("hero-in").innerHTML = heroHTML(d.hero);
+  document.getElementById("hero-deco").textContent = d.hero.deco || "";
+  var flow = document.getElementById("flow");
+  if (d.flow) {
+    flow.innerHTML = d.flow.map(function(line){
+      return "<p>" + line.split("|").map(function(c){ return "<span>" + esc(c) + "</span>"; }).join("") + "</p>";
+    }).join("");
+  } else {
+    flow.innerHTML = "";
+  }
+  document.getElementById("main").innerHTML = d.secs.map(secHTML).join("");
+}
+
+function placeInd(){
+  var active = tabs.filter(function(t){ return t.getAttribute("aria-selected") === "true"; })[0];
+  if (!active) return;
+  ind.style.width = active.offsetWidth + "px";
+  ind.style.transform = "translateX(" + active.offsetLeft + "px)";
+}
+
+function select(svc, focusTab){
+  if (!DATA[svc] || svc === current) { placeInd(); return; }
+  var first = current === null;
+  current = svc;
+  tabs.forEach(function(t){
+    var on = t.getAttribute("data-svc") === svc;
+    t.setAttribute("aria-selected", on ? "true" : "false");
+    t.tabIndex = on ? 0 : -1;
+    if (on && focusTab) t.focus();
+  });
+  var apply = function(){
+    render(svc);
+    placeInd();
+    stage.classList.remove("sw");
+    document.getElementById("announce").textContent = DATA[svc].name + " に切り替えました";
+  };
+  if (first || reduced) {
+    apply();
+  } else {
+    stage.classList.add("sw");
+    placeInd();
+    window.setTimeout(apply, 190);
+  }
+  try {
+    localStorage.setItem("tvapp-svc", svc);
+    history.replaceState(null, "", "#" + svc);
+  } catch (e) { /* file:// 等では無視 */ }
+}
+
+/* ---------- イベント ---------- */
+tabs.forEach(function(t){
+  t.addEventListener("click", function(){ select(t.getAttribute("data-svc")); });
+  t.addEventListener("keydown", function(e){
+    var i = tabs.indexOf(t), n = null;
+    if (e.key === "ArrowRight") n = (i + 1) % tabs.length;
+    if (e.key === "ArrowLeft") n = (i - 1 + tabs.length) % tabs.length;
+    if (n !== null) {
+      e.preventDefault();
+      select(tabs[n].getAttribute("data-svc"), true);
+    }
+  });
+});
+document.addEventListener("keydown", function(e){
+  var el = document.activeElement;
+  if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+  var i = ["1","2","3","4"].indexOf(e.key);
+  if (i >= 0) select(ORDER[i]);
+});
+window.addEventListener("resize", placeInd);
+
+/* ユーザーメニュー */
+var ubtn = document.getElementById("ubtn");
+var umenu = document.getElementById("umenu");
+function closeMenu(){ umenu.hidden = true; ubtn.setAttribute("aria-expanded", "false"); }
+ubtn.addEventListener("click", function(e){
+  e.stopPropagation();
+  var open = umenu.hidden;
+  umenu.hidden = !open;
+  ubtn.setAttribute("aria-expanded", open ? "true" : "false");
+});
+document.addEventListener("click", function(e){
+  if (!umenu.hidden && !umenu.contains(e.target)) closeMenu();
+});
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape" && !umenu.hidden) { closeMenu(); ubtn.focus(); }
+});
+
+/* フィルタチップ(YouTube テーマ内)のトグル */
+document.getElementById("flavor").addEventListener("click", function(e){
+  var b = e.target.closest ? e.target.closest("button[aria-pressed]") : null;
+  if (!b) return;
+  this.querySelectorAll("button[aria-pressed]").forEach(function(x){ x.setAttribute("aria-pressed", "false"); });
+  b.setAttribute("aria-pressed", "true");
+});
+
+/* ダミーリンク保護 */
+document.addEventListener("click", function(e){
+  var a = e.target && e.target.closest ? e.target.closest('a[href="#"]') : null;
+  if (a) e.preventDefault();
+});
+
+/* ---------- 初期化 ---------- */
+var initial = (location.hash || "").replace("#", "");
+if (!DATA[initial]) {
+  try { initial = localStorage.getItem("tvapp-svc") || ""; } catch (e) { initial = ""; }
+}
+if (!DATA[initial]) initial = "tver";
+select(initial);
+window.setTimeout(placeInd, 60); /* フォント確定後に再配置 */
+})();
+</script>
+</body>
+</html>
