@@ -20,6 +20,8 @@ jobs:
       run:
         working-directory: xiaovy.tvapp.web
     env:
+      # 日付フォーマット(Intl)を JST 基準に固定(CI=UTC とのブレ防止)
+      TZ: Asia/Tokyo
       # ビルド検証用。未設定でもビルドは通る(実行時のみ必要な公開値のため)。
       NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
       NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}

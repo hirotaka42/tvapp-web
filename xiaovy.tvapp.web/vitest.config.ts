@@ -8,6 +8,11 @@ export default defineConfig({
     jsx: 'automatic',
   },
   test: {
+    // 日付フォーマットは Intl(既定TZ)依存。CI(UTC)とローカル(JST)で結果が
+    // ぶれないよう、テスト実行のタイムゾーンを JST に固定する。
+    env: {
+      TZ: 'Asia/Tokyo',
+    },
     // jsdom で React コンポーネントのテストも可能に(ロジックは node でも動く)
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
