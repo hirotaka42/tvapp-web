@@ -19,11 +19,16 @@ export async function middleware(request: NextRequest) {
     '/api/utils/verify-token',
     '/api/health',
   ];
+  // 映画ワールドの取り込み口。クローラ(GitHub Actions/ローカル)からの書き込みで、
+  // Bearer トークンを付けられないため公開扱いにし、ルート側で x-ingest-secret を定数時間比較して認証する。
+  const exactPublicPaths = ['/api/service/cinema/ingest'];
+  const pathname = request.nextUrl.pathname;
 
-  if (publicPaths.some((path) => request.nextUrl.pathname.startsWith(path))) {
+  if (exactPublicPaths.includes(pathname) || publicPaths.some((path) => pathname.startsWith(path))) {
     return NextResponse.next();
   }
 
+  // 映画メタは公開情報のため、読取 API は既存アプリ同様に Bearer の存在チェックへ委ねる。
   // Authorizationヘッダーの存在チェック（詳細な検証は各APIで実施）
   const authHeader = request.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {

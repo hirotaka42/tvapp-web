@@ -12,6 +12,7 @@ import { useService } from '@/contexts/ServiceContext';
 import { ComingSoonWorld } from '@/components/atomicDesign/organisms/ComingSoonWorld';
 import { TverHome } from '@/components/atomicDesign/organisms/TverHome';
 import { AbemaHomeContainer } from '@/components/atomicDesign/organisms/AbemaHome';
+import { CinemaWorldContainer } from '@/components/atomicDesign/organisms/CinemaWorld';
 
 export const Main: FC = () => {
     const router = useRouter();
@@ -50,6 +51,10 @@ export const Main: FC = () => {
 
     if (service === 'abema') {
         return <AbemaHomeContainer />;
+    }
+
+    if (service === 'cinema') {
+        return <CinemaWorldContainer />;
     }
 
     // TVER は既存のセッション/ホームデータを必要とする
