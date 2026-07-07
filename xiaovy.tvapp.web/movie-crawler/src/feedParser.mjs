@@ -45,6 +45,21 @@ export function parseFeed(xml, source) {
     }));
   }
 
+  // RSS 1.0 (RDF): 映画.com feeds.eiga.com/eiga_news.xml。item は rdf:RDF 直下、日付は dc:date。
+  const rdf = parsed['rdf:RDF'] ?? parsed.RDF;
+  if (rdf?.item) {
+    return asArray(rdf.item).map((item) => ({
+      guid: textValue(item.link) || textValue(item.guid),
+      source,
+      title: textValue(item.title),
+      url: textValue(item.link),
+      summary: textValue(item.description) || textValue(item['content:encoded']),
+      publishedAt: new Date(textValue(item['dc:date']) || textValue(item.pubDate) || Date.now()).toISOString(),
+      tags: asArray(item['dc:subject'] ?? item.category).map(textValue).filter(Boolean),
+      thumbnailUrl: enclosureUrl(item),
+    }));
+  }
+
   const channel = parsed.rss?.channel;
   return asArray(channel?.item).map((item) => ({
     guid: textValue(item.guid) || textValue(item.link),
