@@ -12,25 +12,52 @@ TVER / ABEMA / YouTube / niconico を1つのWebアプリで切り替えて視聴
 - **TVER**: ビビッド高密度デザインのホーム（実ランキング）、**PC Chrome/スマホで動画再生できる**（本番確認済）。
   - 再生の要点: streaks の master m3u8 のみ CORS 非許可 → 同一オリジンHLSプロキシ `/api/service/stream/hls` で master だけ中継しCORS付与。
     **映像セグメントは直取り（帯域ゼロ・$0維持）**。プレイヤーは **hls.js優先**（Chromeの canPlayType 誤申告でネイティブ経路を選ぶと再生不可だった）。
-  - レスポンシブ: iPhone/iPad/PCで左右見切れなし（.tv-row の左padding 24px）。
+  - レスポンシブ: iPhone/iPad/PCで左右見切れなし。**2026-07-07更新**: スマホ幅で左右余白を詰めコンテンツを広げた
+    （wrap 16→12px、tv-row左24→18px、カード微増）。431〜640px帯の1位バッジ見切れも小オフセット(-10/-12px)を≤640へ適用して解消。360/390/480px実測OK。
 - **ABEMA（ブラウズのみ）**: 番組表/チャンネル一覧を公開API(api.abema.io)経由で実データ表示。緑×黒の世界観。
 - **CI/CD（tvapp-web）**: main保護（PR必須+CI必須+カバレッジ80%）。deploy.yml は version 上昇時のみCloudflareデプロイ。
   デプロイは `npm run deploy:safe`（再ビルド必須+build_sha鮮度照合）。テスト138+、カバレッジ~95%。
 - **ロゴ**: 波モチーフのネオンロゴ（public/brand/）を favicon/ヘッダー/ログインに適用。
 
-## 🔴 いま残っている最大の作業（次セッションの最優先）
-**ABEMAのアプリ内再生が「あと一歩」で未完。** 現在地:
-1. ✅ フロント実装済（feature/tvapp-nextjs-upgrade-cicd ブランチ、未マージ）:
-   `/api/service/abema/{streaminglink,hls,key}` ルート、live/watch再生ページ、VideoPlayerに proxy prop、AbemaCard等をアプリ内再生遷移へ。
-   → Azure が `{manifest_dict:{urls:[master]}, keys:{ticket:hex16}}` を返せば再生できる設計。
-2. ✅ Azure側の鍵導出を実装（Platform-Stream-Loader main にマージ済・**手元funcで本番デプロイ済**）:
-   ABEMAは独自暗号 `abematv-license://`。yt-dlp AbemaLicenseRH でサーバ側16byte鍵導出。**ローカルでは実ライブ2chで鍵16byte導出を実証済**。
-3. 🔴 **未解決の問題**: **本番Azureに直接ABEMAライブを投げると master も keys も返らない（0件）**。ローカルは成功、本番Azureは失敗。
-   - 検証コマンド: `az functionapp keys list -g rg-dev-xiaovy000 -n Platform-Stream-Loader` でkey取得し、
-     `curl "https://platform-stream-loader.azurewebsites.net/api/backend_stream_url_http?code=<KEY>&url=https://abema.tv/now-on-air/abema-news"` → 現状 manifest_dict.urls空・keys空。
-   - **次にやること**: Azure本番のログ/挙動を調べ、なぜ鍵導出が失敗するか特定。候補: (a) yt-dlpの内部API依存(AbemaLicenseRH)がAzure Python 3.12環境で例外、(b) src/services/abema.py の例外を握り潰して空を返している、(c) Azure worker から license.abema.io/api.abema.io への通信やDEVICE_ID発行が失敗、(d) デプロイ反映のタイムラグ。
-     Azure の Application Insights / `az functionapp log` で例外を見る。ローカル(.venv)では動くので差分を詰める。
-4. その後: Azure が鍵を返せたら、tvapp-web の feature ブランチを PR→main→本番デプロイし、**PC Chromeで ABEMA ライブがアプリ内再生できるか実機確認**（CDPで video error=null/readyState>=3/buffered>0、最終はユーザー実機）。VODは media token 必須でライブより難しく後続。
+## ✅ ABEMA アプリ内再生（live + VOD）= ローカルで完成（2026-07-07 夜セッション）
+**ABEMAのアプリ内再生（ライブ＋VODランキング）がローカルで完全動作。** 実ブラウザ(headless Chrome/CDP)で検証済:
+- ライブ `abema-news`: readyState=4 / error=null / buffered=40s / 426x240 デコード（映像フレーム化まで確認）。
+- VOD `210-18_s1_p1`・ランキング1位 season `90-1849_s3_p1`: readyState=4 / buffered≈92s / 427x240 デコード。
+- ランキング1位カードのクリック→season→episode解決→`/service/abema/watch/…` へ**アプリ内遷移**（外部遷移なし）を実測。
+
+### 何が入ったか（feature/tvapp-nextjs-upgrade-cicd、未マージ）
+1. **再生アンブロック**: `src/middleware.ts` の公開許可に `/api/service/abema/{streaminglink,hls,key}` を追加。
+   従来これらが認可ゲート(401)でブロックされ、hls.js が鍵/セグメントを取れず**Azure以前に再生不能**だった（真の主因の一つ）。
+2. **VOD/ランキングのデータ層**（実データ疎通済）:
+   - `src/lib/abema/auth.ts`: yt-dlp `_generate_aks` を TS 移植 → `POST api.abema.io/v1/users` で user token 取得＋module-scopeキャッシュ＋401再取得。
+   - `src/app/api/service/abema/vod/ranking`: `GET user-content-api.p-c3-e.abema-tv.com/v1/modules?spotId=xRKNUGRQ&spotVersion=1&limit=8&qos=PC&qpl=web`（bearer user token）→ 実ランキング8棚（総合/アニメ/バラエティ/恋愛リアリティ/韓中ドラマ等）。
+   - `src/app/api/service/abema/vod/episode`: series/season contentId → 再生用 episodeId 解決（**seasonIdクエリは送らない**＝送ると0件。id が `{contentId}_` で始まる無料話を優先）。
+   - `src/app/api/service/abema/vod/genres`: `GET api.abema.io/v1/video/genres`。
+   - `types/abema/{rawApi,view}.ts` + `utils/abema/normalizeVod.ts` + テスト。
+3. **UI**: `AbemaVodRanking`(organism) + `AbemaVodCard`(実サムネ・クリックでアプリ内再生) + `useAbemaVod` を `AbemaHome` に配線（番組表＝リアルタイムと並べて『ビデオランキング』を前面表示）。
+
+### ローカルで動かす手順（本番Azureは現状壊れているため、ローカルはローカルリゾルバ経由）
+1. **リゾルバをローカル起動**（JP家庭回線＋local .venv で鍵導出が通る）:
+   ```
+   cd Platform-Stream-Loader && source .venv/bin/activate
+   python scripts/local_resolver_server.py     # :7071 で Azure と同じ契約に応答（src自動検出）
+   ```
+   （`http://127.0.0.1:7071/api/backend_stream_url_http` が master+16byte鍵を返すdev用シム。`abema-news` で確認済。
+   シム本体は **`Platform-Stream-Loader` の `chore/local-resolver-dev-shim` ブランチ**にコミット済＝要マージ。VERSION不変でCD非発火）。
+2. **tvapp-web を起動**（リゾルバURLを渡す。.env.local は非破壊のためインライン推奨）:
+   `cd xiaovy.tvapp.web && NEXT_PUBLIC_DEV_BYPASS_AUTH=1 AZURE_FUNCTION_STREEAMING=http://localhost:7071 npm run dev`
+3. ABEMAワールド: localStorage `tvapp-svc-v2=abema`（ヘッダのABEMAタブ）。ビデオランキングのカードをクリック→アプリ内再生。
+
+## 🟡 残: 本番Azureが鍵を返さない（要ユーザーのAzure資格情報）
+ローカルは完動。**本番 Azure だけが空を返す**。Codex調査(read-only)の結論:
+- 現行 `Platform-Stream-Loader/src/services/abema.py` は master/ticket/key が無ければ必ず例外(500)を返す設計で、
+  **200で空(manifest_dict.urls=[]・keys={})を返す経路は現行コードに存在しない**。→ 本番が空200を返すなら
+  **本番が現行のABEMA専用コードを実行していない＝デプロイが古い/失敗**が最有力（次点: 本番ランタイム/yt-dlp差、Azure egressでの ABEMA API/license 失敗）。
+- 確定コマンド（要 `az login` or SCM資格。**AI単独では実行不可**）:
+  - SCMで実デプロイ済コードを確認: `curl -u "$SCM_USER:$SCM_PASS" "https://platform-stream-loader.scm.azurewebsites.net/api/vfs/site/wwwroot/services/abema.py" | head`
+  - 本番ランタイム: SCM `/api/command` で `python -c "import sys,yt_dlp;print(sys.version, yt_dlp.version.__version__)"`
+  - `az functionapp log tail -g rg-dev-xiaovy000 -n Platform-Stream-Loader` で例外確認。
+- 本番修正後は tvapp-web の `AZURE_FUNCTION_STREEAMING` を本番Azureに戻し、feature→main→本番で最終確認。VOD/ライブとも同一鍵導出パスなので本番が鍵を返せば両方通る。
 
 ## 🟡 その他の保留・判断待ち
 - **Platform-Stream-Loader のブランチ保護**: privateリポでGitHub無料プランのためブランチ保護がかけられない（403 "Upgrade to GitHub Pro"）。
