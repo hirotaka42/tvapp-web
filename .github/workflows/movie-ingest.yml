@@ -29,4 +29,5 @@ jobs:
         env:
           CINEMA_INGEST_ENDPOINT: ${{ secrets.CINEMA_INGEST_ENDPOINT }}
           INGEST_SECRET: ${{ secrets.CINEMA_INGEST_SECRET }}
-        run: node crawl.mjs --mode=post --endpoint "$CINEMA_INGEST_ENDPOINT" --secret-env=INGEST_SECRET
+        # crawl.mjs のCLIは `--key=value` 形式。空白区切りだと endpoint が true になり fetch が壊れるため = 形式で渡す。
+        run: node crawl.mjs --mode=post --endpoint="$CINEMA_INGEST_ENDPOINT" --secret-env=INGEST_SECRET
