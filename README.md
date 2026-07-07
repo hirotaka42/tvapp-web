@@ -1,3 +1,9 @@
+# TVapp（tvapp-web）
+
+> ⚠ **この README は旧構成（Docker-Compose 時代）のままで現状と大きく乖離しています。**
+> 現在は **Next.js 16 + Cloudflare Workers(OpenNext) + Firebase** による TVER / ABEMA 統合ビューアです。
+> 正確な現状・構成・起動手順・残タスクは **`HANDOVER.md`** と **`docs/reference/04_usage/`** を参照してください。
+> （この README 本体と `xiaovy.tvapp.web/README.md` の現構成への全面更新は次タスク。以下は旧内容です）
 
 ## 目次
 
