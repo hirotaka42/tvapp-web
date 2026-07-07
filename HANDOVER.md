@@ -8,8 +8,12 @@
 - ABEMA 一式完成: アプリ内再生(live+VOD)/VODランキング/番組情報/シリーズ・シーズン辿り/ヒーロー自動スライド/いま放送中/有料明示/エラー多様化。
 - 横断: 再生中の上部タブ遷移不可を確認ダイアログ付きで解消（TVER時代からの課題）。
 - Platform-Stream-Loader: メディアトークン失効の恒久修正(PR #9)+ローカルリゾルバシム(PR #10)を main マージ済。
-- **CIの罠(解決済)**: wrangler最新版がNode>=22要求。deploy.yml/ci.ymlを node20→22 に更新して解決(PR #59)。
-- **残(要ユーザーのAzure資格)**: 本番ABEMA再生は本番Azureが鍵を返す前提だが本番Azureは空を返す。TVERは本番動作。ABEMAブラウズがCloudflare海外egressで地域制限に当たるかは本番要実測。詳細は下記「本番Azure」節。
+- **本番実測(v1.6.1デプロイ後・訂正)**:
+  - ✅ TVER 本番動作。✅ **ABEMAブラウズ(ランキング/シリーズ/番組情報)はCloudflare海外egressでも200で動作**(地域制限なし)。
+  - ✅ **本番Azureは有効な鍵を返す**(以前の「空を返す」は古い状態。Azure Functionは頻繁リサイクルでトークン新鮮)。本番でセグメントAES復号8/8を実測。
+  - 🔴 **本番ABEMA再生は不安定(次の最優先)**: 原因はAzureでなく **`src/app/api/service/abema/keyStore.ts` の鍵ストアがインメモリで Cloudflare Workers の isolate 間で共有されない**こと。streaminglink(鍵保存)と `/api/service/abema/key`(取得)が別isolateだと404(実測: ライブ404/VOD200が試行ごとにランダム)。ローカルは単一プロセスで常に動く。**恒久=鍵ストアをKV/DO等へ**(KVは結果整合なのでput直後getに注意→DOが堅い、or sidに鍵署名埋め込み)。
+  - ⚠️ **CI経由デプロイ不可**: repoに `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` シークレット未設定→ deploy.yml の wrangler deploy が失敗。当面ローカル `npm run deploy:safe`(端末wrangler OAuth)でデプロイ。恒久はGH Actions Secrets追加。
+  - CIの Node は wrangler の Node>=22 要件に合わせ node20→22 済(PR #59)。
 
 ## 全体像（何を作っているか）
 TVER / ABEMA / YouTube / niconico を1つのWebアプリで切り替えて視聴する統合ビューア「TVapp」。
