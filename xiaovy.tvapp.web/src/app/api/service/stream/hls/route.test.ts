@@ -9,10 +9,13 @@ describe('GET /api/service/stream/hls', () => {
 
   it('returns a proxied m3u8 with CORS headers and rewritten URLs', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchild.m3u8\nsegment.ts\n', {
+      new Response(
+        '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nchild.m3u8\nhttps://variants.streaks.jp/video/segment.ts\n',
+        {
         status: 200,
         headers: { 'content-type': 'application/vnd.apple.mpegurl' },
-      }),
+        },
+      ),
     );
     const sourceUrl = 'https://manifest.streaks.jp/path/master.m3u8?token=abc';
     const request = new NextRequest(`http://localhost/api/service/stream/hls?url=${encodeURIComponent(sourceUrl)}`);
@@ -26,8 +29,9 @@ describe('GET /api/service/stream/hls', () => {
     expect(body).toContain(
       '/api/service/stream/hls?url=https%3A%2F%2Fmanifest.streaks.jp%2Fpath%2Fchild.m3u8',
     );
-    expect(body).toContain(
-      '/api/service/stream/hls?url=https%3A%2F%2Fmanifest.streaks.jp%2Fpath%2Fsegment.ts',
+    expect(body).toContain('https://variants.streaks.jp/video/segment.ts');
+    expect(body).not.toContain(
+      '/api/service/stream/hls?url=https%3A%2F%2Fvariants.streaks.jp%2Fvideo%2Fsegment.ts',
     );
     expect(fetchMock).toHaveBeenCalledWith(sourceUrl, expect.objectContaining({ method: 'GET' }));
   });

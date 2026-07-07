@@ -92,7 +92,7 @@ function toProxyUrl(value: string, playlistUrl: string): string | null {
   }
 
   const resolvedUrl = resolved.toString();
-  return isAllowedStreaksUrl(resolvedUrl) ? createHlsProxyUrl(resolvedUrl) : null;
+  return resolved.hostname.toLowerCase() === 'manifest.streaks.jp' ? createHlsProxyUrl(resolvedUrl) : resolvedUrl;
 }
 
 function safePathname(value: string): string {

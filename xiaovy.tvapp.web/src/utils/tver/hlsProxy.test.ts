@@ -40,16 +40,19 @@ describe('hlsProxy utils', () => {
     );
   });
 
-  it('rewrites media playlists, child playlists, map URIs, and key URIs through the proxy', () => {
+  it('proxies only manifest.streaks.jp URLs and leaves other resources as direct absolute URLs', () => {
     const playlistUrl = 'https://manifest.streaks.jp/v6/tver/show/hls/master.m3u8?token=top';
     const playlist = [
       '#EXTM3U',
       '#EXT-X-STREAM-INF:BANDWIDTH=1280000',
       'variant/index.m3u8',
+      'https://variants.streaks.jp/hls/variant.m3u8?sig=0',
       '#EXT-X-KEY:METHOD=AES-128,URI="../keys/key.bin?sig=1",IV=0x123',
       '#EXT-X-MAP:URI="https://variants.streaks.jp/init.mp4?sig=2"',
       '#EXTINF:6.0,',
       'https://variants.streaks.jp/video/segment001.ts?sig=3',
+      '#EXTINF:6.0,',
+      'https://vod-001.streaks.jp/video/segment002.ts?sig=4',
       '#EXTINF:6.0,',
       'segment002.ts',
       '#EXT-X-ENDLIST',
@@ -63,25 +66,32 @@ describe('hlsProxy utils', () => {
     expect(rewritten).toContain(
       'URI="/api/service/stream/hls?url=https%3A%2F%2Fmanifest.streaks.jp%2Fv6%2Ftver%2Fshow%2Fkeys%2Fkey.bin%3Fsig%3D1"',
     );
-    expect(rewritten).toContain(
-      'URI="/api/service/stream/hls?url=https%3A%2F%2Fvariants.streaks.jp%2Finit.mp4%3Fsig%3D2"',
-    );
-    expect(rewritten).toContain(
-      '/api/service/stream/hls?url=https%3A%2F%2Fvariants.streaks.jp%2Fvideo%2Fsegment001.ts%3Fsig%3D3',
-    );
+    expect(rewritten).toContain('https://variants.streaks.jp/hls/variant.m3u8?sig=0');
+    expect(rewritten).toContain('URI="https://variants.streaks.jp/init.mp4?sig=2"');
+    expect(rewritten).toContain('https://variants.streaks.jp/video/segment001.ts?sig=3');
+    expect(rewritten).toContain('https://vod-001.streaks.jp/video/segment002.ts?sig=4');
     expect(rewritten).toContain(
       '/api/service/stream/hls?url=https%3A%2F%2Fmanifest.streaks.jp%2Fv6%2Ftver%2Fshow%2Fhls%2Fsegment002.ts',
     );
   });
 
-  it('does not rewrite comments, data URIs, or non-streaks URLs', () => {
+  it('keeps data URIs unchanged and absolute-izes direct resource URLs', () => {
     const playlist = [
       '#EXTM3U',
       '#EXT-X-KEY:METHOD=AES-128,URI="data:text/plain;base64,AAAA"',
       '#EXT-X-MAP:URI="https://example.test/init.mp4"',
       'https://example.test/segment.ts',
+      '../relative/segment.ts',
     ].join('\n');
 
-    expect(rewriteM3u8Urls(playlist, 'https://manifest.streaks.jp/master.m3u8')).toBe(playlist);
+    expect(rewriteM3u8Urls(playlist, 'https://variants.streaks.jp/path/master.m3u8')).toBe(
+      [
+        '#EXTM3U',
+        '#EXT-X-KEY:METHOD=AES-128,URI="data:text/plain;base64,AAAA"',
+        '#EXT-X-MAP:URI="https://example.test/init.mp4"',
+        'https://example.test/segment.ts',
+        'https://variants.streaks.jp/relative/segment.ts',
+      ].join('\n'),
+    );
   });
 });
