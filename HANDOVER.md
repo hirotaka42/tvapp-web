@@ -35,6 +35,11 @@ TVER / ABEMA / YouTube / niconico を1つのWebアプリで切り替えて視聴
    - `src/app/api/service/abema/vod/genres`: `GET api.abema.io/v1/video/genres`。
    - `types/abema/{rawApi,view}.ts` + `utils/abema/normalizeVod.ts` + テスト。
 3. **UI**: `AbemaVodRanking`(organism) + `AbemaVodCard`(実サムネ・クリックでアプリ内再生) + `useAbemaVod` を `AbemaHome` に配線（番組表＝リアルタイムと並べて『ビデオランキング』を前面表示）。
+4. **UI追加(2026-07-08)**:
+   - **ヒーロー**: トップの大枠を将棋ライブ固定から、今日の総合ランキング/アニメランキングの1〜3位ランダム表示へ(`AbemaVodHero`/`pickVodHero`)。クリックでアプリ内再生。
+   - **再生ページ番組情報**: watch ページにエピソード名/シリーズ/シーズン/話数/あらすじ/ジャンル/無料/サムネ + 「シリーズ・全話を見る」導線(`/api/service/abema/vod/program`)。
+   - **親/シーズン/話数の辿り**: `/service/abema/series/[seriesId]`(シーズンタブ+話数リスト・各話アプリ内再生)。`/api/service/abema/vod/series` は各シーズンをフルseasonIdで個別取得(無職転生3期=24/25/3話 実測)。
+   - 使用書: `docs/reference/04_usage/03-abema-local-playback.md`。
 
 ### ローカルで動かす手順（本番Azureは現状壊れているため、ローカルはローカルリゾルバ経由）
 1. **リゾルバをローカル起動**（JP家庭回線＋local .venv で鍵導出が通る）:
