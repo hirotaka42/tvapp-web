@@ -1,0 +1,18 @@
+{
+  "name": "movie-crawler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TVapp 映画ワールド 日次クローラ(鍵ゼロ・$0)。映画.com/Filmarks/RSSを取得→ingestへPOST or SQL出力",
+  "scripts": {
+    "crawl": "node crawl.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "fast-xml-parser": "^4.5.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.0"
+  }
+}

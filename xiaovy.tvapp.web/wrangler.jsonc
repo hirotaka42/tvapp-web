@@ -14,6 +14,15 @@
     // 鍵(AZURE_FUNCTION_STREEAMING_CODE_KEY)は `wrangler secret put` で別途登録(暗号化)。
     "AZURE_FUNCTION_STREEAMING": "https://platform-stream-loader.azurewebsites.net"
   },
+  // 映画ワールド(data-svc="cinema")のデータ源。日次クロールで自前upsert・読み取り配信。
+  // スキーマは db/cinema/schema.sql。INGEST_SECRET は `wrangler secret put` で別途登録。
+  "d1_databases": [
+    {
+      "binding": "MOVIE_DB",
+      "database_name": "tvapp-movie",
+      "database_id": "33f44167-8579-43b9-9865-71379d8d73ee"
+    }
+  ],
   "observability": {
     "enabled": true
   }

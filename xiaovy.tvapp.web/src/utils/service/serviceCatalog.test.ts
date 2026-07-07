@@ -7,11 +7,11 @@ describe('serviceCatalog', () => {
     expect(new Set(SERVICES.map((service) => service.hint)).size).toBe(4);
   });
 
-  it('marks TVER and ABEMA as ready', () => {
+  it('marks TVER, ABEMA, and cinema as ready', () => {
     expect(isReady('tver')).toBe(true);
     expect(isReady('abema')).toBe(true);
     expect(isReady('youtube')).toBe(false);
-    expect(isReady('niconico')).toBe(false);
+    expect(isReady('cinema')).toBe(true);
   });
 
   it('checks service ids and returns metadata', () => {

@@ -1,4 +1,4 @@
-export type ServiceId = 'tver' | 'abema' | 'youtube' | 'niconico';
+export type ServiceId = 'tver' | 'abema' | 'youtube' | 'cinema';
 
 export interface ServiceMeta {
   id: ServiceId;
@@ -43,14 +43,14 @@ export const SERVICES: ServiceMeta[] = [
     searchPlaceholder: 'YouTubeの動画を検索',
   },
   {
-    id: 'niconico',
-    label: 'niconico',
-    panelId: 'nc',
-    accent: '#ff8c1a',
-    accentInk: '#2c1602',
+    id: 'cinema',
+    label: '映画',
+    panelId: 'cn',
+    accent: '#e8940f',
+    accentInk: '#2a1602',
     hint: '4',
-    ready: false,
-    searchPlaceholder: 'niconicoの動画を検索',
+    ready: true,
+    searchPlaceholder: '作品名・監督・俳優で検索',
   },
 ];
 
