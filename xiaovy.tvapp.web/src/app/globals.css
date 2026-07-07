@@ -320,6 +320,21 @@
   .ab-ft nav a:hover{color:#17e087}
   .ab-state{display:grid;place-items:center;padding:48px 16px}
   .ab-state-box{max-width:560px;text-align:center;border:1px solid #0e3322;border-radius:14px;background:#04190f;padding:34px 24px;color:#9fc7b1;font-weight:700}
+  /* --- ABEMA VOD ランキング(アプリ内再生) --- */
+  .ab-vod{margin:30px 0 8px}
+  .ab-vod-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:2px 0 14px}
+  .ab-vod-k{font-size:11px;font-weight:700;letter-spacing:.2em;color:#02180d;background:#17e087;border-radius:5px;padding:3px 10px}
+  .ab-vod-h h2{font-size:22px;font-weight:800;color:#e7f5ec}
+  .ab-vod-sub{font-size:12px;font-weight:600;color:#6f9d85}
+  .ab-vod-state{border:1px solid #0e3322;border-radius:14px;background:#04190f;padding:22px 18px;color:#9fc7b1;font-weight:700;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .ab-vod-state button{background:#17e087;color:#02180d;border:none;border-radius:7px;padding:7px 16px;font-weight:800;cursor:pointer}
+  .ab-vclk{width:100%;text-align:left;padding:0;margin:0;cursor:pointer;color:inherit;font:inherit;appearance:none;-webkit-appearance:none}
+  .ab-vclk:hover{transform:translateY(-3px);border-color:#17e087;box-shadow:0 10px 24px rgba(0,0,0,.4)}
+  .ab-vth{background:linear-gradient(140deg,#04321e,#020d08)}
+  .ab-vth img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+  .ab-vth-ph{position:absolute;inset:0;z-index:0;background:repeating-linear-gradient(115deg,transparent 0 22px,rgba(23,224,135,.06) 22px 26px)}
+  .ab-vfree{position:absolute;right:8px;top:8px;z-index:3;font-size:10px;font-weight:800;letter-spacing:.06em;background:#17e087;color:#02180d;border-radius:4px;padding:1px 8px}
+  .ab-vload{position:absolute;left:0;right:0;bottom:0;z-index:4;background:rgba(2,17,10,.82);color:#8ef0bd;font-size:11px;font-weight:700;text-align:center;padding:5px}
   .ab-state-box h1{font-size:24px;color:#e7f5ec;font-weight:800;margin-bottom:8px}
   .ab-state-box button{margin-top:18px;background:#17e087;color:#02180d;border-radius:7px;padding:9px 20px;font-size:13px;font-weight:800}
   .cs-world{min-height:calc(100vh - 64px);display:grid;place-items:center;padding:48px 20px;color:var(--hd-tx);background:var(--hd-bg)}

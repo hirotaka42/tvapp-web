@@ -6,6 +6,7 @@ import { AbemaLiveHero } from '@/components/atomicDesign/molecules/abema/AbemaLi
 import { AbemaLiveTicker } from '@/components/atomicDesign/molecules/abema/AbemaLiveTicker';
 import { AbemaShelf } from '@/components/atomicDesign/molecules/abema/AbemaShelf';
 import { AbemaUpNext } from '@/components/atomicDesign/molecules/abema/AbemaUpNext';
+import { AbemaVodRanking } from '@/components/atomicDesign/organisms/AbemaVodRanking';
 import { useAbemaHome } from '@/hooks/useAbemaHome';
 import { AbemaChannel, AbemaSlot } from '@/types/abema/view';
 import { deriveEpgGrid } from '@/utils/abema/homeView/deriveEpgGrid';
@@ -45,6 +46,7 @@ export function AbemaHome({ channels, slots, now = Date.now() }: AbemaHomeProps)
         <AbemaUpNext slots={upNext} channels={channels} />
       </div>
       <div className="wrap">
+        <AbemaVodRanking />
         <AbemaEpg grid={grid} liveCount={liveSlots.length} nowLabel={formatNow(now)} />
         {shelves.map((shelf) => (
           <AbemaShelf key={shelf.key} shelf={shelf} channels={channels} liveSlots={liveSlots} />
