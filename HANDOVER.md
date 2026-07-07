@@ -1,7 +1,15 @@
-# TVapp 引き継ぎ資料（2026-07-07 セッション終了時点）
+# TVapp 引き継ぎ資料（2026-07-08 更新）
 
-> 次セッションはまず本ファイルと `CLAUDE.md`、そして recall されるメモリ（下記）を読むこと。
-> 本番URL: `https://tvapp-web.kodama-hirotaka-190380-cloudflare.workers.dev`
+> 次セッションはまず本ファイルと `CLAUDE.md`、`docs/reference/04_usage/03-abema-local-playback.md`、そして recall されるメモリを読むこと。
+> 本番URL: `https://tvapp-web.xie-cloudflare.workers.dev`
+
+## 🟢 最終状態（2026-07-08）
+- **tvapp-web を v1.6.1 で main マージ + Cloudflare 本番デプロイ済**（PR #58=機能一式、PR #59=deploy用Node22化+版再発火）。
+- ABEMA 一式完成: アプリ内再生(live+VOD)/VODランキング/番組情報/シリーズ・シーズン辿り/ヒーロー自動スライド/いま放送中/有料明示/エラー多様化。
+- 横断: 再生中の上部タブ遷移不可を確認ダイアログ付きで解消（TVER時代からの課題）。
+- Platform-Stream-Loader: メディアトークン失効の恒久修正(PR #9)+ローカルリゾルバシム(PR #10)を main マージ済。
+- **CIの罠(解決済)**: wrangler最新版がNode>=22要求。deploy.yml/ci.ymlを node20→22 に更新して解決(PR #59)。
+- **残(要ユーザーのAzure資格)**: 本番ABEMA再生は本番Azureが鍵を返す前提だが本番Azureは空を返す。TVERは本番動作。ABEMAブラウズがCloudflare海外egressで地域制限に当たるかは本番要実測。詳細は下記「本番Azure」節。
 
 ## 全体像（何を作っているか）
 TVER / ABEMA / YouTube / niconico を1つのWebアプリで切り替えて視聴する統合ビューア「TVapp」。
