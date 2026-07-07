@@ -82,3 +82,40 @@ export interface AbemaVodShelf {
   uiType?: string;
   items: AbemaVodItem[];
 }
+
+export interface AbemaProgramInfo {
+  id: string;
+  seriesId?: string;
+  seriesTitle?: string;
+  seasonId?: string;
+  seasonName?: string;
+  seasonSequence?: number;
+  episodeNumber?: number;
+  episodeTitle?: string;
+  description?: string;
+  thumbnailUrl?: string;
+  genreName?: string;
+  isFree?: boolean;
+}
+
+export interface AbemaSeasonGroup {
+  id: string;
+  name: string;
+  sequence?: number;
+  episodes: Array<{
+    id: string;
+    number?: number;
+    title?: string;
+    isFree?: boolean;
+    thumbnailUrl?: string;
+  }>;
+}
+
+export interface AbemaSeriesDetail {
+  id: string;
+  title: string;
+  description?: string;
+  genreName?: string;
+  thumbnailUrl?: string;
+  seasons: AbemaSeasonGroup[];
+}

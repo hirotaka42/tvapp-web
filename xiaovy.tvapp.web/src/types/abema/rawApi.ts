@@ -106,22 +106,81 @@ export interface RawAbemaVideoGenre {
 }
 
 export interface RawAbemaVideoSeries {
+  id?: string;
   version?: string | number;
   title?: string;
+  content?: string;
+  genre?: {
+    id?: string;
+    name?: string;
+    [key: string]: unknown;
+  };
+  seasons?: RawAbemaVideoSeason[];
+  orderedSeasons?: RawAbemaVideoSeason[];
+  label?: RawAbemaVodLabel;
+  thumbComponent?: RawAbemaThumb;
+  [key: string]: unknown;
+}
+
+export interface RawAbemaVideoSeason {
+  id?: string;
+  sequence?: number;
+  name?: string;
+  order?: number;
+  thumbComponent?: RawAbemaThumb;
+  episodeGroups?: Array<{
+    id?: string;
+    name?: string;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
+}
+
+export interface RawAbemaVideoProgram {
+  id?: string;
+  series?: {
+    id?: string;
+    title?: string;
+    label?: RawAbemaVodLabel;
+    thumbComponent?: RawAbemaThumb;
+    [key: string]: unknown;
+  };
+  season?: RawAbemaVideoSeason;
+  genre?: {
+    id?: string;
+    name?: string;
+    [key: string]: unknown;
+  };
+  episode?: {
+    number?: number;
+    sequence?: number;
+    title?: string;
+    content?: string;
+    [key: string]: unknown;
+  };
+  label?: RawAbemaVodLabel;
+  thumbComponent?: RawAbemaThumb;
   [key: string]: unknown;
 }
 
 export interface RawAbemaSeriesPrograms {
   programs?: RawAbemaSeriesProgram[];
+  version?: string | number;
   [key: string]: unknown;
 }
 
 export interface RawAbemaSeriesProgram {
   id?: string;
+  season?: RawAbemaVideoSeason;
   label?: RawAbemaVodLabel;
+  sequence?: number;
   episode?: {
+    number?: number;
+    sequence?: number;
     title?: string;
+    content?: string;
     [key: string]: unknown;
   };
+  thumbComponent?: RawAbemaThumb;
   [key: string]: unknown;
 }
