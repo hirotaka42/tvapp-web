@@ -7,7 +7,7 @@ export function AbemaFooter() {
         <a href="https://abema.tv/about/privacy-policy" target="_blank" rel="noopener noreferrer">プライバシー</a>
         <a href="https://abema.tv/" target="_blank" rel="noopener noreferrer">ABEMA</a>
       </nav>
-      <p>本アプリはABEMAの番組表ブラウズ専用です。DRMにより本アプリ内では再生できません。視聴はABEMAアプリまたはサイトで行われます。</p>
+      <p>ABEMAの番組表からアプリ内プレイヤーへ遷移します。解決できない番組は公式サイトでの視聴に切り替えます。</p>
     </footer>
   );
 }

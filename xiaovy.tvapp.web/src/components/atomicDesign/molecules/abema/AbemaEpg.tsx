@@ -1,5 +1,7 @@
 import { AbemaEpgGrid } from '@/types/abema/view';
 import type { CSSProperties } from 'react';
+import Link from 'next/link';
+import { abemaSlotPlaybackPath } from '@/utils/abema/playbackUrl';
 
 function shortCode(name: string): string {
   return name.replace(/\s+/g, '').slice(0, 8).toUpperCase();
@@ -32,17 +34,15 @@ export function AbemaEpg({ grid, liveCount, nowLabel }: AbemaEpgProps) {
             <div className="ab-trow" key={row.channel.id}>
               <div className="ab-chl"><b>{row.channel.name}</b><span>{shortCode(row.channel.id)}</span></div>
               {row.cells.map((cell) => (
-                <a
+                <Link
                   className={`ab-pg ${cell.isLive ? 'on' : ''}`}
-                  href={cell.slot.watchUrl}
+                  href={abemaSlotPlaybackPath(cell.slot)}
                   key={cell.slot.id}
-                  rel="noopener noreferrer"
                   style={{ gridColumn: `${cell.colStart} / span ${cell.colSpan}` }}
-                  target="_blank"
                 >
                   <b>{cell.slot.title}</b>
                   <span>{cell.slot.highlight || cell.slot.detailHighlight || 'ABEMAで開く'}</span>
-                </a>
+                </Link>
               ))}
             </div>
           ))}

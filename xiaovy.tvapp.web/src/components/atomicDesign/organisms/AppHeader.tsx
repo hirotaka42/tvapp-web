@@ -5,13 +5,13 @@ import { IconLogo } from '@/components/atomicDesign/atoms/IconLogo';
 import { SearchBar } from '@/components/atomicDesign/molecules/SearchBar';
 import { ServiceDock } from '@/components/atomicDesign/molecules/ServiceDock';
 import { UserMenu } from '@/components/atomicDesign/molecules/UserMenu';
-import { useService } from '@/contexts/ServiceContext';
+import { useServiceNavigation } from '@/hooks/useServiceNavigation';
 import { SERVICES, getServiceMeta } from '@/utils/service/serviceCatalog';
 
 export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
-  const { service, setService } = useService();
+  const { service, selectService } = useServiceNavigation();
   const selectedMeta = getServiceMeta(service);
 
   if (pathname === '/user/login' || pathname === '/user/register') {
@@ -22,7 +22,7 @@ export function AppHeader() {
     <header className="hd">
       <div className="hd-in">
         <IconLogo />
-        <ServiceDock services={SERVICES} selected={service} onSelect={setService} />
+        <ServiceDock services={SERVICES} selected={service} onSelect={selectService} />
         <SearchBar
           placeholder={selectedMeta.searchPlaceholder}
           onSubmit={(query) => {

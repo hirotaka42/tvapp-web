@@ -1,4 +1,6 @@
 import { AbemaChannel, AbemaLiveSlot } from '@/types/abema/view';
+import Link from 'next/link';
+import { abemaPlaybackPath } from '@/utils/abema/playbackUrl';
 
 function formatTime(ms: number): string {
   return new Intl.DateTimeFormat('ja-JP', {
@@ -35,8 +37,8 @@ export function AbemaLiveHero({ slot, channel, now }: AbemaLiveHeroProps) {
         <span className="ab-ch-tag">{channel?.name || slot.channelId}</span>
         <div className="ab-cmt" aria-hidden="true">
           <span>リアルタイム番組表から表示中</span>
-          <span>再生はABEMAアプリまたはサイトで行われます</span>
-          <span>DRMのため本アプリ内再生には対応していません</span>
+          <span>アプリ内プレイヤーで再生します</span>
+          <span>解決できない場合はABEMA公式へ切り替えます</span>
         </div>
         <div className="ab-live-tt">
           <p className="rd">{slot.highlight || 'LIVE PROGRAM'}</p>
@@ -45,7 +47,7 @@ export function AbemaLiveHero({ slot, channel, now }: AbemaLiveHeroProps) {
         </div>
       </div>
       <div className="ab-live-bar">
-        <span className="ab-play-note">本アプリ内では再生できません</span>
+        <span className="ab-play-note">アプリ内再生</span>
         <div className="ab-prg">
           <div className="ab-prg-t">
             <span>{formatTime(slot.startMs)}</span>
@@ -54,8 +56,8 @@ export function AbemaLiveHero({ slot, channel, now }: AbemaLiveHeroProps) {
           </div>
           <div className="ab-prg-bar"><i style={{ width: `${slot.progressPercent}%` }} /></div>
         </div>
-        <a className="go" href={slot.watchUrl} target="_blank" rel="noopener noreferrer">ABEMA で視聴</a>
-        <span className="sub2" aria-label="アプリ内再生不可">DRM再生不可</span>
+        <Link className="go" href={abemaPlaybackPath({ kind: 'live', id: slot.channelId })}>再生</Link>
+        <span className="sub2" aria-label="アプリ内再生">LIVE</span>
       </div>
     </article>
   );
