@@ -6,7 +6,6 @@ const ABEMA_VIDEO_SERIES_URL = 'https://api.abema.io/v1/video/series';
 
 interface ResolvedContentId {
   seriesId: string;
-  seasonId?: string;
 }
 
 function resolveContentId(contentId: string, contentType: string): ResolvedContentId | null {
@@ -19,14 +18,18 @@ function resolveContentId(contentId: string, contentType: string): ResolvedConte
     if (!match) {
       return null;
     }
-    return { seriesId: match[1], seasonId: match[2] };
+    return { seriesId: match[1] };
   }
 
   return null;
 }
 
-function pickProgram(programs: RawAbemaSeriesProgram[]): RawAbemaSeriesProgram | undefined {
-  return programs.find((program) => program.label?.free === true) ?? programs[0];
+function pickProgram(programs: RawAbemaSeriesProgram[], contentId: string): RawAbemaSeriesProgram | undefined {
+  const contentPrefix = `${contentId}_`;
+  return programs.find((program) => program.id?.startsWith(contentPrefix) && program.label?.free === true)
+    ?? programs.find((program) => program.id?.startsWith(contentPrefix))
+    ?? programs.find((program) => program.label?.free === true)
+    ?? programs[0];
 }
 
 export async function GET(request: NextRequest) {
@@ -69,9 +72,6 @@ export async function GET(request: NextRequest) {
     programsUrl.searchParams.set('seriesVersion', String(series.version));
     programsUrl.searchParams.set('order', 'seq');
     programsUrl.searchParams.set('limit', '8');
-    if (resolved.seasonId) {
-      programsUrl.searchParams.set('seasonId', resolved.seasonId);
-    }
 
     const programsResponse = await fetchWithAbemaUserToken(programsUrl, {
       headers: {
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     }
 
     const rawPrograms = await programsResponse.json() as RawAbemaSeriesPrograms;
-    const program = pickProgram(rawPrograms.programs ?? []);
+    const program = pickProgram(rawPrograms.programs ?? [], contentId);
     if (!program?.id) {
       return NextResponse.json({ error: 'ABEMA episode not found' }, { status: 404 });
     }
