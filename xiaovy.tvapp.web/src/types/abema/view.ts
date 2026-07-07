@@ -67,3 +67,18 @@ export interface AbemaTickerItem {
   badgeVariant: 'live' | 'reserve';
   text: string;
 }
+
+export interface AbemaVodItem {
+  contentId: string;
+  contentType: string;
+  title: string;
+  thumbnailUrl?: string;
+  isFree?: boolean;
+}
+
+export interface AbemaVodShelf {
+  key: string;
+  title: string;
+  uiType?: string;
+  items: AbemaVodItem[];
+}
