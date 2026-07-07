@@ -1,0 +1,32 @@
+# 映画ワールドの日次データ取り込み(鍵ゼロ$0)。
+# クローラ(movie-crawler)が公開ソースを取得→ deploy 済み /api/service/cinema/ingest へ POST → D1 upsert。
+# アプリは xiaovy.tvapp.web サブディレクトリにあるため、working-directory / cache パスを xiaovy.tvapp.web/ 起点にする。
+# 必要な Repository secrets:
+# - CINEMA_INGEST_ENDPOINT: 本番 /api/service/cinema/ingest の URL
+# - CINEMA_INGEST_SECRET: Worker の INGEST_SECRET と一致する値
+name: Movie ingest
+
+on:
+  schedule:
+    - cron: '17 21 * * *' # UTC。JST 6:17。毎時0分を避ける(GitHub Actions のドロップ回避)
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: xiaovy.tvapp.web/movie-crawler/package-lock.json
+      - name: Install crawler dependencies
+        working-directory: xiaovy.tvapp.web/movie-crawler
+        run: npm ci
+      - name: Crawl and post ingest payload
+        working-directory: xiaovy.tvapp.web/movie-crawler
+        env:
+          CINEMA_INGEST_ENDPOINT: ${{ secrets.CINEMA_INGEST_ENDPOINT }}
+          INGEST_SECRET: ${{ secrets.CINEMA_INGEST_SECRET }}
+        run: node crawl.mjs --mode=post --endpoint "$CINEMA_INGEST_ENDPOINT" --secret-env=INGEST_SECRET
