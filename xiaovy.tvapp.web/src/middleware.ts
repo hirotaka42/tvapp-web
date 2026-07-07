@@ -10,6 +10,7 @@ export async function middleware(request: NextRequest) {
     '/api/User/Authentication',
     '/api/User/setGuestRole',
     '/api/service/betaLoginToken',
+    '/api/service/stream/hls',
     '/api/utils/verify-token',
     '/api/health',
   ];

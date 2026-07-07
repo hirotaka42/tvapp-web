@@ -4,6 +4,7 @@ import type { ErrorData } from 'hls.js';
 import { canPlayNativeHls } from '@/utils/player/canPlayNativeHls';
 import { deriveProgress, type PlayerProgress } from '@/utils/player/deriveProgress';
 import { getRetryDecision } from '@/utils/player/retryPolicy';
+import { createHlsProxyUrl } from '@/utils/tver/hlsProxy';
 
 interface VideoPlayerProps {
   url: string;
@@ -103,7 +104,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, onPlay, onProgres
         hls.destroy();
       });
 
-      hls.loadSource(url);
+      hls.loadSource(createHlsProxyUrl(url));
       hls.attachMedia(video);
     };
 
