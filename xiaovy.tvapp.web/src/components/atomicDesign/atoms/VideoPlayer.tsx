@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type Hls from 'hls.js';
 import type { ErrorData } from 'hls.js';
-import { canPlayNativeHls } from '@/utils/player/canPlayNativeHls';
+import { selectHlsPlaybackStrategy } from '@/utils/player/canPlayNativeHls';
 import { deriveProgress, type PlayerProgress } from '@/utils/player/deriveProgress';
 import { getRetryDecision } from '@/utils/player/retryPolicy';
+import { createHlsProxyUrl } from '@/utils/tver/hlsProxy';
 
 interface VideoPlayerProps {
   url: string;
@@ -53,20 +54,24 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, onPlay, onProgres
     };
 
     const setup = async () => {
+      const HlsModule = await import('hls.js');
+      if (cancelled) return;
+
+      const HlsClass = HlsModule.default;
       const nativeHlsResult =
         video.canPlayType('application/vnd.apple.mpegurl') || video.canPlayType('application/x-mpegURL');
+      const playbackStrategy = selectHlsPlaybackStrategy({
+        hlsJsSupported: HlsClass.isSupported(),
+        nativeHlsCanPlayType: nativeHlsResult,
+      });
 
-      if (canPlayNativeHls(nativeHlsResult)) {
+      if (playbackStrategy === 'native-hls') {
         video.src = url;
         video.load();
         return;
       }
 
-      const HlsModule = await import('hls.js');
-      if (cancelled) return;
-
-      const HlsClass = HlsModule.default;
-      if (!HlsClass.isSupported()) {
+      if (playbackStrategy === 'unsupported') {
         setErrorMessage('この環境では動画を再生できません。');
         return;
       }
@@ -103,7 +108,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, onPlay, onProgres
         hls.destroy();
       });
 
-      hls.loadSource(url);
+      hls.loadSource(createHlsProxyUrl(url));
       hls.attachMedia(video);
     };
 
