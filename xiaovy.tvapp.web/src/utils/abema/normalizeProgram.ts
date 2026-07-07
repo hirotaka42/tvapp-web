@@ -1,13 +1,6 @@
-import { RawAbemaThumb, RawAbemaVideoProgram } from '@/types/abema/rawApi';
+import { RawAbemaVideoProgram } from '@/types/abema/rawApi';
 import { AbemaProgramInfo } from '@/types/abema/view';
-
-function buildThumbnailUrl(thumb?: RawAbemaThumb): string | undefined {
-  if (!thumb?.urlPrefix || !thumb.filename) {
-    return undefined;
-  }
-  const base = `${thumb.urlPrefix}/${thumb.filename}`;
-  return thumb.query ? `${base}?${thumb.query}` : base;
-}
+import { abemaEpisodeStillUrl, buildAbemaThumbnailUrl } from './abemaImage';
 
 export function normalizeProgram(raw: RawAbemaVideoProgram): AbemaProgramInfo | null {
   if (!raw.id) {
@@ -24,8 +17,9 @@ export function normalizeProgram(raw: RawAbemaVideoProgram): AbemaProgramInfo | 
     episodeNumber: raw.episode?.number,
     episodeTitle: raw.episode?.title,
     description: raw.episode?.content,
-    thumbnailUrl: buildThumbnailUrl(raw.series?.thumbComponent) ?? buildThumbnailUrl(raw.thumbComponent),
+    thumbnailUrl: raw.id ? abemaEpisodeStillUrl(raw.id) : buildAbemaThumbnailUrl(raw.series?.thumbComponent),
     genreName: raw.genre?.name,
     isFree: raw.label?.free === true ? true : undefined,
+    isPremium: raw.label?.free !== true,
   };
 }

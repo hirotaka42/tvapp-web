@@ -35,9 +35,10 @@ describe('GET /api/service/abema/vod/program', () => {
       episodeNumber: 1,
       episodeTitle: '第1話',
       description: 'あらすじ本文',
-      thumbnailUrl: undefined,
+      thumbnailUrl: 'https://image.p-c2-x.abema-tv.com/image/programs/210-18_s1_p1/thumb001.png?height=158&width=280&quality=75',
       genreName: undefined,
       isFree: true,
+      isPremium: false,
     });
     expect(JSON.stringify(body)).not.toContain('user-token');
 

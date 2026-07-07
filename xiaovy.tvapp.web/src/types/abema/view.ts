@@ -74,6 +74,7 @@ export interface AbemaVodItem {
   title: string;
   thumbnailUrl?: string;
   isFree?: boolean;
+  isPremium?: boolean;
 }
 
 export interface AbemaVodShelf {
@@ -96,6 +97,7 @@ export interface AbemaProgramInfo {
   thumbnailUrl?: string;
   genreName?: string;
   isFree?: boolean;
+  isPremium?: boolean;
 }
 
 export interface AbemaSeasonGroup {
@@ -107,6 +109,7 @@ export interface AbemaSeasonGroup {
     number?: number;
     title?: string;
     isFree?: boolean;
+    isPremium?: boolean;
     thumbnailUrl?: string;
   }>;
 }

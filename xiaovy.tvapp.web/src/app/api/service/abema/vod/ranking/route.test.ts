@@ -46,6 +46,7 @@ describe('GET /api/service/abema/vod/ranking', () => {
               contentType: 'CONTENT_TYPE_SERIES',
               title: '無職転生',
               isFree: true,
+              isPremium: false,
             },
           ],
         },

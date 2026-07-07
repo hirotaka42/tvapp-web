@@ -1,18 +1,10 @@
 import {
   RawAbemaSeriesProgram,
-  RawAbemaThumb,
   RawAbemaVideoSeason,
   RawAbemaVideoSeries,
 } from '@/types/abema/rawApi';
 import { AbemaSeriesDetail } from '@/types/abema/view';
-
-function buildThumbnailUrl(thumb?: RawAbemaThumb): string | undefined {
-  if (!thumb?.urlPrefix || !thumb.filename) {
-    return undefined;
-  }
-  const base = `${thumb.urlPrefix}/${thumb.filename}`;
-  return thumb.query ? `${base}?${thumb.query}` : base;
-}
+import { abemaEpisodeStillUrl, buildAbemaThumbnailUrl } from './abemaImage';
 
 function programOrder(program: RawAbemaSeriesProgram): number {
   return program.episode?.number ?? program.episode?.sequence ?? program.sequence ?? Number.MAX_SAFE_INTEGER;
@@ -28,7 +20,8 @@ function normalizeEpisode(program: RawAbemaSeriesProgram) {
     number: program.episode?.number,
     title: program.episode?.title,
     isFree: program.label?.free === true ? true : undefined,
-    thumbnailUrl: buildThumbnailUrl(program.thumbComponent),
+    isPremium: program.label?.free !== true,
+    thumbnailUrl: abemaEpisodeStillUrl(program.id),
   };
 }
 
@@ -64,7 +57,7 @@ export function normalizeSeriesDetail(
     title: series.title,
     description: series.content,
     genreName: series.genre?.name,
-    thumbnailUrl: buildThumbnailUrl(series.thumbComponent),
+    thumbnailUrl: buildAbemaThumbnailUrl(series.thumbComponent),
     seasons,
   };
 }

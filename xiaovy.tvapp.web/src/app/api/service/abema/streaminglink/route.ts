@@ -18,21 +18,70 @@ interface AzureStreamResponse {
   key_dict?: Record<string, string>;
 }
 
+type StreamResolveFailureReason =
+  | 'premium'
+  | 'geo'
+  | 'upstream'
+  | 'not_found'
+  | 'resolver_unavailable'
+  | 'unknown';
+
+function classifyStreamResolveFailure(input: {
+  status?: number;
+  message?: string;
+  resolverUnavailable?: boolean;
+}): StreamResolveFailureReason {
+  const message = input.message?.toLowerCase() ?? '';
+
+  if (message.includes('premium') || message.includes('member')) {
+    return 'premium';
+  }
+
+  if (message.includes('region') || message.includes('geo') || message.includes('id124')) {
+    return 'geo';
+  }
+
+  if (input.resolverUnavailable) {
+    return 'resolver_unavailable';
+  }
+
+  if (input.status === 404) {
+    return 'not_found';
+  }
+
+  if (input.status || message) {
+    return 'upstream';
+  }
+
+  return 'unknown';
+}
+
+function failureResponse(error: string, status: number, reason: StreamResolveFailureReason) {
+  return NextResponse.json({ error, reason }, { status });
+}
+
+function parseAzureStreamResponse(text: string): AzureStreamResponse {
+  if (!text) {
+    return {};
+  }
+  return JSON.parse(text) as AzureStreamResponse;
+}
+
 export async function GET(request: NextRequest) {
   const type = request.nextUrl.searchParams.get('type');
   const channelId = request.nextUrl.searchParams.get('channelId');
   const slotId = request.nextUrl.searchParams.get('slotId');
 
   if (type !== 'live' && type !== 'slot') {
-    return NextResponse.json({ error: 'type must be live or slot.' }, { status: 400 });
+    return failureResponse('type must be live or slot.', 400, 'unknown');
   }
 
   if (type === 'live' && !channelId) {
-    return NextResponse.json({ error: 'channelId is required for live playback.' }, { status: 400 });
+    return failureResponse('channelId is required for live playback.', 400, 'unknown');
   }
 
   if (type === 'slot' && !slotId) {
-    return NextResponse.json({ error: 'slotId is required for slot playback.' }, { status: 400 });
+    return failureResponse('slotId is required for slot playback.', 400, 'unknown');
   }
 
   try {
@@ -57,12 +106,19 @@ export async function GET(request: NextRequest) {
       {
         error:
           'ABEMA slot playback requires the JP-egress resolver because media token acquisition is required.',
+        reason: 'resolver_unavailable',
       },
       { status: 501 },
     );
   } catch (error) {
     console.error('ABEMA stream resolve error:', error);
-    return NextResponse.json({ error: 'ABEMA stream resolve failed.' }, { status: 502 });
+    return failureResponse(
+      'ABEMA stream resolve failed.',
+      502,
+      classifyStreamResolveFailure({
+        message: error instanceof Error ? error.message : undefined,
+      }),
+    );
   }
 }
 
@@ -73,27 +129,67 @@ async function resolveViaAzure(sourceUrl: string) {
     `&url=${encodeURIComponent(sourceUrl)}` +
     `&service_id=2&res_type=6`;
 
-  const response = await fetch(url, {
-    headers: {
-      Origin: 'https://abema.tv',
-      Referer: 'https://abema.tv/',
-      'User-Agent': 'Mozilla/5.0 TVapp ABEMA Browser',
-    },
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    return NextResponse.json({ error: 'ABEMA stream resolve via Azure failed.' }, { status: response.status });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        Origin: 'https://abema.tv',
+        Referer: 'https://abema.tv/',
+        'User-Agent': 'Mozilla/5.0 TVapp ABEMA Browser',
+      },
+      cache: 'no-store',
+    });
+  } catch (error) {
+    return failureResponse(
+      'ABEMA stream resolve via Azure failed.',
+      502,
+      classifyStreamResolveFailure({
+        message: error instanceof Error ? error.message : undefined,
+        resolverUnavailable: true,
+      }),
+    );
   }
 
-  const data = (await response.json()) as AzureStreamResponse;
+  const responseText = await response.text();
+
+  if (!response.ok) {
+    return failureResponse(
+      'ABEMA stream resolve via Azure failed.',
+      response.status,
+      classifyStreamResolveFailure({
+        status: response.status,
+        message: responseText,
+      }),
+    );
+  }
+
+  let data: AzureStreamResponse;
+  try {
+    data = parseAzureStreamResponse(responseText);
+  } catch (error) {
+    return failureResponse(
+      'ABEMA stream resolve via Azure failed.',
+      502,
+      classifyStreamResolveFailure({
+        message: `${responseText} ${error instanceof Error ? error.message : ''}`,
+      }),
+    );
+  }
+
   const urls = data.manifest_dict?.urls ?? data.m3u8_urls ?? (data.video_url ? [data.video_url] : []);
   const firstUrl = urls[0];
   const keys = data.keys ?? data.key_dict;
   const sessionId = keys ? crypto.randomUUID() : undefined;
 
   if (!firstUrl) {
-    return NextResponse.json({ error: 'Playable ABEMA manifest was not found.' }, { status: 404 });
+    return failureResponse(
+      'Playable ABEMA manifest was not found.',
+      404,
+      classifyStreamResolveFailure({
+        status: 404,
+        message: responseText,
+      }),
+    );
   }
 
   if (sessionId && keys) {

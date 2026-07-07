@@ -1,13 +1,6 @@
-import { RawAbemaModule, RawAbemaModuleItem, RawAbemaModulesResponse, RawAbemaThumb } from '@/types/abema/rawApi';
+import { RawAbemaModule, RawAbemaModuleItem, RawAbemaModulesResponse } from '@/types/abema/rawApi';
 import { AbemaVodItem, AbemaVodShelf } from '@/types/abema/view';
-
-function buildThumbnailUrl(thumb?: RawAbemaThumb): string | undefined {
-  if (!thumb?.urlPrefix || !thumb.filename) {
-    return undefined;
-  }
-  const base = `${thumb.urlPrefix}/${thumb.filename}`;
-  return thumb.query ? `${base}?${thumb.query}` : base;
-}
+import { buildAbemaThumbnailUrl } from './abemaImage';
 
 export function normalizeVodItem(raw: RawAbemaModuleItem): AbemaVodItem | null {
   if (!raw.contentId || !raw.contentType || !raw.title) {
@@ -18,8 +11,9 @@ export function normalizeVodItem(raw: RawAbemaModuleItem): AbemaVodItem | null {
     contentId: raw.contentId,
     contentType: raw.contentType,
     title: raw.title,
-    thumbnailUrl: buildThumbnailUrl(raw.thumb),
+    thumbnailUrl: buildAbemaThumbnailUrl(raw.thumb),
     isFree: raw.label?.free === true ? true : undefined,
+    isPremium: raw.label?.free !== true,
   };
 }
 

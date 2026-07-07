@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { normalizeProgram } from './normalizeProgram';
 
 describe('normalizeProgram', () => {
-  it('normalizes program metadata and prefers the series thumbnail', () => {
+  it('normalizes program metadata and prefers the episode still thumbnail', () => {
     const program = normalizeProgram({
       id: '210-18_s1_p1',
       series: {
@@ -48,13 +48,14 @@ describe('normalizeProgram', () => {
       episodeNumber: 1,
       episodeTitle: '第1話 重騎士エルマ',
       description: 'あらすじ本文',
-      thumbnailUrl: 'https://image.p-c2-x.abema-tv.com/image/series/210-18/series_thumb.png?version=1',
+      thumbnailUrl: 'https://image.p-c2-x.abema-tv.com/image/programs/210-18_s1_p1/thumb001.png?height=158&width=280&quality=75',
       genreName: 'アニメ',
       isFree: true,
+      isPremium: false,
     });
   });
 
-  it('falls back to the program thumbnail and rejects missing ids', () => {
+  it('uses the episode still thumbnail and rejects missing ids', () => {
     expect(normalizeProgram({})).toBeNull();
 
     expect(normalizeProgram({
@@ -75,9 +76,10 @@ describe('normalizeProgram', () => {
       episodeNumber: undefined,
       episodeTitle: undefined,
       description: undefined,
-      thumbnailUrl: 'https://image.p-c2-x.abema-tv.com/image/programs/210-18_s1_p2/program_thumb.png',
+      thumbnailUrl: 'https://image.p-c2-x.abema-tv.com/image/programs/210-18_s1_p2/thumb001.png?height=158&width=280&quality=75',
       genreName: undefined,
       isFree: undefined,
+      isPremium: true,
     });
   });
 });
