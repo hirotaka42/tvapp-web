@@ -1,23 +1,28 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { AbemaEpg } from '@/components/atomicDesign/molecules/abema/AbemaEpg';
 import { AbemaFooter } from '@/components/atomicDesign/molecules/abema/AbemaFooter';
 import { AbemaLiveHero } from '@/components/atomicDesign/molecules/abema/AbemaLiveHero';
+import { AbemaVodHero } from '@/components/atomicDesign/molecules/abema/AbemaVodHero';
 import { AbemaLiveTicker } from '@/components/atomicDesign/molecules/abema/AbemaLiveTicker';
 import { AbemaShelf } from '@/components/atomicDesign/molecules/abema/AbemaShelf';
 import { AbemaUpNext } from '@/components/atomicDesign/molecules/abema/AbemaUpNext';
 import { AbemaVodRanking } from '@/components/atomicDesign/organisms/AbemaVodRanking';
 import { useAbemaHome } from '@/hooks/useAbemaHome';
+import { AbemaVodState, useAbemaVod } from '@/hooks/useAbemaVod';
 import { AbemaChannel, AbemaSlot } from '@/types/abema/view';
 import { deriveEpgGrid } from '@/utils/abema/homeView/deriveEpgGrid';
 import { deriveLiveNow } from '@/utils/abema/homeView/deriveLiveNow';
 import { deriveShelves } from '@/utils/abema/homeView/deriveShelves';
 import { deriveTicker } from '@/utils/abema/homeView/deriveTicker';
 import { deriveUpNext } from '@/utils/abema/homeView/deriveUpNext';
+import { AbemaVodHeroPick, pickVodHero } from '@/utils/abema/pickVodHero';
 
 interface AbemaHomeProps {
   channels: AbemaChannel[];
   slots: AbemaSlot[];
+  vod: AbemaVodState;
   now?: number;
 }
 
@@ -30,7 +35,7 @@ function formatNow(ms: number): string {
   }).format(new Date(ms));
 }
 
-export function AbemaHome({ channels, slots, now = Date.now() }: AbemaHomeProps) {
+export function AbemaHome({ channels, slots, vod, now = Date.now() }: AbemaHomeProps) {
   const liveSlots = deriveLiveNow(slots, now);
   const upNext = deriveUpNext(slots, now, 5);
   const shelves = deriveShelves(slots, channels, now);
@@ -38,15 +43,28 @@ export function AbemaHome({ channels, slots, now = Date.now() }: AbemaHomeProps)
   const heroSlot = liveSlots[0];
   const heroChannel = heroSlot ? channels.find((channel) => channel.id === heroSlot.channelId) : undefined;
 
+  // Hero: feature a random top-3 item from the VOD ranking (once shelves arrive),
+  // instead of the fixed live channel. Falls back to the live hero when VOD is empty.
+  const [heroPick, setHeroPick] = useState<AbemaVodHeroPick | null>(null);
+  useEffect(() => {
+    if (!heroPick && vod.shelves.length > 0) {
+      setHeroPick(pickVodHero(vod.shelves));
+    }
+  }, [vod.shelves, heroPick]);
+
   return (
     <section className="world ab-world" id="ab" role="tabpanel" aria-labelledby="dk-abema" aria-label="ABEMA ホーム">
       <AbemaLiveTicker items={deriveTicker(liveSlots, upNext, 8)} />
       <div className="wrap ab-top">
-        <AbemaLiveHero slot={heroSlot} channel={heroChannel} now={now} />
+        {heroPick ? (
+          <AbemaVodHero pick={heroPick} />
+        ) : (
+          <AbemaLiveHero slot={heroSlot} channel={heroChannel} now={now} />
+        )}
         <AbemaUpNext slots={upNext} channels={channels} />
       </div>
       <div className="wrap">
-        <AbemaVodRanking />
+        <AbemaVodRanking vod={vod} />
         <AbemaEpg grid={grid} liveCount={liveSlots.length} nowLabel={formatNow(now)} />
         {shelves.map((shelf) => (
           <AbemaShelf key={shelf.key} shelf={shelf} channels={channels} liveSlots={liveSlots} />
@@ -59,6 +77,7 @@ export function AbemaHome({ channels, slots, now = Date.now() }: AbemaHomeProps)
 
 export function AbemaHomeContainer() {
   const { channels, slots, loading, error, reload } = useAbemaHome();
+  const vod = useAbemaVod();
 
   if (loading) {
     return (
@@ -80,5 +99,5 @@ export function AbemaHomeContainer() {
     );
   }
 
-  return <AbemaHome channels={channels} slots={slots} />;
+  return <AbemaHome channels={channels} slots={slots} vod={vod} />;
 }

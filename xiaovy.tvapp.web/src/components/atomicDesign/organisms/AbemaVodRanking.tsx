@@ -1,10 +1,14 @@
 'use client';
 
-import { useAbemaVod } from '@/hooks/useAbemaVod';
+import { AbemaVodState } from '@/hooks/useAbemaVod';
 import { AbemaVodCard } from '@/components/atomicDesign/molecules/abema/AbemaVodCard';
 
-export function AbemaVodRanking() {
-  const { shelves, loading, error, reload } = useAbemaVod();
+interface AbemaVodRankingProps {
+  vod: AbemaVodState;
+}
+
+export function AbemaVodRanking({ vod }: AbemaVodRankingProps) {
+  const { shelves, loading, error, reload } = vod;
 
   if (loading) {
     return (

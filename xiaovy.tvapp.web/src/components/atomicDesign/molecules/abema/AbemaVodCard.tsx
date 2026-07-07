@@ -3,22 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AbemaVodItem } from '@/types/abema/view';
-import { auth } from '@/lib/firebase';
+import { resolveAbemaWatchPath } from '@/lib/abema/clientPlayback';
 
 interface AbemaVodCardProps {
   item: AbemaVodItem;
   rank?: number;
-}
-
-async function getAuthToken(): Promise<string> {
-  if (typeof window !== 'undefined') {
-    const tokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME || 'IdToken';
-    const stored = window.localStorage.getItem(tokenName);
-    if (stored) return stored;
-  }
-  const currentUser = auth?.currentUser;
-  if (currentUser) return currentUser.getIdToken();
-  return 'anonymous';
 }
 
 export function AbemaVodCard({ item, rank }: AbemaVodCardProps) {
@@ -28,18 +17,10 @@ export function AbemaVodCard({ item, rank }: AbemaVodCardProps) {
   const handleClick = async () => {
     if (state === 'resolving') return;
     setState('resolving');
-    try {
-      const token = await getAuthToken();
-      const params = new URLSearchParams({ contentId: item.contentId, contentType: item.contentType });
-      const response = await fetch(`/api/service/abema/vod/episode?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store',
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const { episodeId } = (await response.json()) as { episodeId?: string };
-      if (!episodeId) throw new Error('episode not found');
-      router.push(`/service/abema/watch/${encodeURIComponent(episodeId)}`);
-    } catch {
+    const path = await resolveAbemaWatchPath(item);
+    if (path) {
+      router.push(path);
+    } else {
       setState('error');
       setTimeout(() => setState('idle'), 2600);
     }

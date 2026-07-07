@@ -335,6 +335,15 @@
   .ab-vth-ph{position:absolute;inset:0;z-index:0;background:repeating-linear-gradient(115deg,transparent 0 22px,rgba(23,224,135,.06) 22px 26px)}
   .ab-vfree{position:absolute;right:8px;top:8px;z-index:3;font-size:10px;font-weight:800;letter-spacing:.06em;background:#17e087;color:#02180d;border-radius:4px;padding:1px 8px}
   .ab-vload{position:absolute;left:0;right:0;bottom:0;z-index:4;background:rgba(2,17,10,.82);color:#8ef0bd;font-size:11px;font-weight:700;text-align:center;padding:5px}
+  /* --- ABEMA VODヒーロー(ランキング上位をトップに大きく) --- */
+  .ab-vhero-scr{width:100%;border:none;margin:0;padding:0;cursor:pointer;color:inherit;font:inherit;appearance:none;-webkit-appearance:none;display:block}
+  .ab-vhero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+  .ab-vhero-scr::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(0deg,rgba(2,13,8,.94),rgba(2,13,8,.2) 48%,rgba(2,13,8,.55));pointer-events:none}
+  .ab-vhero-scr .ab-onair,.ab-vhero-scr .ab-ch-tag,.ab-vhero-scr .ab-live-tt{z-index:2}
+  .ab-vhero-rk{background:#17e087;color:#02180d;letter-spacing:.08em;font-weight:800}
+  .ab-vhero .ab-live-tt h1{font-size:clamp(24px,2.8vw,36px)}
+  .ab-vhero-spacer{flex:1 1 auto}
+  .ab-live-bar button.go{border:none;cursor:pointer;font:inherit}
   .ab-state-box h1{font-size:24px;color:#e7f5ec;font-weight:800;margin-bottom:8px}
   .ab-state-box button{margin-top:18px;background:#17e087;color:#02180d;border-radius:7px;padding:9px 20px;font-size:13px;font-weight:800}
   .cs-world{min-height:calc(100vh - 64px);display:grid;place-items:center;padding:48px 20px;color:var(--hd-tx);background:var(--hd-bg)}
