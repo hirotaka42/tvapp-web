@@ -7,9 +7,9 @@ describe('serviceCatalog', () => {
     expect(new Set(SERVICES.map((service) => service.hint)).size).toBe(4);
   });
 
-  it('marks only TVER as ready', () => {
+  it('marks TVER and ABEMA as ready', () => {
     expect(isReady('tver')).toBe(true);
-    expect(isReady('abema')).toBe(false);
+    expect(isReady('abema')).toBe(true);
     expect(isReady('youtube')).toBe(false);
     expect(isReady('niconico')).toBe(false);
   });

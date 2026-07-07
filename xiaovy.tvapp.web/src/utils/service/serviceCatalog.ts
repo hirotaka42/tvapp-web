@@ -29,7 +29,7 @@ export const SERVICES: ServiceMeta[] = [
     accent: '#17e087',
     accentInk: '#02180d',
     hint: '2',
-    ready: false,
+    ready: true,
     searchPlaceholder: 'ABEMAの番組を検索',
   },
   {

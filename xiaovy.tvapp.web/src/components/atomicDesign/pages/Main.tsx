@@ -11,6 +11,7 @@ import { useFirebaseAuth } from '@/contexts/AuthContext';
 import { useService } from '@/contexts/ServiceContext';
 import { ComingSoonWorld } from '@/components/atomicDesign/organisms/ComingSoonWorld';
 import { TverHome } from '@/components/atomicDesign/organisms/TverHome';
+import { AbemaHomeContainer } from '@/components/atomicDesign/organisms/AbemaHome';
 
 export const Main: FC = () => {
     const router = useRouter();
@@ -41,8 +42,18 @@ export const Main: FC = () => {
         }
     }, [tvHomeData, loginUser]);
 
-    // 認証チェック中、またはデータ読み込み中
-    if (loading || !loginUser || !session || !tvHomeData) {
+    if (loading || !loginUser) {
+        return <div className="flex justify-center items-center min-h-screen">
+            <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+        </div>;
+    }
+
+    if (service === 'abema') {
+        return <AbemaHomeContainer />;
+    }
+
+    // TVER は既存のセッション/ホームデータを必要とする
+    if (!session || !tvHomeData) {
         return <div className="flex justify-center items-center min-h-screen">
             <div className="text-gray-600 dark:text-gray-400">Loading...</div>
         </div>;
