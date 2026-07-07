@@ -43,7 +43,7 @@ export function AbemaVodHero({ pick }: AbemaVodHeroProps) {
         {state === 'resolving' ? <span className="ab-vload">再生を準備中…</span> : null}
       </button>
       <div className="ab-live-bar">
-        <span className="ab-play-note">{heroShelfLabel(shelfTitle)}ランキング</span>
+        <span className="ab-play-note">{heroShelfLabel(shelfTitle)}</span>
         <span className="ab-vhero-spacer" />
         <button type="button" className="go" onClick={play}>
           {state === 'error' ? '再試行' : state === 'resolving' ? '準備中…' : '再生'}
