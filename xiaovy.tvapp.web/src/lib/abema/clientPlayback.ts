@@ -13,6 +13,14 @@ export async function getAbemaClientToken(): Promise<string> {
   return 'anonymous';
 }
 
+/** GET an ABEMA BFF route as JSON with the client bearer token. */
+export async function fetchAbemaJson<T>(url: string): Promise<T> {
+  const token = await getAbemaClientToken();
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json() as Promise<T>;
+}
+
 /**
  * Resolve a VOD ranking item (series/season) to the in-app watch path by finding
  * a playable episode id. Returns null when no episode can be resolved.
