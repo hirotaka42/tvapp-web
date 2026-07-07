@@ -48,6 +48,14 @@ TVER / ABEMA / YouTube / niconico を1つのWebアプリで切り替えて視聴
    `cd xiaovy.tvapp.web && NEXT_PUBLIC_DEV_BYPASS_AUTH=1 AZURE_FUNCTION_STREEAMING=http://localhost:7071 npm run dev`
 3. ABEMAワールド: localStorage `tvapp-svc-v2=abema`（ヘッダのABEMAタブ）。ビデオランキングのカードをクリック→アプリ内再生。
 
+### ⚠ 落とし穴（実測で判明・重要）: 長時間起動のリゾルバは鍵が狂う
+- 症状: しばらく起動しっぱなしのリゾルバ経由だと「マニフェスト・鍵・セグメントは全部200で取れるのに、readyState=0のまま再生されない（エラーも出ない）」。
+- 原因: yt-dlp は `AbemaTVBaseIE._MEDIATOKEN` を**プロセス内クラス属性で使い回す**。これが古くなると **16byteだが実際には復号できない誤った鍵**を導出する（同一チケットで正しい鍵に対し別値を返す→AES-128が0/8）。プレイヤーは無言でセグメントを捨て続ける。
+- 恒久対策: **`Platform-Stream-Loader` の `fix/abema-fresh-media-token` ブランチ**で `resolve_abema_stream` 冒頭に `_MEDIATOKEN` リセットを入れ、毎回新鮮なトークンで鍵導出（要マージ。本番Azure再デプロイ時もこの修正込みで）。
+- 応急: リゾルバ・サーバーを再起動すれば新鮮なトークンで直る。
+- **要マージのPlatform-Stream-Loaderブランチ2本**: `fix/abema-fresh-media-token`（鍵の恒久修正・重要）と `chore/local-resolver-dev-shim`（ローカル起動シム）。
+- 検証手法メモ: 再生不能の切り分けは「サーバから鍵とセグメントを取り AES-128-CBC 復号して先頭0x47・188周期のTS同期を見る」のが確実（headlessブラウザの可否より速く確実に鍵の正誤が分かる）。
+
 ## 🟡 残: 本番Azureが鍵を返さない（要ユーザーのAzure資格情報）
 ローカルは完動。**本番 Azure だけが空を返す**。Codex調査(read-only)の結論:
 - 現行 `Platform-Stream-Loader/src/services/abema.py` は master/ticket/key が無ければ必ず例外(500)を返す設計で、
