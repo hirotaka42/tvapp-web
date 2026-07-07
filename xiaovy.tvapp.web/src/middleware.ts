@@ -11,6 +11,11 @@ export async function middleware(request: NextRequest) {
     '/api/User/setGuestRole',
     '/api/service/betaLoginToken',
     '/api/service/stream/hls',
+    // ABEMA 再生系メディアエンドポイント（プレイヤー/hls.js は認可ヘッダを付けられないため公開。
+    // TVER の stream/hls と同種の、公開コンテンツのストリーム解決・中継・鍵配布）
+    '/api/service/abema/streaminglink',
+    '/api/service/abema/hls',
+    '/api/service/abema/key',
     '/api/utils/verify-token',
     '/api/health',
   ];
