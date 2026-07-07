@@ -12,9 +12,17 @@ interface VideoPlayerProps {
   onProgress?: (state: PlayerProgress) => void;
   playing?: boolean;
   controls?: boolean;
+  proxy?: 'streaks' | 'none';
 }
 
-export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, onPlay, onProgress, playing = true, controls = true }) => {
+export const VideoPlayer: React.FC<VideoPlayerProps> = ({
+  url,
+  onPlay,
+  onProgress,
+  playing = true,
+  controls = true,
+  proxy = 'streaks',
+}) => {
   const [clientSide, setClientSide] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -108,7 +116,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, onPlay, onProgres
         hls.destroy();
       });
 
-      hls.loadSource(createHlsProxyUrl(url));
+      hls.loadSource(proxy === 'streaks' ? createHlsProxyUrl(url) : url);
       hls.attachMedia(video);
     };
 
@@ -121,7 +129,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, onPlay, onProgres
       cancelled = true;
       cleanupSource();
     };
-  }, [clientSide, url]);
+  }, [clientSide, proxy, url]);
 
   useEffect(() => {
     const video = videoRef.current;

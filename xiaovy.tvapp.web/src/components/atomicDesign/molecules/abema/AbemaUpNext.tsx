@@ -1,4 +1,6 @@
 import { AbemaChannel, AbemaSlot } from '@/types/abema/view';
+import Link from 'next/link';
+import { abemaSlotPlaybackPath } from '@/utils/abema/playbackUrl';
 
 function formatTime(ms: number): string {
   return new Intl.DateTimeFormat('ja-JP', {
@@ -23,11 +25,11 @@ export function AbemaUpNext({ slots, channels }: AbemaUpNextProps) {
       <ol>
         {slots.length ? slots.map((slot) => (
           <li key={slot.id}>
-            <a className="rw" href={slot.watchUrl} target="_blank" rel="noopener noreferrer">
+            <Link className="rw" href={abemaSlotPlaybackPath(slot)}>
               <span className="tm">{formatTime(slot.startMs)}<em>{channelName(slot.channelId)}</em></span>
               <span className="nm"><b>{slot.title}</b><span>{slot.highlight || slot.detailHighlight || 'ABEMAで開く'}</span></span>
               <span className="rsv">開く</span>
-            </a>
+            </Link>
           </li>
         )) : (
           <li><span className="ab-empty-row">このあとの番組を取得できません</span></li>
