@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp ローカル実行手順と本番設定情報（Cloudflare Workers + Firebase + Azure Function）</title>
+<style>
+  :root{
+    --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+    --acc:#0969da;--ok:#1a7f37;--warn:#9a6700;--err:#d1242f;
+    --code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+  }
+  html[data-theme="dark"]{
+    --bg:#0b0e14;--panel:#11151f;--line:#252b3b;--tx:#dde3f0;--tx2:#8b93a7;
+    --acc:#7aa2f7;--ok:#9ece6a;--warn:#e0af68;--err:#f7768e;
+    --code-bg:#1a2030;--code-tx:#9fd3ff;--th-bg:#1a2030;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+    font-size:16px;line-height:1.8;letter-spacing:.02em;font-feature-settings:"palt" 1}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 100px}
+  a{color:var(--acc)}
+  h1{font-size:26px;margin:0 0 6px;line-height:1.4}
+  .meta{margin:14px 0 26px;color:var(--tx2);font-size:13px}
+  .tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--tx2);margin:0 6px 6px 0}
+  .tag b{color:var(--tx)}
+  .status-ok{color:var(--ok)}.status-wip{color:var(--warn)}
+  h2{font-size:19px;margin:34px 0 12px;border-left:4px solid var(--acc);padding-left:11px}
+  h3{font-size:16px;margin:22px 0 7px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--th-bg)}
+  code{background:var(--code-bg);color:var(--code-tx);padding:1px 6px;border-radius:5px;font-family:"SF Mono","Consolas",monospace;font-size:13px}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto}
+  pre code{background:none;padding:0}
+  .note{border-left:4px solid var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);padding:10px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+  ul,ol{padding-left:22px}
+  figure{margin:20px 0;text-align:center}
+  figcaption{color:var(--tx2);font-size:13px;margin-top:8px}
+  svg{max-width:100%;height:auto}
+  footer{margin-top:52px;color:var(--tx2);font-size:12px;border-top:1px solid var(--line);padding-top:20px}
+  #themeToggle{position:fixed;top:14px;right:14px;z-index:10;border:1px solid var(--line);
+    background:var(--panel);color:var(--tx);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer}
+  @media print{
+    html[data-theme="dark"]{
+      --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+      --acc:#0969da;--code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+    }
+    #themeToggle{display:none}
+    a{color:#0550ae}
+  }
+</style>
+</head>
+<body>
+<button id="themeToggle" onclick="__toggle()">☾ ダーク</button>
+<div class="wrap">
+<h1>TVapp ローカル実行手順と本番設定情報</h1>
+<div class="meta">
+  <span class="tag">対象 <b>tvapp-web</b>（アプリ本体 <b>xiaovy.tvapp.web/</b>）</span>
+  <span class="tag">ブランチ <b>project/tvapp-cf-zero-cost</b></span>
+  <span class="tag">version <b>1.5.0</b></span>
+  <span class="tag">区分 <b>reference / 04_usage</b></span>
+  <span class="tag">ステータス <b class="status-ok">本番稼働中</b></span>
+</div>
+
+<p>TVapp（Next.js 16 / Cloudflare Workers / Firebase / Azure Function）の
+<b>ローカル実行手順</b>と<b>本番設定情報</b>をまとめた常設リファレンス。
+初回セットアップからのデプロイ全手順は
+<a href="./00-deploy-guide.html">00-deploy-guide.html</a>、設定変更の時系列ログは
+<a href="./01-setup-record.md">01-setup-record.md</a> を参照。
+記載値はすべてリポジトリ内の実ファイル
+（<code>package.json</code> / <code>.env.local.example</code> / <code>wrangler.jsonc</code> /
+<code>scripts/deploy.sh</code> / <code>.github/workflows/*.yml</code>）に基づく。</p>
+
+<nav class="note" aria-label="目次">
+  <b>目次</b>
+  <ol>
+    <li><a href="#s1">概要と全体像</a></li>
+    <li><a href="#s2">開発ワークフロー（順序が重要）</a></li>
+    <li><a href="#s3">ローカル実行手順</a></li>
+    <li><a href="#s4">本番設定情報</a></li>
+    <li><a href="#s5">コスト（$0 方針）</a></li>
+    <li><a href="#s6">トラブルシュート</a></li>
+  </ol>
+</nav>
+
+<h2 id="s1">1. 概要と全体像</h2>
+<p>TVER をより手軽に見るための Web アプリ。3 つのマネージドサービスを役割分担させ、
+全体をほぼ $0 で運用する。</p>
+<table>
+  <tr><th>役割</th><th>基盤</th><th>要点</th></tr>
+  <tr>
+    <td>フロント + ブラウズ<br>（ランキング / 検索 / シリーズ）</td>
+    <td>Cloudflare Workers（OpenNext）</td>
+    <td>Next.js 16（App Router）を <code>@opennextjs/cloudflare</code> で Workers に載せる。
+      無料枠 10 万リクエスト/日。TVER 公開 API の代理（ブラウズ）は Workers から直接成立する。</td>
+  </tr>
+  <tr>
+    <td>認証</td>
+    <td>Firebase Authentication</td>
+    <td>Google / メール+パスワード / メールリンク（passwordless）。<b>匿名（ゲスト）は不採用</b>。
+      Spark（無料）プランのまま運用。</td>
+  </tr>
+  <tr>
+    <td>再生（ストリーム解決）</td>
+    <td>Azure Function<br>（Platform-Stream-Loader）</td>
+    <td>Japan East / Consumption（Y1）従量課金・無料枠内（~$0）。
+      Cloudflare Workers の外向き IP は非 JP のため Streaks の地域制限（id124=geo）で弾かれる。
+      JP-egress の Azure Function へ委譲することで本番の再生解決が成立する。</td>
+  </tr>
+</table>
+
+<figure>
+<svg viewBox="0 0 920 420" role="img" aria-label="TVapp 全体構成図">
+  <defs>
+    <marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="var(--acc)"/>
+    </marker>
+  </defs>
+  <!-- Browser -->
+  <rect x="20" y="160" width="160" height="90" rx="10" fill="var(--panel)" stroke="var(--acc)" stroke-width="2"/>
+  <text x="100" y="196" text-anchor="middle" fill="var(--tx)" font-size="15" font-weight="bold">ブラウザ</text>
+  <text x="100" y="220" text-anchor="middle" fill="var(--tx2)" font-size="12">利用者</text>
+  <!-- Cloudflare Workers -->
+  <rect x="280" y="110" width="250" height="180" rx="10" fill="var(--panel)" stroke="var(--acc)" stroke-width="2"/>
+  <text x="405" y="142" text-anchor="middle" fill="var(--tx)" font-size="15" font-weight="bold">Cloudflare Workers</text>
+  <text x="405" y="164" text-anchor="middle" fill="var(--tx2)" font-size="12">無料枠 10万req/日・$0</text>
+  <rect x="303" y="182" width="204" height="84" rx="8" fill="var(--bg)" stroke="var(--line)" stroke-width="1.5"/>
+  <text x="405" y="212" text-anchor="middle" fill="var(--tx)" font-size="13" font-weight="bold">Next.js 16 (App Router)</text>
+  <text x="405" y="234" text-anchor="middle" fill="var(--tx2)" font-size="11">OpenNext / .open-next/worker.js</text>
+  <text x="405" y="254" text-anchor="middle" fill="var(--tx2)" font-size="11">name: tvapp-web / nodejs_compat</text>
+  <!-- TVER public API -->
+  <rect x="660" y="20" width="240" height="90" rx="10" fill="var(--panel)" stroke="var(--line)" stroke-width="1.5"/>
+  <text x="780" y="55" text-anchor="middle" fill="var(--tx)" font-size="14" font-weight="bold">TVER 公開 API</text>
+  <text x="780" y="80" text-anchor="middle" fill="var(--tx2)" font-size="12">ランキング / 検索 / シリーズ</text>
+  <!-- Azure Function -->
+  <rect x="660" y="150" width="240" height="120" rx="10" fill="var(--panel)" stroke="var(--warn)" stroke-width="2"/>
+  <text x="780" y="182" text-anchor="middle" fill="var(--tx)" font-size="14" font-weight="bold">Azure Function</text>
+  <text x="780" y="205" text-anchor="middle" fill="var(--tx2)" font-size="12">Platform-Stream-Loader</text>
+  <text x="780" y="226" text-anchor="middle" fill="var(--tx2)" font-size="11">Japan East / Consumption Y1 (~$0)</text>
+  <text x="780" y="247" text-anchor="middle" fill="var(--tx2)" font-size="11">Python 3.12 + yt-dlp / JP-egress</text>
+  <!-- Firebase -->
+  <rect x="660" y="310" width="240" height="90" rx="10" fill="var(--panel)" stroke="var(--ok)" stroke-width="2"/>
+  <text x="780" y="345" text-anchor="middle" fill="var(--tx)" font-size="14" font-weight="bold">Firebase Auth（Spark）</text>
+  <text x="780" y="370" text-anchor="middle" fill="var(--tx2)" font-size="12">Google / メール / メールリンク</text>
+  <!-- arrows -->
+  <line x1="182" y1="205" x2="278" y2="200" stroke="var(--acc)" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="230" y="188" text-anchor="middle" fill="var(--tx2)" font-size="11">HTTPS</text>
+  <line x1="532" y1="140" x2="658" y2="75" stroke="var(--acc)" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="600" y="88" text-anchor="middle" fill="var(--tx2)" font-size="11">ブラウズ（直接）</text>
+  <line x1="532" y1="210" x2="658" y2="210" stroke="var(--acc)" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="595" y="198" text-anchor="middle" fill="var(--tx2)" font-size="11">再生解決を委譲</text>
+  <text x="595" y="232" text-anchor="middle" fill="var(--tx2)" font-size="11">(function key)</text>
+  <line x1="160" y1="252" x2="658" y2="352" stroke="var(--ok)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+  <text x="400" y="330" text-anchor="middle" fill="var(--tx2)" font-size="11">認証はクライアント直（SDK 値はビルド時埋め込み）</text>
+</svg>
+<figcaption>図1. TVapp 全体構成 — ブラウズは Workers 直、再生解決は JP-egress の Azure Function へ委譲、認証は Firebase へクライアント直。</figcaption>
+</figure>
+
+<h3>ストリーム解決の二段構え</h3>
+<p><code>/api/service/call/streaminglink</code>（<code>src/app/api/service/call/streaminglink/route.ts</code>）は
+環境変数の有無で解決経路を切り替える。</p>
+<ol>
+  <li><code>AZURE_FUNCTION_STREEAMING</code> が設定されていれば、Azure Function
+    （<code>/api/backend_stream_url_http?code=…&amp;url=…&amp;service_id=1&amp;res_type=6</code>）へ委譲する（本番）。</li>
+  <li>未設定なら、純 TypeScript の TVER→Streaks 解決
+    （<code>src/lib/tver/streamResolver.ts</code>）を使う（ローカル / JP-egress ホスト向け）。</li>
+</ol>
+
+<h2 id="s2">2. 開発ワークフロー（順序が重要）</h2>
+<p>開発は次の順序で進める。<b>ローカル開発がデフォルト</b>で、本番反映は最後。</p>
+<ol>
+  <li><b>ローカルで開発する</b>（デフォルト）— <code>npm run dev</code>。TVER 公開 API には
+    ローカルから直接つながる（JP 家庭回線なら純 TS 解決で再生まで確認できる）。</li>
+  <li><b>本物の API に繋いで実機確認する</b> — TVER 公開 API はそのまま実物。Azure 経由の解決を確認したいときは
+    <code>.env.local</code> に <code>AZURE_FUNCTION_STREEAMING</code>（+ key）を設定する。
+    <code>bash scripts/health-check.sh</code> で実データ経路（session → streaminglink → m3u8）まで検証する。</li>
+  <li><b>問題なければ main へマージする</b> — PR / push で CI（型検査 + テスト + カバレッジ 80% + ビルド）が走り、
+    通らない変更は main に入れない（ブランチ保護）。</li>
+  <li><b>Cloudflare 本番で最終確認する</b> — main へのマージで <code>package.json</code> の version が
+    上がっていれば版ゲートが自動デプロイする。デプロイ後は本番 URL の表示・ログイン・再生と
+    <code>/api/health</code> の <code>build_sha</code> を確認する。</li>
+</ol>
+<div class="note">版ゲート方式のため、<b>version を上げないマージはデプロイされない</b>（AGENTS-SHARED §4）。
+出荷物が変わる変更では <code>xiaovy.tvapp.web/package.json</code> の version を上げてからマージする。</div>
+
+<h2 id="s3">3. ローカル実行手順</h2>
+
+<h3>3.1 前提</h3>
+<ul>
+  <li><b>Node.js 20+</b> と <b>npm</b>（CI も Node 20 を使用）。</li>
+  <li>作業ディレクトリはアプリ本体 <code>tvapp-service/tvapp-web/xiaovy.tvapp.web</code>。</li>
+</ul>
+
+<h3>3.2 インストールと環境変数</h3>
+<pre><code>cd xiaovy.tvapp.web
+npm install
+cp .env.local.example .env.local   # 値を記入（下表）</code></pre>
+<table>
+  <tr><th>変数</th><th>必須</th><th>内容</th></tr>
+  <tr><td><code>NEXT_PUBLIC_FIREBASE_API_KEY</code><br>
+      <code>NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</code><br>
+      <code>NEXT_PUBLIC_FIREBASE_PROJECT_ID</code><br>
+      <code>NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET</code><br>
+      <code>NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID</code><br>
+      <code>NEXT_PUBLIC_FIREBASE_APP_ID</code></td>
+    <td>必須（6 値）</td>
+    <td>Firebase コンソール &gt; プロジェクトの設定 &gt; 全般 &gt; SDK 構成。
+      クライアントに埋め込まれる公開値（秘密情報ではない）。</td></tr>
+  <tr><td><code>NEXT_PUBLIC_IDTOKEN_NAME</code></td><td>必須</td>
+    <td>認証トークンの localStorage キー名（例 <code>IdToken</code>）。</td></tr>
+  <tr><td><code>NEXT_PUBLIC_DEV_BYPASS_AUTH</code></td><td>任意（開発専用）</td>
+    <td><code>1</code> で認証を通さずに UI を確認できる（モックユーザーでログイン済み扱い）。
+      コード側が <code>NODE_ENV !== 'production'</code> との二重ガードで、<b>本番では絶対に無効</b>。</td></tr>
+  <tr><td><code>AZURE_FUNCTION_STREEAMING</code><br><code>AZURE_FUNCTION_STREEAMING_CODE_KEY</code></td>
+    <td>任意</td>
+    <td>設定するとストリーム解決を Azure Function へ委譲（本番と同じ経路）。
+      未設定ならローカルの純 TS 解決を使う。</td></tr>
+  <tr><td><code>NEXT_PUBLIC_STREAM_PASSWORD</code> ほか</td><td>任意</td>
+    <td>ライブ配信（/stream）・独自 JWT を使う場合のみ（<code>.env.local.example</code> 参照）。</td></tr>
+</table>
+
+<h3>3.3 起動</h3>
+<pre><code>npm run dev
+# → http://localhost:3000</code></pre>
+<ul>
+  <li>TVER のブラウズ（ランキング / 検索 / シリーズ）は本物の TVER 公開 API に接続する。</li>
+  <li>再生解決は <code>AZURE_FUNCTION_STREEAMING</code> 設定時は Azure 経由、
+    未設定時はローカルの純 TS 解決（JP 回線から動作）。</li>
+  <li>Firebase の承認済みドメインは <code>localhost</code> が既定で許可されているため、
+    ローカルの Google ログインは追加設定なしで動く。</li>
+</ul>
+<div class="note"><b>dev サーバーは使い終わったら必ず停止する</b>。起動時に PID を控え、検証後に kill し、
+<code>ps</code> と ポート解放で残存ゼロを確認する（orphan 化した <code>next dev</code> が CPU を飽和させた事例あり。CLAUDE.md 教訓参照）。</div>
+
+<h3>3.4 テストと動作確認</h3>
+<table>
+  <tr><th>コマンド</th><th>内容</th></tr>
+  <tr><td><code>npm test</code></td><td>ユニットテスト一括実行（vitest run）。ライブ疎通テスト（*.live.test.ts）は既定で除外。</td></tr>
+  <tr><td><code>npm run test:watch</code></td><td>watch モード。</td></tr>
+  <tr><td><code>npm run test:coverage</code></td><td>カバレッジ付き実行。<code>src/lib/**</code> / <code>src/utils/**</code> に対して
+    lines / functions / branches / statements <b>各 80% 未満で失敗</b>（CI・デプロイと同じゲート）。</td></tr>
+  <tr><td><code>npm run test:live</code></td><td><code>TVER_LIVE=1</code> で実 TVER API への疎通テストも実行（ネットワーク必須・JP 回線推奨）。</td></tr>
+  <tr><td><code>bash scripts/health-check.sh [PORT]</code></td><td>ローカル生存チェック（既定ポート 3000）。
+    プロセス/ポート、<code>/api/health</code>・<code>/</code>・<code>/user/login</code> の HTTP 200、
+    TVER 実データ経路（session 発行 → ランキングから実エピソード → streaminglink が m3u8 を返す）、
+    ログのエラー走査（<code>LOG=path</code> 指定時）を検証。終了コード 0=健全 / 1=異常。</td></tr>
+</table>
+
+<h3>3.5 Cloudflare 向けビルドの事前確認（任意）</h3>
+<pre><code>npm run cf:build     # OpenNext で Workers バンドル生成（.open-next/）
+npm run cf:preview   # ビルド + ローカルプレビュー（workerd 実行）</code></pre>
+
+<h2 id="s4">4. 本番設定情報</h2>
+
+<h3>4.1 Cloudflare Workers</h3>
+<table>
+  <tr><th>項目</th><th>値</th></tr>
+  <tr><td>Worker 名</td><td><code>tvapp-web</code>（<code>wrangler.jsonc</code> の <code>name</code>）</td></tr>
+  <tr><td>エントリ</td><td><code>.open-next/worker.js</code>（assets は <code>.open-next/assets</code>、binding <code>ASSETS</code>）</td></tr>
+  <tr><td>互換性</td><td><code>compatibility_date: 2025-03-25</code> / <code>compatibility_flags: ["nodejs_compat"]</code></td></tr>
+  <tr><td>vars（平文・非秘密）</td><td><code>AZURE_FUNCTION_STREEAMING = https://platform-stream-loader.azurewebsites.net</code>
+    （JP リージョンの Azure Function へ再生解決を委譲。ホスト名は秘密ではない）</td></tr>
+  <tr><td>observability</td><td>enabled</td></tr>
+  <tr><td>本番 URL</td><td><code>https://tvapp-web.kodama-hirotaka-190380-cloudflare.workers.dev</code>（workers.dev サブドメイン）</td></tr>
+</table>
+
+<h3>4.2 Worker Secret（暗号化変数）</h3>
+<pre><code>npx wrangler secret put AZURE_FUNCTION_STREEAMING_CODE_KEY
+# Azure Function の function key を入力（暗号化保存・wrangler.jsonc には書かない）</code></pre>
+
+<h3>4.3 手動デプロイは deploy:safe（必ず再ビルド + 鮮度照合）</h3>
+<pre><code>npm run deploy:safe   # = bash scripts/deploy.sh</code></pre>
+<p><code>scripts/deploy.sh</code> の保証（「デプロイしたのに中身が古い」事故の構造的防止）:</p>
+<ol>
+  <li>未コミット変更（src / package.json / wrangler.jsonc 等）があれば<b>中断</b>。</li>
+  <li>古い <code>.open-next</code> / <code>.next</code> を<b>必ず削除して新規ビルド</b>（<code>npm run cf:build</code>）。</li>
+  <li><code>wrangler deploy --var BUILD_SHA:&lt;HEAD短SHA&gt;</code> で SHA を埋め込みデプロイ。</li>
+  <li>デプロイ後、本番 <code>/api/health</code> の <code>build_sha</code> が HEAD と一致するか照合
+    （エッジ反映待ちで最大 ~48 秒リトライ）。<b>不一致なら失敗</b>させる。</li>
+</ol>
+<div class="note"><code>opennextjs-cloudflare deploy</code> 単体や bare <code>wrangler deploy</code> は
+<b>再ビルドせず既存 .open-next を上げるだけ</b>。手動デプロイは必ず <code>deploy:safe</code> を使う
+（<code>cf:deploy</code> も <code>build &amp;&amp; deploy</code> に修正済みだが、鮮度照合まで行うのは deploy:safe のみ）。</div>
+
+<h3>4.4 Firebase（プロジェクト tvapp-service）</h3>
+<table>
+  <tr><th>項目</th><th>値</th></tr>
+  <tr><td>プロジェクト</td><td>表示名 <code>TVAPP-Service</code> / Project ID <code>tvapp-service</code> / Project Number <code>1029534608920</code></td></tr>
+  <tr><td>Web アプリ</td><td><code>TVapp Web</code>（App ID <code>1:1029534608920:web:816639fd7892db2b499d6d</code>。Auth 用の登録のみ、Hosting 等は未作成）</td></tr>
+  <tr><td>サインイン方法</td><td>✅ Google / ✅ メール+パスワード / ✅ メールリンク（passwordless）。❌ 匿名（ゲスト）は不採用（設計判断）。</td></tr>
+  <tr><td>承認済みドメイン</td><td>Authentication &gt; Settings &gt; 承認済みドメインに
+    本番の <code>tvapp-web.kodama-hirotaka-190380-cloudflare.workers.dev</code> を追加する
+    （<b>Google ログインに必須</b>。localhost は既定で許可）。</td></tr>
+  <tr><td>プラン</td><td>Spark（無料）のまま。Blaze へ切り替えない。</td></tr>
+</table>
+
+<h3>4.5 Azure Function（Platform-Stream-Loader）</h3>
+<table>
+  <tr><th>項目</th><th>値</th></tr>
+  <tr><td>Function App</td><td><code>Platform-Stream-Loader</code>（既存を再利用・新規作成なし）</td></tr>
+  <tr><td>リージョン / RG</td><td>Japan East / <code>rg-dev-xiaovy000</code></td></tr>
+  <tr><td>プラン</td><td>Y1（Dynamic）= Consumption 従量課金。固定費なし・無料枠内（~$0）</td></tr>
+  <tr><td>ランタイム</td><td>Python 3.12（yt-dlp）。health_check は TVer / Twitter / YouTube / ABEMA / niconico に対応</td></tr>
+  <tr><td>エンドポイント</td><td><code>https://platform-stream-loader.azurewebsites.net/api/backend_stream_url_http</code>
+    （<code>?code=&lt;function key&gt;&amp;url=&lt;エピソードURL&gt;&amp;service_id=1&amp;res_type=6</code>）</td></tr>
+  <tr><td>認証</td><td>function key（Cloudflare 側では Worker Secret <code>AZURE_FUNCTION_STREEAMING_CODE_KEY</code> として保持）</td></tr>
+  <tr><td>サブスクリプション</td><td><code>XIAOVYポータル_開発_サービス提供</code>。<b>会社/組織テナント</b>（roivy.net・MFA）上にある（事実として留意）。</td></tr>
+</table>
+
+<h3>4.6 GitHub CI/CD（.github/workflows/）</h3>
+<table>
+  <tr><th>設定</th><th>内容</th></tr>
+  <tr><td>Secrets</td><td><code>CLOUDFLARE_API_TOKEN</code> / <code>CLOUDFLARE_ACCOUNT_ID</code>（deploy.yml のデプロイに使用）</td></tr>
+  <tr><td>Variables</td><td><code>NEXT_PUBLIC_FIREBASE_API_KEY</code> ほか Firebase 6 値 + <code>NEXT_PUBLIC_IDTOKEN_NAME</code>
+    （ビルド時にクライアントへ埋め込む公開値）</td></tr>
+  <tr><td>ci.yml（品質ゲート）</td><td>PR と main 以外への push で実行。<code>TZ=Asia/Tokyo</code>・Node 20。
+    <code>npm ci</code> → <code>tsc --noEmit</code>（型検査） → <code>test:coverage</code>（<b>80% 未満で失敗</b>）
+    → <code>next build</code> → <code>cf:build</code>。※ Next 16 で <code>next lint</code> は廃止のため lint 段はなし。</td></tr>
+  <tr><td>deploy.yml（版ゲート）</td><td>main への push 時、<code>xiaovy.tvapp.web/package.json</code> の version が
+    直前コミットから<b>上がったときだけ</b>デプロイ。test:coverage → cf:build →
+    <code>wrangler deploy --var BUILD_SHA:&lt;短SHA&gt;</code> → 版タグ <code>v&lt;x.y.z&gt;</code> を付与。</td></tr>
+  <tr><td>main 保護</td><td>CI の <code>verify</code> ジョブ通過を必須化（カバレッジ 80% ゲート込み）。通らない変更はマージ不可。</td></tr>
+</table>
+
+<h2 id="s5">5. コスト（$0 方針）</h2>
+<ul>
+  <li><b>Cloudflare</b>: Workers 無料枠（10 万リクエスト/日）。有料アドオンを付けない。</li>
+  <li><b>Firebase</b>: Spark（無料）プランのまま。<b>Blaze（従量課金）へ切り替えない</b>。
+    使うのは Authentication（無料）と、段階2で Firestore 無料枠のみ。
+    <b>Storage は使わない</b>（新規プロジェクトで Blaze 必須になり得るため）。Cloud Functions も使わない。</li>
+  <li><b>Azure</b>: Consumption（Y1）の無料枠内（~$0）。既存 Function の再利用で新規費用なし。</li>
+  <li>課金につながる操作（Blaze 化・カード登録・従量サービス有効化）は行わない。</li>
+</ul>
+
+<h2 id="s6">6. トラブルシュート</h2>
+<table>
+  <tr><th>症状</th><th>原因と対処</th></tr>
+  <tr><td>本番で Google ログインができない<br>（ポップアップ即閉じ / auth/unauthorized-domain）</td>
+    <td>Firebase の<b>承認済みドメインに workers.dev の本番ドメインが未追加</b>。
+      Authentication &gt; Settings &gt; 承認済みドメインに追加する（§4.4）。localhost は既定許可のためローカルでは再現しない。</td></tr>
+  <tr><td>再生解決が「この地域からは視聴できません」<br>（id124 = geo）</td>
+    <td>Streaks が非 JP / データセンター IP を拒否する。Cloudflare Workers 直の解決は成立しないため、
+      本番は <code>AZURE_FUNCTION_STREEAMING</code>（JP-egress の Azure）委譲が前提。
+      ローカルでも国外 IP・VPN 経由では純 TS 解決が同様に弾かれる（JP 回線で確認する）。</td></tr>
+  <tr><td>デプロイしたのに本番の中身が古い</td>
+    <td>再ビルドなしのデプロイ（bare <code>wrangler deploy</code> 等）で古い <code>.open-next</code> を上げた。
+      手動デプロイは<b>必ず <code>npm run deploy:safe</code></b>（削除 → 再ビルド → BUILD_SHA 照合。§4.3）。
+      本番 <code>/api/health</code> の <code>build_sha</code> と HEAD の一致で確認できる。</td></tr>
+  <tr><td>main にマージしたのにデプロイされない</td>
+    <td>版ゲート仕様（version 変化なし = スキップ）。<code>package.json</code> の version を上げてマージする（§2）。</td></tr>
+  <tr><td>CI がカバレッジで落ちる</td>
+    <td><code>src/lib/**</code> / <code>src/utils/**</code> の 4 指標いずれかが 80% 未満。
+      ローカルで <code>npm run test:coverage</code> を実行して不足箇所を特定する。</td></tr>
+  <tr><td>ローカルで Firebase 未設定のまま UI を確認したい</td>
+    <td><code>.env.local</code> に <code>NEXT_PUBLIC_DEV_BYPASS_AUTH="1"</code>（開発専用・本番では二重ガードで無効。§3.2）。</td></tr>
+</table>
+
+<footer>
+  正本: <code>tvapp-service/tvapp-web/xiaovy.tvapp.web/docs/reference/04_usage/02-local-dev-and-prod-config.html</code>。
+  記載値の出典は <code>package.json</code>(v1.5.0) / <code>.env.local.example</code> / <code>wrangler.jsonc</code> /
+  <code>scripts/deploy.sh</code> / <code>scripts/health-check.sh</code> / <code>.github/workflows/ci.yml, deploy.yml</code> /
+  <code>docs/reference/04_usage/01-setup-record.md</code>。更新履歴は Git に委ねる。
+</footer>
+</div>
+<script>
+  (function(){
+    var t=localStorage.getItem('doc-theme');
+    if(t)document.documentElement.setAttribute('data-theme',t);
+    __sync();
+  })();
+  function __toggle(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var n=d?'light':'dark';
+    document.documentElement.setAttribute('data-theme',n);
+    localStorage.setItem('doc-theme',n);__sync();
+  }
+  function __sync(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var b=document.getElementById('themeToggle');
+    if(b)b.textContent=d?'☀ ライト':'☾ ダーク';
+  }
+</script>
+</body>
+</html>
