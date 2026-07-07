@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Genre types for TVer ranking API
-type RankingGenre = 'drama' | 'variety' | 'anime' | 'documentary' | 'sports';
+type RankingGenre = 'drama' | 'variety' | 'anime' | 'news_documentary' | 'sports';
 
 interface EpisodeContent {
     id: string;
@@ -67,12 +67,12 @@ export async function GET(request: NextRequest) {
     try {
         // Fetch multiple ranking genres to build home page
         // TVer API supports these ranking genres
-        const genres: RankingGenre[] = ['drama', 'variety', 'anime', 'documentary', 'sports'];
+        const genres: RankingGenre[] = ['drama', 'variety', 'anime', 'news_documentary', 'sports'];
         const genreLabels: Record<RankingGenre, string> = {
             'drama': 'ドラマランキング',
             'variety': 'バラエティランキング',
             'anime': 'アニメ／ヒーローランキング',
-            'documentary': '報道／ドキュメンタリーランキング',
+            'news_documentary': '報道／ドキュメンタリーランキング',
             'sports': 'スポーツランキング',
         };
 

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp CI/CD アーキテクチャ(版ゲート自動デプロイ)</title>
+<style>
+  :root{
+    --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+    --acc:#0969da;--ok:#1a7f37;--warn:#9a6700;--err:#d1242f;
+    --code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+  }
+  html[data-theme="dark"]{
+    --bg:#0b0e14;--panel:#11151f;--line:#252b3b;--tx:#dde3f0;--tx2:#8b93a7;
+    --acc:#7aa2f7;--ok:#9ece6a;--warn:#e0af68;--err:#f7768e;
+    --code-bg:#1a2030;--code-tx:#9fd3ff;--th-bg:#1a2030;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+    font-size:16px;line-height:1.8;letter-spacing:.02em;font-feature-settings:"palt" 1}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 100px}
+  a{color:var(--acc)}
+  h1{font-size:26px;margin:0 0 6px;line-height:1.4}
+  .meta{margin:14px 0 26px;color:var(--tx2);font-size:13px}
+  .tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--tx2);margin:0 6px 6px 0}
+  .tag b{color:var(--tx)}
+  .status-ok{color:var(--ok)}.status-wip{color:var(--warn)}
+  h2{font-size:19px;margin:34px 0 12px;border-left:4px solid var(--acc);padding-left:11px}
+  h3{font-size:16px;margin:22px 0 7px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--th-bg)}
+  code{background:var(--code-bg);color:var(--code-tx);padding:1px 6px;border-radius:5px;font-family:"SF Mono","Consolas",monospace;font-size:13px}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto}
+  pre code{background:none;padding:0}
+  .note{border-left:4px solid var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);padding:10px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+  ul,ol{padding-left:22px}
+  figure{margin:20px 0;text-align:center}
+  figcaption{color:var(--tx2);font-size:13px;margin-top:8px}
+  svg{max-width:100%;height:auto}
+  footer{margin-top:52px;color:var(--tx2);font-size:12px;border-top:1px solid var(--line);padding-top:20px}
+  #themeToggle{position:fixed;top:14px;right:14px;z-index:10;border:1px solid var(--line);
+    background:var(--panel);color:var(--tx);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer}
+  @media print{
+    html[data-theme="dark"]{
+      --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+      --acc:#0969da;--code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+    }
+    #themeToggle{display:none}
+    a{color:#0550ae}
+  }
+</style>
+</head>
+<body>
+<button id="themeToggle" onclick="__toggle()">☾ ダーク</button>
+<div class="wrap">
+<h1>TVapp CI/CD アーキテクチャ(版ゲート自動デプロイ)</h1>
+<div class="meta">
+  <span class="tag">対象 <b>tvapp-web</b>(<code>xiaovy.tvapp.web/</code>)</span>
+  <span class="tag">ブランチ <b>project/tvapp-cf-zero-cost</b></span>
+  <span class="tag">ステータス <b class="status-ok">実装済み(運用中)</b></span>
+  <br>
+  <span class="tag">関連 <b>.github/workflows/ci.yml</b></span>
+  <span class="tag">関連 <b>.github/workflows/deploy.yml</b></span>
+  <span class="tag">関連 <b>xiaovy.tvapp.web/wrangler.jsonc</b></span>
+</div>
+
+<h2>1. 概要</h2>
+<p>
+  TVapp のデプロイは <b>GitHub Actions による版ゲート方式 CI/CD</b> で構成する。
+  リポジトリは <code>hirotaka42/tvapp-web</code>、Next.js アプリ本体はリポジトリ直下ではなく
+  <code>xiaovy.tvapp.web/</code> サブディレクトリに置かれている。したがって各ワークフローの
+  ジョブは <code>working-directory: xiaovy.tvapp.web</code> を既定として動作する。
+</p>
+<p>
+  ワークフローは 2 本に分かれる。品質を守る <b>CI</b>(<code>ci.yml</code>)と、版が上がったときだけ本番へ出す
+  <b>版ゲート・デプロイ</b>(<code>deploy.yml</code>)である。デプロイ先は Cloudflare Workers で、
+  Next.js を OpenNext でバンドルし <code>wrangler</code> で配信する。
+</p>
+<div class="note">
+  <b>版ゲート(AGENTS-SHARED §4)</b>:「版が上がったときだけ」出荷する。
+  <code>xiaovy.tvapp.web/package.json</code> の <code>version</code> を上げない変更は、
+  <code>main</code> に入ってもデプロイされない。
+</div>
+
+<h2>2. 全体フロー</h2>
+<figure>
+<svg viewBox="0 0 780 720" role="img" aria-label="PR から CI、マージ、版ゲート判定、デプロイ/スキップ、タグ付与までのフロー図">
+  <defs>
+    <marker id="arw" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,4 L0,8 Z" fill="var(--tx2)"/>
+    </marker>
+    <marker id="arwOk" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,4 L0,8 Z" fill="var(--ok)"/>
+    </marker>
+    <marker id="arwWarn" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,4 L0,8 Z" fill="var(--warn)"/>
+    </marker>
+  </defs>
+
+  <!-- 1. PR -->
+  <rect x="120" y="24" width="280" height="52" rx="9" fill="var(--panel)" stroke="var(--line)" stroke-width="1.5"/>
+  <text x="260" y="46" text-anchor="middle" font-size="14" font-weight="bold" fill="var(--tx)">feature ブランチ → Pull Request</text>
+  <text x="260" y="65" text-anchor="middle" font-size="12" fill="var(--tx2)">main への取り込みを申請</text>
+
+  <!-- arrow to CI -->
+  <line x1="260" y1="76" x2="260" y2="118" stroke="var(--tx2)" stroke-width="1.6" marker-end="url(#arw)"/>
+  <text x="272" y="102" font-size="12" fill="var(--tx2)">ci.yml が起動</text>
+
+  <!-- 2. CI -->
+  <rect x="90" y="120" width="340" height="70" rx="9" fill="var(--panel)" stroke="var(--acc)" stroke-width="1.8"/>
+  <text x="260" y="142" text-anchor="middle" font-size="14" font-weight="bold" fill="var(--tx)">CI(品質ゲート)</text>
+  <text x="260" y="162" text-anchor="middle" font-size="12" fill="var(--tx2)">npm ci → tsc → lint → test</text>
+  <text x="260" y="180" text-anchor="middle" font-size="12" fill="var(--tx2)">→ next build → OpenNext build</text>
+
+  <!-- arrow to merge -->
+  <line x1="260" y1="190" x2="260" y2="232" stroke="var(--ok)" stroke-width="1.6" marker-end="url(#arwOk)"/>
+  <text x="272" y="216" font-size="12" fill="var(--ok)">緑ならマージ可</text>
+
+  <!-- 3. merge -->
+  <rect x="120" y="234" width="280" height="52" rx="9" fill="var(--panel)" stroke="var(--line)" stroke-width="1.5"/>
+  <text x="260" y="256" text-anchor="middle" font-size="14" font-weight="bold" fill="var(--tx)">main へマージ(push)</text>
+  <text x="260" y="275" text-anchor="middle" font-size="12" fill="var(--tx2)">version を上げて取り込む</text>
+
+  <!-- arrow to gate -->
+  <line x1="260" y1="286" x2="260" y2="324" stroke="var(--tx2)" stroke-width="1.6" marker-end="url(#arw)"/>
+  <text x="272" y="310" font-size="12" fill="var(--tx2)">deploy.yml が起動</text>
+
+  <!-- 4. decision diamond -->
+  <polygon points="260,326 372,384 260,442 148,384" fill="var(--panel)" stroke="var(--warn)" stroke-width="1.8"/>
+  <text x="260" y="380" text-anchor="middle" font-size="13" font-weight="bold" fill="var(--tx)">版ゲート判定</text>
+  <text x="260" y="399" text-anchor="middle" font-size="12" fill="var(--tx2)">version 変化?</text>
+
+  <!-- No branch: right to skip -->
+  <line x1="372" y1="384" x2="470" y2="384" stroke="var(--warn)" stroke-width="1.6" marker-end="url(#arwWarn)"/>
+  <text x="392" y="374" font-size="12" fill="var(--warn)">No(据え置き)</text>
+  <rect x="472" y="358" width="270" height="52" rx="9" fill="var(--panel)" stroke="var(--line)" stroke-width="1.5"/>
+  <text x="607" y="380" text-anchor="middle" font-size="13" font-weight="bold" fill="var(--tx)">デプロイをスキップ</text>
+  <text x="607" y="399" text-anchor="middle" font-size="12" fill="var(--tx2)">deploy = false</text>
+
+  <!-- Yes branch: down to deploy -->
+  <line x1="260" y1="442" x2="260" y2="482" stroke="var(--ok)" stroke-width="1.6" marker-end="url(#arwOk)"/>
+  <text x="272" y="468" font-size="12" fill="var(--ok)">Yes(deploy = true)</text>
+
+  <!-- 5. deploy -->
+  <rect x="90" y="484" width="340" height="70" rx="9" fill="var(--panel)" stroke="var(--ok)" stroke-width="1.8"/>
+  <text x="260" y="506" text-anchor="middle" font-size="14" font-weight="bold" fill="var(--tx)">デプロイ(Cloudflare Workers)</text>
+  <text x="260" y="526" text-anchor="middle" font-size="12" fill="var(--tx2)">npm ci → test → OpenNext build</text>
+  <text x="260" y="544" text-anchor="middle" font-size="12" fill="var(--tx2)">→ wrangler deploy</text>
+
+  <!-- arrow to tag -->
+  <line x1="260" y1="554" x2="260" y2="594" stroke="var(--tx2)" stroke-width="1.6" marker-end="url(#arw)"/>
+  <text x="272" y="580" font-size="12" fill="var(--tx2)">成功後</text>
+
+  <!-- 6. tag -->
+  <rect x="120" y="596" width="280" height="52" rx="9" fill="var(--panel)" stroke="var(--line)" stroke-width="1.5"/>
+  <text x="260" y="618" text-anchor="middle" font-size="14" font-weight="bold" fill="var(--tx)">版タグを付与</text>
+  <text x="260" y="637" text-anchor="middle" font-size="12" fill="var(--tx2)">v x.y.z を push</text>
+</svg>
+<figcaption>PR → CI → マージ → 版ゲート判定(version 変化?)→(Yes)デプロイ /(No)スキップ → タグ付与のフロー。</figcaption>
+</figure>
+
+<h2>3. CI(<code>ci.yml</code>)— 品質ゲート</h2>
+<p>
+  壊れた変更を <code>main</code> に入れないためのゲート。<b>Pull Request</b> と、<b>main 以外への push</b>
+  (<code>branches-ignore: [main]</code>)で起動する。同一 ref の実行は直列化され、後発が来ると
+  古い実行はキャンセルされる(<code>concurrency: ci-${{ github.ref }}</code> / <code>cancel-in-progress: true</code>)。
+</p>
+<p>
+  <code>verify</code> ジョブは <code>ubuntu-latest</code> 上、<code>working-directory: xiaovy.tvapp.web</code>、
+  Node 20(<code>npm</code> キャッシュ、<code>cache-dependency-path: xiaovy.tvapp.web/package-lock.json</code>)で以下を順に実行する。
+</p>
+<ol>
+  <li><b>依存インストール</b> — <code>npm ci</code></li>
+  <li><b>型検査</b> — <code>npx tsc --noEmit</code></li>
+  <li><b>Lint</b> — <code>npm run lint</code></li>
+  <li><b>テスト(ユニット)</b> — <code>npm test</code></li>
+  <li><b>本番ビルド(Next)</b> — <code>npm run build</code></li>
+  <li><b>OpenNext ビルド(Workers バンドル生成確認)</b> — <code>npm run cf:build</code></li>
+</ol>
+<p>
+  ビルド検証用に <code>NEXT_PUBLIC_*</code> 系の値を GitHub の <b>Variables</b> から <code>env</code> に注入するが、
+  これらは実行時のみ必要な公開値のため<b>未設定でもビルド自体は通る</b>。
+</p>
+<div class="note">
+  この CI はゲートとして機能させることを前提とする。<b>ブランチ保護</b>で <code>verify</code> を
+  必須チェックに設定し、緑でなければ <code>main</code> にマージできない運用を推奨する。
+</div>
+
+<h2>4. 版ゲート・デプロイ(<code>deploy.yml</code>)</h2>
+<p>
+  <b>main への push(= PR マージ)</b>時に起動する(<code>on: push: branches: [main]</code>)。
+  <code>concurrency: deploy-main</code> / <code>cancel-in-progress: false</code> で、main への多重デプロイを
+  直列化する(実行中のデプロイはキャンセルしない)。版タグ付与のため <code>permissions: contents: write</code> を持つ。
+  ジョブは <code>gate</code> と <code>deploy</code> の 2 段。
+</p>
+
+<h3>4-1. <code>gate</code> ジョブ — 版変化の判定</h3>
+<p>
+  <code>fetch-depth: 2</code> で直前コミットまで取得し、<code>xiaovy.tvapp.web/package.json</code> の
+  <code>version</code> を比較する。
+</p>
+<ul>
+  <li><b>現在</b>(<code>CUR</code>)= 現在の <code>package.json</code> の <code>version</code>。</li>
+  <li><b>直前</b>(<code>PREV</code>)= <code>git show HEAD~1:xiaovy.tvapp.web/package.json</code> の <code>version</code>(取得不可なら <code>none</code>)。</li>
+  <li><code>CUR != PREV</code> なら <code>deploy=true</code>、同じなら <code>deploy=false</code> を出力(<code>version</code> も出力)。</li>
+</ul>
+<p>つまり <b>version を上げたコミットが main に入ったときだけ</b>後続のデプロイが走る。</p>
+
+<h3>4-2. <code>deploy</code> ジョブ — 本体(<code>needs: gate</code> / <code>if: deploy == 'true'</code>)</h3>
+<p>
+  <code>working-directory: xiaovy.tvapp.web</code>、Node 20(npm キャッシュ)で以下を順に実行する。
+  ビルド時に埋め込む <code>NEXT_PUBLIC_*</code> は Variables から注入する。
+</p>
+<ol>
+  <li><b>依存インストール</b> — <code>npm ci</code></li>
+  <li><b>テスト(ユニット)</b> — <code>npm test</code></li>
+  <li><b>OpenNext ビルド</b> — <code>npm run cf:build</code></li>
+  <li><b>Cloudflare Workers へデプロイ</b> — <code>npx wrangler deploy</code>(<code>CLOUDFLARE_API_TOKEN</code> / <code>CLOUDFLARE_ACCOUNT_ID</code> を Secrets から注入)</li>
+  <li><b>版タグを付与</b> — <code>v{version}</code> を作成して push(同名タグが既存ならスキップ)</li>
+</ol>
+<p>
+  デプロイ対象の Worker 設定は <code>xiaovy.tvapp.web/wrangler.jsonc</code> に定義する:
+  Worker 名 <code>tvapp-web</code>、エントリ <code>.open-next/worker.js</code>、
+  <code>compatibility_date: 2025-03-25</code>、<code>compatibility_flags: ["nodejs_compat"]</code>、
+  静的アセット <code>.open-next/assets</code>(バインディング <code>ASSETS</code>)、<code>observability</code> 有効。
+</p>
+
+<h2>5. 必要な GitHub 設定</h2>
+<p>CI とデプロイを機能させるために、リポジトリに次を設定する。</p>
+
+<h3>5-1. Secrets(機密・デプロイ本体で使用)</h3>
+<table>
+  <thead><tr><th>名前</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>CLOUDFLARE_API_TOKEN</code></td><td>Cloudflare Workers を編集する権限を持つ API トークン。<code>wrangler deploy</code> の認証に使用。</td></tr>
+    <tr><td><code>CLOUDFLARE_ACCOUNT_ID</code></td><td>デプロイ先の Cloudflare アカウント ID。</td></tr>
+  </tbody>
+</table>
+
+<h3>5-2. Variables(公開値・ビルド時に埋め込み)</h3>
+<p>
+  <code>NEXT_PUBLIC_*</code> は <b>ビルド時にクライアント側バンドルへ埋め込まれる</b>ため、
+  CI / デプロイのビルド環境に必要。CI・deploy 両ワークフローが Variables から <code>env</code> へ注入する。
+</p>
+<table>
+  <thead><tr><th>名前</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_API_KEY</code></td><td>Firebase 公開 API キー。</td></tr>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</code></td><td>Firebase 認証ドメイン。</td></tr>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_PROJECT_ID</code></td><td>Firebase プロジェクト ID。</td></tr>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET</code></td><td>Firebase ストレージバケット。</td></tr>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID</code></td><td>Firebase メッセージング送信者 ID。</td></tr>
+    <tr><td><code>NEXT_PUBLIC_FIREBASE_APP_ID</code></td><td>Firebase アプリ ID。</td></tr>
+    <tr><td><code>NEXT_PUBLIC_IDTOKEN_NAME</code></td><td>ID トークンの識別名(クライアントで参照)。</td></tr>
+  </tbody>
+</table>
+
+<h3>5-3. Actions / ワークフローの権限</h3>
+<table>
+  <thead><tr><th>項目</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td>Actions の書き込み権限</td><td>リポジトリの Actions 設定で workflow の書き込みを許可する(版タグ付与に <code>contents: write</code> を使用)。</td></tr>
+    <tr><td>workflow ファイルの push</td><td>ワークフローファイル(<code>.github/workflows/*</code>)を push するには、トークンに <code>workflow</code> スコープが必要(SSH 鍵でも可)。</td></tr>
+  </tbody>
+</table>
+
+<h2>6. 運用フロー</h2>
+<ol>
+  <li><b>feature ブランチで開発</b>する。</li>
+  <li><b>PR を作成し CI(<code>ci.yml</code>)が緑</b>になることを確認する。</li>
+  <li><b>レビュー</b>を受ける。</li>
+  <li>出荷するなら <b><code>xiaovy.tvapp.web/package.json</code> の <code>version</code> を上げて</b> <code>main</code> にマージする。</li>
+  <li><b><code>deploy.yml</code> が版上げを検知</b>し、Cloudflare Workers へ<b>自動デプロイ</b>する。</li>
+  <li>デプロイ成功後、<b><code>v x.y.z</code> タグ</b>が付与される。</li>
+</ol>
+<div class="note">
+  <b>version を据え置いた場合</b>(挙動が同じリファクタなど)は、<code>main</code> にマージしても
+  <code>gate</code> が <code>deploy=false</code> と判定し、<b>デプロイは走らない</b>。
+</div>
+
+<h2>7. 補足</h2>
+<ul>
+  <li><b>Cloudflare の無料枠</b>で運用する構成(Workers + OpenNext + Wrangler)。</li>
+  <li><b>TVER は日本国内限定</b>で配信される(事実)。</li>
+  <li><b>ブランチ保護の推奨</b>: <code>main</code> への直 push を禁止し、<code>ci.yml</code> の <code>verify</code> を
+    必須チェックに設定する。PR 経由でのみ <code>main</code> を更新し、CI 緑 + レビュー通過を取り込みの条件とする。</li>
+</ul>
+
+<footer>
+  TVapp CI/CD アーキテクチャ(版ゲート自動デプロイ)/ 対象: tvapp-web(<code>xiaovy.tvapp.web/</code>)/
+  出典: <code>.github/workflows/ci.yml</code>・<code>.github/workflows/deploy.yml</code>・<code>xiaovy.tvapp.web/wrangler.jsonc</code>
+</footer>
+
+</div>
+<script>
+  (function(){
+    var t=localStorage.getItem('doc-theme');
+    if(t)document.documentElement.setAttribute('data-theme',t);
+    __sync();
+  })();
+  function __toggle(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var n=d?'light':'dark';
+    document.documentElement.setAttribute('data-theme',n);
+    localStorage.setItem('doc-theme',n);__sync();
+  }
+  function __sync(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var b=document.getElementById('themeToggle');
+    if(b)b.textContent=d?'☀ ライト':'☾ ダーク';
+  }
+</script>
+</body>
+</html>

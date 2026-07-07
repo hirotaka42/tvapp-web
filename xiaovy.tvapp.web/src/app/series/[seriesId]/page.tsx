@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useSessionService } from '@/hooks/useSession';
 import { GenreContentCardList } from '@/components/atomicDesign/molecules/GenreContentCardList';
 import { ConvertedCardViewContent } from '@/types/CardItem/ForGeneric';
@@ -15,7 +15,8 @@ interface SeasonGroupedContents {
     contents: ConvertedCardViewContent[];
 }
 
-function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
+function SeriesEpisodesPage(props: { params: Promise<{ seriesId: string }> }) {
+    const params = use(props.params);
     const { seriesId } = params;
     const [seriesContents, setSeriesContents] = useState<SeasonGroupedContents[] | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -150,7 +151,7 @@ function SeriesEpisodesPage({ params }: { params: { seriesId: string } }) {
             {seriesContents.map((season, index) => (
                 <div key={index}>
                     <h2
-                        className="text-md font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
+                        className="text-base font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
                     >{season.seasonTitle}</h2>
                     <GenreContentCardList contents={season.contents} />
                 </div>

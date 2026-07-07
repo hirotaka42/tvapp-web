@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp UI/UX 設計書</title>
+<style>
+  :root{
+    --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+    --acc:#0969da;--ok:#1a7f37;--warn:#9a6700;--err:#d1242f;
+    --code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+  }
+  html[data-theme="dark"]{
+    --bg:#0b0e14;--panel:#11151f;--line:#252b3b;--tx:#dde3f0;--tx2:#8b93a7;
+    --acc:#7aa2f7;--ok:#9ece6a;--warn:#e0af68;--err:#f7768e;
+    --code-bg:#1a2030;--code-tx:#9fd3ff;--th-bg:#1a2030;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+    font-size:16px;line-height:1.8;letter-spacing:.02em;font-feature-settings:"palt" 1}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 100px}
+  a{color:var(--acc)}
+  h1{font-size:26px;margin:0 0 6px;line-height:1.4}
+  .meta{margin:14px 0 26px;color:var(--tx2);font-size:13px}
+  .tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--tx2);margin:0 6px 6px 0}
+  .tag b{color:var(--tx)}
+  .status-ok{color:var(--ok)}.status-wip{color:var(--warn)}
+  h2{font-size:19px;margin:34px 0 12px;border-left:4px solid var(--acc);padding-left:11px}
+  h3{font-size:16px;margin:22px 0 7px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--th-bg)}
+  code{background:var(--code-bg);color:var(--code-tx);padding:1px 6px;border-radius:5px;font-family:"SF Mono","Consolas",monospace;font-size:13px}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto}
+  pre code{background:none;padding:0}
+  .note{border-left:4px solid var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);padding:10px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+  ul,ol{padding-left:22px}
+  figure{margin:20px 0;text-align:center}
+  figcaption{color:var(--tx2);font-size:13px;margin-top:8px}
+  svg{max-width:100%;height:auto}
+  footer{margin-top:52px;color:var(--tx2);font-size:12px;border-top:1px solid var(--line);padding-top:20px}
+  #themeToggle{position:fixed;top:14px;right:14px;z-index:10;border:1px solid var(--line);
+    background:var(--panel);color:var(--tx);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer}
+  @media print{
+    html[data-theme="dark"]{
+      --bg:#ffffff !important;--panel:#f6f8fa !important;--line:#d8dee4 !important;--tx:#1f2328 !important;--tx2:#59636e !important;
+      --acc:#0969da !important;--code-bg:#f6f8fa !important;--code-tx:#0550ae !important;--th-bg:#f6f8fa !important;
+    }
+    body{background:#ffffff !important;color:#1f2328 !important}
+    #themeToggle{display:none}
+    a{color:#0550ae}
+  }
+</style>
+</head>
+<body>
+<button id="themeToggle" onclick="__toggle()">☾ ダーク</button>
+<div class="wrap">
+<h1>TVapp UI/UX 設計書</h1>
+<div class="meta">
+  <span class="tag">対象=<b>tvapp-web</b>（xiaovy.tvapp.web / Next.js 14.2 App Router）</span>
+  <span class="tag">ブランチ=<b>project/tvapp-cf-zero-cost</b></span>
+  <span class="tag">関連=<b>Main.tsx / episode/[episodeId] / atomicDesign</b></span>
+  <span class="tag">ステータス=<b class="status-wip">現状記述 + 改善提案（WIP）</b></span>
+</div>
+
+<p>
+本書は TVER 視聴 Web アプリ「TVapp」フロントエンドの <b>UI/UX 設計</b>を、実装コード
+（<code>src/app</code> / <code>src/components/atomicDesign</code>）に即して記述する。画面一覧・遷移、情報設計、
+コンポーネント階層（atomic design）、テーマ（next-themes）、レスポンシブ、アクセシビリティ、
+ゲスト視聴の 30 秒制限 UX、動画再生（react-player）を扱う。末尾に、コードから観測できる事実に基づく
+<b>改善提案</b>を客観的に併記する。記述は技術・構成・データフローの事実に徹し、題材の是非は評価しない。
+</p>
+
+<div class="note">
+本アプリの UI は <b>Next.js App Router のサーバ/クライアント境界</b>上に構築される。
+描画コンポーネントの大半は <code>"use client"</code> で、データは Context 経由で注入した Service 群
+（<code>SessionService</code> / <code>TvHomeService</code> / <code>EpisodeService</code> / <code>StreamService</code> ほか）
+が同アプリの BFF（<code>/api/*</code>）を叩いて取得する。UI は取得済みデータを描くことに集中する。
+</p>
+</div>
+
+<h2>1. 全体像とレイアウトシェル</h2>
+
+<p>
+ルートは <code>src/app/layout.tsx</code>。<code>&lt;html lang="ja" suppressHydrationWarning&gt;</code> の下に
+<code>Providers</code>（next-themes + 認証 + 各 Service Context + トースト）でラップし、常設の
+<code>Header</code> と各ページ（<code>children</code>）を配置する。テーマの初期不一致（ハイドレーション警告）を
+避けるため <code>suppressHydrationWarning</code> を付与している。<code>body</code> には
+<code>min-h-screen dark:bg-black dark:text-white</code> を与え、ダーク時の地色を黒基調にする。
+</p>
+
+<table>
+  <thead><tr><th>要素</th><th>実体</th><th>役割</th></tr></thead>
+  <tbody>
+    <tr><td>ルートレイアウト</td><td><code>app/layout.tsx</code></td><td>フォント読込・メタ情報・<code>Providers</code> と <code>Header</code> を全ページに適用</td></tr>
+    <tr><td>プロバイダ</td><td><code>app/providers.tsx</code></td><td><code>ThemeProvider(attribute="class")</code> → <code>AuthProvider</code> → 各 Service Context → <code>Toaster</code></td></tr>
+    <tr><td>共通ヘッダ</td><td><code>molecules/Header.tsx</code></td><td>ロゴ + ハンバーガー。開くと右からサイドパネル（プロフィール/一覧/設定）。<code>sticky top-0 z-10</code></td></tr>
+    <tr><td>メタ情報</td><td><code>metadata</code></td><td><code>title:"TVapp"</code> / 説明文（日本最大級のストリーミングを手軽に）</td></tr>
+  </tbody>
+</table>
+
+<p>
+<code>Header</code> は <code>usePathname()</code> を見て <code>/user/login</code> と <code>/user/register</code> では
+<code>null</code> を返し、認証前画面ではシェル（ハンバーガー）を出さない。ログイン画面は左半分の
+ブランドパネル（<code>BrandPanel</code>）と右半分のフォームという独立レイアウトを持つ。
+</p>
+
+<h2>2. 画面一覧</h2>
+
+<p>App Router のルート（<code>src/app</code>）と主な表示要素・認証要件の対応。</p>
+
+<table>
+  <thead><tr><th>パス</th><th>画面</th><th>主な内容</th><th>認証</th></tr></thead>
+  <tbody>
+    <tr><td><code>/</code></td><td>ホーム（Main）</td><td>ジャンル/ラベル別ランキングの横スクロール一覧</td><td>要（未認証は <code>/user/login</code> へ）</td></tr>
+    <tr><td><code>/episode/[episodeId]</code></td><td>エピソード視聴</td><td>16:9 プレイヤー + メタ + お気に入り + シリーズ内エピソード一覧</td><td>要（ゲストは 30 秒制限）</td></tr>
+    <tr><td><code>/series/[seriesId]</code></td><td>シリーズ一覧</td><td>シーズン別エピソードのグリッド + お気に入り</td><td>要</td></tr>
+    <tr><td><code>/user/login</code></td><td>ログイン</td><td>ブランドパネル + メール/パスワード + ゲストログイン</td><td>不要</td></tr>
+    <tr><td><code>/user/register</code></td><td>新規登録</td><td>登録フォーム</td><td>不要</td></tr>
+    <tr><td><code>/user/profile</code>（<code>/edit</code>）</td><td>プロフィール</td><td>プロフィール表示・編集・画像アップロード</td><td>要（非ゲスト）</td></tr>
+    <tr><td><code>/user/favorite</code></td><td>お気に入り</td><td>お気に入りシリーズ一覧</td><td>要（非ゲスト）</td></tr>
+    <tr><td><code>/user/history</code></td><td>視聴履歴</td><td>視聴履歴一覧</td><td>要（非ゲスト）</td></tr>
+    <tr><td><code>/user/verify-email</code> / <code>/reset-password</code> / <code>/activate</code></td><td>アカウント補助</td><td>メール確認・パスワード再設定・有効化</td><td>状況依存</td></tr>
+    <tr><td><code>/admin/users</code></td><td>ユーザー管理</td><td>ユーザー一覧・ロール変更</td><td>要（<code>role===99</code>）</td></tr>
+    <tr><td><code>/stream</code></td><td>ライブ m3u</td><td>パスワード制のライブ再生（別機能）</td><td>状況依存</td></tr>
+  </tbody>
+</table>
+
+<p>
+「認証」列の<b>状況依存</b>は、遷移してきた状態やパラメータで要否・可否が変わるものを指す:
+<code>/user/verify-email</code>・<code>/activate</code> はメール確認・有効化トークンの状態、
+<code>/reset-password</code> は再設定リンクのトークンの有無、<code>/stream</code> はライブ再生用パスワードの入力状態に依存する。
+</p>
+
+<h2>3. 画面遷移</h2>
+
+<p>
+未認証時の入口は必ずログイン画面。ホーム（<code>Main</code>）は <code>useAuth()</code> と
+<code>useFirebaseAuth().loading</code> を監視し、<code>!loading && !loginUser</code> のとき
+<code>router.push('/user/login')</code> でリダイレクトする。ゲスト（匿名）は閲覧できるが、
+エピソードでの視聴は 30 秒で制限され、達成後はホームへ自動遷移する（§8）。
+</p>
+
+<figure>
+<svg viewBox="0 0 900 540" role="img" aria-label="TVapp の主要画面遷移図">
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="var(--tx2)"/>
+    </marker>
+    <marker id="ahg" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="var(--acc)"/>
+    </marker>
+  </defs>
+  <style>
+    .box{fill:var(--panel);stroke:var(--line);stroke-width:1.5;rx:10}
+    .boxa{fill:var(--panel);stroke:var(--acc);stroke-width:2}
+    .lbl{fill:var(--tx);font-size:13px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+    .sub{fill:var(--tx2);font-size:12px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+    .edge{stroke:var(--tx2);stroke-width:1.6;fill:none}
+    .edgeg{stroke:var(--acc);stroke-width:2.2;fill:none;stroke-dasharray:6 4}
+    .elbl{fill:var(--tx2);font-size:12px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+    .elblg{fill:var(--acc);font-size:12px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+  </style>
+
+  <!-- Login -->
+  <rect class="boxa" x="40" y="230" width="150" height="64" rx="10"/>
+  <text class="lbl" x="115" y="258" text-anchor="middle">/user/login</text>
+  <text class="sub" x="115" y="277" text-anchor="middle">ログイン / ゲスト</text>
+
+  <!-- Register -->
+  <rect class="box" x="40" y="340" width="150" height="52" rx="10"/>
+  <text class="lbl" x="115" y="371" text-anchor="middle">/user/register</text>
+
+  <!-- Home -->
+  <rect class="boxa" x="300" y="230" width="160" height="64" rx="10"/>
+  <text class="lbl" x="380" y="258" text-anchor="middle">/（ホーム）</text>
+  <text class="sub" x="380" y="277" text-anchor="middle">ランキング横スクロール</text>
+
+  <!-- Episode -->
+  <rect class="boxa" x="560" y="120" width="180" height="64" rx="10"/>
+  <text class="lbl" x="650" y="148" text-anchor="middle">/episode/[episodeId]</text>
+  <text class="sub" x="650" y="167" text-anchor="middle">16:9 プレイヤー + 情報</text>
+
+  <!-- Series -->
+  <rect class="box" x="560" y="230" width="180" height="64" rx="10"/>
+  <text class="lbl" x="650" y="258" text-anchor="middle">/series/[seriesId]</text>
+  <text class="sub" x="650" y="277" text-anchor="middle">シーズン別グリッド</text>
+
+  <!-- User pages -->
+  <rect class="box" x="560" y="330" width="180" height="52" rx="10"/>
+  <text class="lbl" x="650" y="352" text-anchor="middle">/user/profile</text>
+  <text class="sub" x="650" y="369" text-anchor="middle">favorite / history</text>
+
+  <!-- Admin -->
+  <rect class="box" x="560" y="420" width="180" height="52" rx="10"/>
+  <text class="lbl" x="650" y="442" text-anchor="middle">/admin/users</text>
+  <text class="sub" x="650" y="459" text-anchor="middle">role===99 のみ</text>
+
+  <!-- edges -->
+  <path class="edge" d="M190,258 L296,258" marker-end="url(#ah)"/>
+  <text class="elbl" x="243" y="250" text-anchor="middle">認証成功</text>
+
+  <path class="edge" d="M115,340 L115,300 L115,296" marker-end="url(#ah)"/>
+  <text class="elbl" x="150" y="320" text-anchor="start">登録↔戻る</text>
+  <path class="edge" d="M96,294 L96,340" marker-end="url(#ah)"/>
+
+  <path class="edge" d="M460,250 L556,180 L556,164" marker-end="url(#ah)"/>
+  <text class="elbl" x="512" y="205" text-anchor="middle">カード選択</text>
+
+  <path class="edge" d="M460,270 L556,262" marker-end="url(#ah)"/>
+  <text class="elbl" x="512" y="285" text-anchor="middle">シリーズ名</text>
+
+  <path class="edge" d="M650,230 L650,190" marker-end="url(#ah)"/>
+  <text class="elbl" x="690" y="212" text-anchor="start">エピソード</text>
+
+  <path class="edge" d="M380,294 L380,356 L556,356" marker-end="url(#ah)"/>
+  <text class="elbl" x="430" y="348" text-anchor="middle">ヘッダのサイドパネル</text>
+
+  <path class="edge" d="M380,294 L380,446 L556,446" marker-end="url(#ah)"/>
+
+  <!-- guest path -->
+  <path class="edgeg" d="M650,184 C650,320 470,330 466,300" marker-end="url(#ahg)"/>
+  <text class="elblg" x="560" y="330" text-anchor="middle">ゲスト 30 秒到達 → ホームへ自動遷移</text>
+
+  <text class="sub" x="40" y="500">実線=ユーザー操作による遷移 / 破線=ゲスト制限による自動遷移</text>
+</svg>
+<figcaption>図1: 主要画面の遷移。青枠はゲストでも閲覧可、灰枠はログイン（非ゲスト）が必須、青破線はゲスト 30 秒制限による自動リダイレクト。</figcaption>
+</figure>
+
+<details open>
+<summary>図1 の凡例とテキスト説明（スクリーンリーダ向け）</summary>
+<ul>
+  <li><b>青枠</b>＝ゲストでも閲覧できる画面（<code>/user/login</code>・<code>/</code>ホーム・<code>/episode/[episodeId]</code>）／<b>灰枠</b>＝ログイン（非ゲスト）が要る画面（<code>/user/register</code>・<code>/series/[seriesId]</code>・<code>/user/profile</code> 系・<code>/admin/users</code>）。</li>
+  <li><b>実線矢印</b>＝ユーザー操作による遷移／<b>青の破線矢印</b>＝ゲストの 30 秒制限による自動遷移。</li>
+</ul>
+<p>
+遷移の流れ: <code>/user/login</code>（ログイン / ゲスト）で認証に成功するとホーム <code>/</code> へ進む。<code>/user/register</code>（新規登録）はログイン画面と相互に行き来する。ホームのカードを選ぶとエピソード <code>/episode/[episodeId]</code> へ、シリーズ名からシリーズ一覧 <code>/series/[seriesId]</code> へ、シリーズ一覧の各エピソードからエピソードへ遷移する。ホームのヘッダ内サイドパネルからプロフィール（<code>/user/profile</code>・favorite・history）へ、<code>role===99</code> のときのみユーザー管理 <code>/admin/users</code> へ入る。ゲストがエピソードで再生 30 秒に達すると、破線の経路でホーム <code>/</code> へ自動的に戻る。
+</p>
+</details>
+
+<h2>4. 情報設計（画面別）</h2>
+
+<p>
+本節では、ユーザーが頻繁に触れる<b>ホーム・エピソード・ログイン</b>の 3 画面を詳述する。
+その他のページ（シリーズ一覧・プロフィール・お気に入り・視聴履歴・ユーザー管理・ライブ再生）は
+§5 のコンポーネント（<code>GenreContentCardList</code>・<code>ProfileCard</code>・各フォーム等）の組版で構成でき、
+情報構造が上記 3 画面の応用に収まるため、本節では図示を省略する。
+</p>
+
+<h3>4.1 ホーム（Main.tsx）</h3>
+
+<p>
+ホームは「ジャンル/ラベル別ランキングの縦積み × 各行の横スクロール」で構成する。
+<code>useTvHomeService(session)</code> の結果から <code>getAllLabels()</code> でラベル配列を得て、
+ラベルごとに <code>getContentsByLabel()</code> → <code>convertRankingToCardData()</code> でカード配列へ整形し、
+状態 <code>rankingContents</code> / <code>rankingLabels</code> に格納する。描画は
+<code>rankingLabels.map(label =&gt; &lt;h2&gt;{label}&lt;/h2&gt; + &lt;ContentCardList&gt;)</code>。
+</p>
+
+<p>
+横スクロール行の実体は <code>ContentCardList</code> の
+<code>flex flex-row ... gap-x-4 overflow-x-auto</code>。各カード <code>ContentCard</code> は
+16:9 サムネイル（<code>aspect-w-16 aspect-h-9</code>）、任意のランクバッジ（<code>rank</code> があれば
+<code>https://tver.jp/images/PC_img_ranking_{rank}.svg</code> を左上に重畳）、シリーズ名 / エピソード名 /
+「制作局 放送日ラベル」を <code>truncate</code> で 1 行省略表示する。カードは <code>/episode/{id}</code> へのリンク。
+</p>
+
+<div class="note">
+<b>ホーム合成の背景（データ層の事実）:</b> TVER の <code>callHome</code> は空を返すため、UI は
+<code>callEpisodeRankingDetail/{genre}</code>（drama / variety / anime / documentary / sports）の
+ランキングを合成してホームを構成する。ラベル分割・カード整形は
+<code>utils/Convert/ranking/home/responseParser</code> の <code>getAllLabels()</code> / <code>getContentsByLabel()</code> と <code>convertRankingToCardData</code> が担う。
+</div>
+
+<figure>
+<svg viewBox="0 0 900 360" role="img" aria-label="ホーム画面のワイヤフレーム">
+  <style>
+    .fr{fill:none;stroke:var(--line);stroke-width:1.5}
+    .card{fill:var(--panel);stroke:var(--line);stroke-width:1.2}
+    .thumb{fill:color-mix(in srgb,var(--acc) 22%,var(--panel));stroke:var(--line);stroke-width:1}
+    .t{fill:var(--tx);font-size:13px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+    .t2{fill:var(--tx2);font-size:12px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+    .badge{fill:var(--acc)}
+  </style>
+  <rect class="fr" x="20" y="16" width="860" height="330" rx="10"/>
+  <!-- header bar -->
+  <rect x="20" y="16" width="860" height="40" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+  <circle cx="48" cy="36" r="9" fill="var(--acc)"/>
+  <text class="t" x="66" y="41">TVapp</text>
+  <rect x="836" y="26" width="26" height="20" rx="4" fill="none" stroke="var(--tx2)"/>
+  <line x1="842" y1="33" x2="856" y2="33" stroke="var(--tx2)"/>
+  <line x1="842" y1="39" x2="856" y2="39" stroke="var(--tx2)"/>
+
+  <!-- row 1 label -->
+  <text class="t" x="40" y="86">ドラマ ランキング</text>
+  <g>
+    <rect class="card" x="40" y="96" width="150" height="118" rx="8"/>
+    <rect class="thumb" x="40" y="96" width="150" height="80" rx="8"/>
+    <path class="badge" d="M40,96 l26,0 l-13,22 Z"/>
+    <text class="t2" x="50" y="192">シリーズ名</text>
+    <text class="t2" x="50" y="206">局 / 放送日</text>
+
+    <rect class="card" x="205" y="96" width="150" height="118" rx="8"/>
+    <rect class="thumb" x="205" y="96" width="150" height="80" rx="8"/>
+    <rect class="card" x="370" y="96" width="150" height="118" rx="8"/>
+    <rect class="thumb" x="370" y="96" width="150" height="80" rx="8"/>
+    <rect class="card" x="535" y="96" width="150" height="118" rx="8"/>
+    <rect class="thumb" x="535" y="96" width="150" height="80" rx="8"/>
+    <rect class="card" x="700" y="96" width="150" height="118" rx="8"/>
+    <rect class="thumb" x="700" y="96" width="150" height="80" rx="8"/>
+  </g>
+  <text class="t2" x="862" y="160" text-anchor="end">→ overflow-x-auto</text>
+
+  <!-- row 2 label -->
+  <text class="t" x="40" y="252">バラエティ ランキング</text>
+  <rect class="card" x="40" y="262" width="150" height="80" rx="8"/>
+  <rect class="thumb" x="40" y="262" width="150" height="80" rx="8"/>
+  <rect class="card" x="205" y="262" width="150" height="80" rx="8"/>
+  <rect class="thumb" x="205" y="262" width="150" height="80" rx="8"/>
+  <rect class="card" x="370" y="262" width="150" height="80" rx="8"/>
+  <rect class="thumb" x="370" y="262" width="150" height="80" rx="8"/>
+  <rect class="card" x="535" y="262" width="150" height="80" rx="8"/>
+  <rect class="thumb" x="535" y="262" width="150" height="80" rx="8"/>
+  <rect class="card" x="700" y="262" width="150" height="80" rx="8"/>
+  <rect class="thumb" x="700" y="262" width="150" height="80" rx="8"/>
+</svg>
+<figcaption>図2: ホームのワイヤフレーム。ラベルごとに横スクロール行、各カードは 16:9 サムネ + 三点メタ + 任意のランクバッジ。</figcaption>
+</figure>
+
+<h3>4.2 エピソード視聴（episode/[episodeId]/page.tsx）</h3>
+
+<p>
+視聴画面は上から「16:9 プレイヤー」「メタ情報ブロック」「シリーズ内エピソード一覧」の縦積み。
+プレイヤーの寸法は <code>width:100vw; height:calc(100vw * 9 / 16)</code> の固定 16:9 で、背景は黒
+（<code>#000</code>）。<code>videoUrl</code> 取得前は「動画を読み込み中...」を中央表示する。
+メタブロック（<code>width:95vw</code>）はシリーズ名リンク（<code>/series/{seriesID}</code>）+ お気に入りボタン
+（非ゲストのみ）、<code>&lt;h3&gt;</code> のエピソード名、放送局ラベル・放送日ラベル・説明、TVER の URL（<code>https://tver.jp/episodes/{episodeId}</code> へのリンク）を並べる。
+</p>
+
+<p>
+シリーズ内一覧は <code>useSeriesService(seriesID, session)</code> の結果を
+<code>convertCardContentsBySeason()</code> でシーズン別にまとめ、シーズンごとに見出し +
+<code>GenreContentCardList</code>（レスポンシブグリッド）で表示する。エピソード情報が 10 秒以上取得できない場合
+（<code>!episode</code> の状態が続く場合。<code>setTimeout</code> による判定）は
+<code>ErrorState</code>（「エピソードが見つかりません」+ 再読み込み/ホーム）へ切り替える。
+</p>
+
+<figure>
+<svg viewBox="0 0 900 430" role="img" aria-label="エピソード視聴画面のワイヤフレーム">
+  <style>
+    .fr{fill:none;stroke:var(--line);stroke-width:1.5}
+    .player{fill:#000;stroke:var(--line);stroke-width:1.2}
+    .card{fill:var(--panel);stroke:var(--line);stroke-width:1.2}
+    .thumb{fill:color-mix(in srgb,var(--acc) 22%,var(--panel));stroke:var(--line);stroke-width:1}
+    .t{fill:var(--tx);font-size:13px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+    .t2{fill:var(--tx2);font-size:12px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+    .lnk{fill:var(--acc);font-size:13px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+    .white{fill:#e8edf6;font-size:12px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+  </style>
+  <rect class="fr" x="20" y="14" width="860" height="404" rx="10"/>
+  <!-- player 16:9 -->
+  <rect class="player" x="250" y="24" width="400" height="150" rx="6"/>
+  <circle cx="450" cy="99" r="24" fill="none" stroke="#e8edf6" stroke-width="2"/>
+  <path d="M442,88 L466,99 L442,110 Z" fill="#e8edf6"/>
+  <text class="white" x="450" y="164" text-anchor="middle">16:9 / width:100vw · height:calc(100vw*9/16)</text>
+
+  <!-- meta -->
+  <text class="lnk" x="40" y="204">シリーズ名（/series/…）</text>
+  <path d="M232,196 a9,9 0 1,0 0.1,0" fill="none" stroke="var(--err)" stroke-width="1.5"/>
+  <text class="t2" x="248" y="204">♡ お気に入り（非ゲスト）</text>
+  <text class="t" x="40" y="230">エピソード名（h3）</text>
+  <text class="t2" x="40" y="252">放送局ラベル / 放送日ラベル</text>
+  <text class="t2" x="40" y="270">説明文 …</text>
+  <text class="t2" x="40" y="288">https://tver.jp/episodes/{id}</text>
+
+  <!-- series list -->
+  <text class="t" x="40" y="322">エピソード（シーズン別）</text>
+  <rect class="card" x="40" y="334" width="180" height="66" rx="8"/>
+  <rect class="thumb" x="48" y="342" width="86" height="50" rx="5"/>
+  <text class="t2" x="142" y="362">#1</text>
+  <rect class="card" x="235" y="334" width="180" height="66" rx="8"/>
+  <rect class="thumb" x="243" y="342" width="86" height="50" rx="5"/>
+  <text class="t2" x="337" y="362">#2</text>
+  <rect class="card" x="430" y="334" width="180" height="66" rx="8"/>
+  <rect class="thumb" x="438" y="342" width="86" height="50" rx="5"/>
+  <rect class="card" x="625" y="334" width="180" height="66" rx="8"/>
+  <rect class="thumb" x="633" y="342" width="86" height="50" rx="5"/>
+</svg>
+<figcaption>図3: エピソード視聴のワイヤフレーム。上から 16:9 プレイヤー → メタ（シリーズ名・お気に入り・説明・TVER URL）→ シリーズ内一覧。</figcaption>
+</figure>
+
+<h3>4.3 ログイン / ゲスト（user/login/page.tsx）</h3>
+
+<p>
+ログインは <code>min-h-screen flex</code> の 2 カラム。左は <code>BrandPanel</code>
+（<code>hidden lg:flex lg:w-1/2</code>、インディゴ→ブルーのグラデーションにロゴ・キャッチ・特徴 3 点・
+TV イラストの SVG）で、<code>lg</code> 未満では非表示。右は <code>SignInForms</code>（カード内にロゴ・
+「ログイン」見出し・入力・送信・区切り・ゲストログイン）。
+</p>
+
+<ul>
+  <li><b>メール/パスワード:</b> <code>signIn()</code> 成功後、<code>emailVerified</code> が false なら
+  <code>/user/verify-email</code> へ、確認済みなら <code>/</code> へ。Firebase のエラーコードを日本語文言へ
+  マップして表示（例 <code>auth/wrong-password</code> → 「メールアドレスまたはパスワードが正しくありません」）。</li>
+  <li><b>ゲスト:</b> <code>GuestLoginButton</code> が Firebase 匿名認証（<code>signInAsGuest()</code>）→
+  <code>/api/User/setGuestRole</code> でロール付与 → クレーム反映待ち（約 1 秒）→ トークン強制リフレッシュ →
+  <code>/</code> へ。ゲストはお気に入り・視聴履歴・プロフィールが無効化される。</li>
+  <li>フォームは <code>isFormValid</code>（両フィールド非空）で送信ボタンの活性を制御し、送信中は
+  <code>loading</code> でスピナー表示。</li>
+</ul>
+
+<h2>5. コンポーネント設計（atomic design）</h2>
+
+<p>
+<code>src/components/atomicDesign</code> 配下を atoms / molecules / organisms / pages の 4 層で構成する。
+App Router のルート（<code>app/**/page.tsx</code>）が最上位のテンプレートとして各層を束ねる。
+</p>
+
+<figure>
+<svg viewBox="0 0 900 430" role="img" aria-label="atomic design のコンポーネント階層">
+  <style>
+    .layer{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+    .h{fill:var(--tx);font-size:14px;font-weight:bold;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+    .i{fill:var(--tx2);font-size:12.5px;font-family:"SF Mono","Consolas",monospace}
+    .arw{stroke:var(--tx2);stroke-width:1.5;fill:none}
+  </style>
+  <defs>
+    <marker id="up" markerWidth="9" markerHeight="9" refX="4" refY="1.5" orient="auto">
+      <path d="M0,8 L4,0 L8,8 Z" fill="var(--tx2)"/>
+    </marker>
+  </defs>
+
+  <rect class="layer" x="40" y="20" width="820" height="70" rx="8"/>
+  <text class="h" x="56" y="44">app router — page.tsx（テンプレート）</text>
+  <text class="i" x="56" y="66">/  ·  /episode/[episodeId]  ·  /series/[seriesId]  ·  /user/login  ·  /admin/users</text>
+
+  <rect class="layer" x="40" y="112" width="820" height="62" rx="8"/>
+  <text class="h" x="56" y="136">pages</text>
+  <text class="i" x="56" y="158">Main（ホーム。ランキング取得 + ラベル別 ContentCardList）</text>
+
+  <rect class="layer" x="40" y="196" width="820" height="76" rx="8"/>
+  <text class="h" x="56" y="220">organisms / molecules</text>
+  <text class="i" x="56" y="240">Header · ContentCardList · GenreContentCardList · ConfirmationModal · ErrorState</text>
+  <text class="i" x="56" y="258">BrandPanel · ProfileCard · ProfileSection · Forms/sign-in · Navi/TabsWithUnderLine</text>
+
+  <rect class="layer" x="40" y="294" width="820" height="86" rx="8"/>
+  <text class="h" x="56" y="318">atoms</text>
+  <text class="i" x="56" y="338">Button · ContentCard · GenreContentCard · VideoPlayer · FavoriteButton</text>
+  <text class="i" x="56" y="356">GuestLoginButton · ProfileAvatar · PasswordInput · LoadingSkeleton · BadgeDisplay</text>
+
+  <line class="arw" x1="450" y1="294" x2="450" y2="274" marker-end="url(#up)"/>
+  <line class="arw" x1="450" y1="196" x2="450" y2="176" marker-end="url(#up)"/>
+  <line class="arw" x1="450" y1="112" x2="450" y2="92" marker-end="url(#up)"/>
+  <text class="i" x="470" y="288">composes ↑</text>
+  <text class="i" x="470" y="190">composes ↑</text>
+  <text class="i" x="470" y="106">renders ↑</text>
+</svg>
+<figcaption>図4: atomic design の階層。下位（atoms）を上位（molecules → pages → page.tsx）が合成する。</figcaption>
+</figure>
+
+<table>
+  <thead><tr><th>層</th><th>代表</th><th>責務</th></tr></thead>
+  <tbody>
+    <tr><td>atoms</td><td><code>Button</code> / <code>ContentCard</code> / <code>GenreContentCard</code> / <code>VideoPlayer</code> / <code>FavoriteButton</code> / <code>ProfileAvatar</code> / <code>PasswordInput</code> / <code>LoadingSkeleton</code></td><td>単機能 UI。propsで見た目・状態を受ける最小単位</td></tr>
+    <tr><td>molecules</td><td><code>Header</code> / <code>ContentCardList</code>（横スクロール）/ <code>GenreContentCardList</code>（グリッド）/ <code>ConfirmationModal</code> / <code>ErrorState</code> / <code>BrandPanel</code> / <code>Forms/sign-in-forms</code></td><td>atoms を並べた機能ブロック</td></tr>
+    <tr><td>organisms</td><td><code>ProfileCard</code></td><td>複数 molecules を束ねた大きな塊</td></tr>
+    <tr><td>pages</td><td><code>Main</code></td><td>データ取得 + 整形 + 層の組み立て（ホーム本体）</td></tr>
+  </tbody>
+</table>
+
+<h3>5.1 カード 2 種の使い分け</h3>
+
+<p>
+一覧カードは用途で 2 種類ある。横スクロール（ホーム）は <code>ContentCard</code>、グリッド
+（シリーズ/エピソード内一覧）は <code>GenreContentCard</code>。両者はサムネイル・ランクバッジ・
+三点メタという情報構造を共有しつつ、レイアウトが異なる。
+</p>
+
+<table>
+  <thead><tr><th>項目</th><th>ContentCard（横スクロール）</th><th>GenreContentCard（グリッド）</th></tr></thead>
+  <tbody>
+    <tr><td>親</td><td><code>ContentCardList</code>（<code>flex-row overflow-x-auto</code>）</td><td><code>GenreContentCardList</code>（<code>grid ... auto-fill minmax(200px,250px)</code>）</td></tr>
+    <tr><td>方向</td><td>常に縦積み（画像上・文字下）</td><td>モバイル横並び → <code>sm:</code> 以上で縦積み（<code>flex-row sm:flex-col</code>）</td></tr>
+    <tr><td>最小幅</td><td><code>min-w-[164px]</code></td><td><code>min-w-[128px]</code>（グリッドのセルに追従）</td></tr>
+    <tr><td>用途</td><td>ホームのランキング行</td><td>シリーズ内・シーズン別一覧</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 モーダルとフィードバック</h3>
+
+<ul>
+  <li><b><code>ConfirmationModal</code></b>: Headless UI の <code>Dialog</code> ベース。タイトル/本文/確認・取消ボタン、
+  <code>hideButtons</code> でボタン無し表示（ゲスト制限のカウントダウン用）に切替可能。バックドロップ
+  <code>bg-black/30 dark:bg-black/50</code>。</li>
+  <li><b>トースト</b>: <code>react-hot-toast</code>（<code>Toaster position="bottom-right" duration:4000</code>）で
+  ログイン/ログアウト/エラーを通知。</li>
+  <li><b><code>ErrorState</code></b>: 大きめ絵文字アイコン + タイトル + 説明 + 「再度読み込む」/「ホームに戻る」。
+  エピソード・シリーズの取得失敗時に全画面表示。</li>
+  <li><b><code>LoadingSkeleton</code></b>: <code>animate-pulse</code> のスケルトン（プロフィール系で使用）。</li>
+</ul>
+
+<h2>6. テーマ（next-themes・ライト/ダーク）</h2>
+
+<p>
+テーマは <code>next-themes</code> の <code>ThemeProvider attribute="class"</code>（<code>providers.tsx</code>）で管理し、
+Tailwind の <code>dark:</code> バリアントと連動する。切替 UI は <code>ThemeToggleSwitch</code>
+（<code>useTheme()</code> の <code>resolvedTheme</code>/<code>setTheme</code>）で、ヘッダのサイドパネル「設定」内に置く。
+SSR とクライアントの不一致を避けるため <code>mounted</code> フラグが立つまでトグルを描かず、
+<code>&lt;html suppressHydrationWarning&gt;</code> を併用する。
+</p>
+
+<table>
+  <thead><tr><th>局面</th><th>実装</th></tr></thead>
+  <tbody>
+    <tr><td>テーマ属性</td><td><code>class</code>（<code>html</code> に <code>dark</code> クラスを付与）</td></tr>
+    <tr><td>永続化</td><td>next-themes（<code>providers.tsx</code> の <code>ThemeProvider</code>）が <code>localStorage</code> に保存（既定挙動）</td></tr>
+    <tr><td>配色</td><td>Tailwind の <code>dark:</code> ユーティリティ（例 <code>bg-white dark:bg-black</code> / <code>text-gray-900 dark:text-white</code>）</td></tr>
+    <tr><td>地色</td><td><code>body</code> に <code>dark:bg-black dark:text-white</code>、カードは <code>dark:bg-black</code> 中心</td></tr>
+    <tr><td>初期不一致対策</td><td><code>suppressHydrationWarning</code> + <code>ThemeToggleSwitch</code> の <code>mounted</code> ガード</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+アプリ本体のテーマ（next-themes / Tailwind <code>dark:</code>）と、本ドキュメント HTML 自身のテーマ
+（<code>data-theme</code> + CSS 変数のトグル）は別系統。前者はアプリの実行時、後者は本書の閲覧時のもの。
+</div>
+
+<h2>7. レスポンシブ方針</h2>
+
+<p>
+ブレークポイントは Tailwind 既定（<code>sm</code>=640px / <code>lg</code>=1024px / <code>xl</code>=1280px）。
+モバイルファーストで、要所を <code>sm:</code>/<code>lg:</code>/<code>xl:</code> で拡張する。
+</p>
+
+<table>
+  <thead><tr><th>領域</th><th>モバイル</th><th>デスクトップ</th></tr></thead>
+  <tbody>
+    <tr><td>ホーム外枠</td><td><code>max-w-6xl mx-auto p-0</code></td><td><code>xl:p-14</code> で余白付与</td></tr>
+    <tr><td>ヘッダ</td><td>ハンバーガー → 右スライドの全幅パネル</td><td><code>md:max-w-sm</code> の右サイドパネル、<code>max-w-7xl</code></td></tr>
+    <tr><td>ランキング行</td><td>横スクロール（<code>overflow-x-auto</code>）</td><td>同左（幅が広がりカードが多く見える）</td></tr>
+    <tr><td>シリーズ/エピソード一覧</td><td>横並びカード（<code>flex-row</code>、画像左・文字右）</td><td><code>sm:flex-col</code> の縦カード + <code>auto-fill minmax(200px,250px)</code> グリッド</td></tr>
+    <tr><td>ログイン</td><td>フォーム 1 カラム（ブランドパネル非表示）</td><td><code>lg:</code> でブランドパネル + フォームの 2 カラム</td></tr>
+    <tr><td>エピソードプレイヤー</td><td colspan="2"><code>width:100vw; height:calc(100vw*9/16)</code> でビューポート幅に追従する 16:9（メタは <code>95vw</code>）</td></tr>
+  </tbody>
+</table>
+
+<h2>8. ゲスト 30 秒制限の UX</h2>
+
+<p>
+匿名（ゲスト）ユーザーはエピソードを 30 秒まで視聴できる。実装は <code>episode/[episodeId]/page.tsx</code> に集約され、
+状態は <code>showInitialWarning</code>（入室時の告知）・<code>showLimitModal</code>（制限到達）・
+<code>isPlaying</code>・<code>countdown</code> で管理する。
+</p>
+
+<ol>
+  <li><b>入室時の告知:</b> ゲストがエピソードを開くと <code>showInitialWarning=true</code> となり、
+  <code>ConfirmationModal</code> で「ゲストは 30 秒まで。全編はログイン/登録を」を表示。表示中は再生を止める。</li>
+  <li><b>視聴中の監視:</b> <code>VideoPlayer</code> の <code>onProgress</code>（<code>progressInterval=500</code>）が
+  <code>playedSeconds</code> を返し、<code>handleProgress</code> が <code>isAnonymous &amp;&amp; playedSeconds &gt;= 30</code> を検知したら
+  <code>isPlaying=false</code>、<code>showLimitModal=true</code>。</li>
+  <li><b>制限到達:</b> <code>showLimitModal</code> のモーダルは <code>hideButtons</code> でボタンを持たず、
+  <code>countdown</code>（10 → 0）を毎秒減算。0 で <code>router.push('/')</code> によりホームへ自動遷移。</li>
+  <li><b>再生ガード:</b> いずれかのモーダル表示中は <code>playing={isPlaying &amp;&amp; !showLimitModal &amp;&amp; !showInitialWarning}</code>、
+  <code>controls</code> も同条件で無効化し、モーダル越しの操作を防ぐ。</li>
+</ol>
+
+<figure>
+<svg viewBox="0 0 900 300" role="img" aria-label="ゲスト30秒制限のUXフロー">
+  <defs>
+    <marker id="ah2" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="var(--tx2)"/>
+    </marker>
+  </defs>
+  <style>
+    .n{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+    .na{fill:var(--panel);stroke:var(--acc);stroke-width:2}
+    .nw{fill:var(--panel);stroke:var(--warn);stroke-width:2}
+    .t{fill:var(--tx);font-size:12.5px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+    .s{fill:var(--tx2);font-size:12px;font-family:"Hiragino Sans","Noto Sans JP",sans-serif}
+    .e{stroke:var(--tx2);stroke-width:1.5;fill:none}
+  </style>
+
+  <rect class="na" x="24" y="60" width="150" height="70" rx="9"/>
+  <text class="t" x="99" y="88" text-anchor="middle">エピソード入室</text>
+  <text class="s" x="99" y="108" text-anchor="middle">isAnonymous 判定</text>
+
+  <rect class="nw" x="210" y="60" width="160" height="70" rx="9"/>
+  <text class="t" x="290" y="82" text-anchor="middle">初回警告モーダル</text>
+  <text class="s" x="290" y="100" text-anchor="middle">showInitialWarning</text>
+  <text class="s" x="290" y="116" text-anchor="middle">了解→再生開始</text>
+
+  <rect class="n" x="406" y="60" width="150" height="70" rx="9"/>
+  <text class="t" x="481" y="88" text-anchor="middle">再生中を監視</text>
+  <text class="s" x="481" y="108" text-anchor="middle">onProgress / 500ms</text>
+
+  <rect class="nw" x="592" y="60" width="150" height="70" rx="9"/>
+  <text class="t" x="667" y="82" text-anchor="middle">30 秒到達</text>
+  <text class="s" x="667" y="100" text-anchor="middle">playedSeconds≥30</text>
+  <text class="s" x="667" y="116" text-anchor="middle">停止 + モーダル</text>
+
+  <rect class="na" x="592" y="196" width="150" height="70" rx="9"/>
+  <text class="t" x="667" y="224" text-anchor="middle">ホームへ自動遷移</text>
+  <text class="s" x="667" y="244" text-anchor="middle">countdown 10→0</text>
+
+  <path class="e" d="M174,95 L206,95" marker-end="url(#ah2)"/>
+  <path class="e" d="M370,95 L402,95" marker-end="url(#ah2)"/>
+  <path class="e" d="M556,95 L588,95" marker-end="url(#ah2)"/>
+  <path class="e" d="M667,130 L667,192" marker-end="url(#ah2)"/>
+  <text class="s" x="682" y="165" text-anchor="start">router.push('/')</text>
+
+  <text class="s" x="24" y="30">ゲスト（匿名）ユーザーのみ。ログイン/登録ユーザーはこの制限を通らない。</text>
+</svg>
+<figcaption>図5: ゲスト 30 秒制限の状態遷移。入室告知 → 監視 → 到達で停止 → 10 秒カウントダウン後にホームへ。</figcaption>
+</figure>
+
+<details open>
+<summary>図5 のテキスト説明（スクリーンリーダ向け）</summary>
+<p>
+ゲスト（匿名）ユーザーがエピソードに入室すると <code>isAnonymous</code> を判定し、初回警告モーダル
+（<code>showInitialWarning</code>）を表示する。「了解」で再生を開始し、<code>onProgress</code>（500ms 間隔）で
+再生位置を監視する。<code>playedSeconds ≥ 30</code> に達すると再生を停止して制限モーダルを表示し、
+<code>countdown</code> を 10 から 0 へ毎秒減算、0 で <code>router.push('/')</code> によりホームへ自動遷移する。
+ログイン / 登録ユーザーはこの制限を通らない。
+</p>
+</details>
+
+<h2>9. 動画再生（react-player）</h2>
+
+<p>
+再生は atom <code>VideoPlayer</code> が <code>react-player</code>（v2.16）をラップして担う。SSR での不整合を避けるため
+<code>useEffect</code> で <code>clientSide</code> を立ててから <code>ReactPlayer</code> を描画し、それまでは
+「読み込み中...」を出す。親から <code>url</code>・<code>playing</code>・<code>controls</code>・<code>onPlay</code>・
+<code>onProgress</code> を受ける。
+</p>
+
+<pre><code>&lt;ReactPlayer
+  url={url}                       // Streaks 解決の m3u8（HLS）
+  controls={controls}            // モーダル中は false
+  playing={playing}              // ゲスト制限・モーダルで制御
+  width='100%' height='100%'
+  onPlay={handlePlay}            // 視聴履歴の記録トリガ（非ゲスト）
+  onProgress={onProgress}        // playedSeconds を親へ
+  progressInterval={500}
+  config={{ file:{ attributes:{ controlsList:'nodownload', playsInline:true } } }}
+/&gt;</code></pre>
+
+<ul>
+  <li><b>HLS ソース:</b> <code>url</code> は <code>StreamService</code> 経由で解決された <code>video_url</code>（m3u8）。
+  react-player は HLS を <code>file</code> プレイヤーで扱う。</li>
+  <li><b>視聴履歴:</b> <code>onPlay</code> → <code>handleVideoPlay</code> が非ゲスト時に <code>recordHistory()</code> で
+  エピソード情報を記録し、共有 Context（<code>WatchHistoryDataContext</code>）にも追加してヘッダの履歴一覧へ即反映。</li>
+  <li><b>属性:</b> <code>controlsList:'nodownload'</code> でダウンロード UI を抑制、<code>playsInline:true</code> で
+  モバイルのインライン再生を有効化。</li>
+</ul>
+
+<div class="note">
+<b>ストリーム解決の位置づけ（データ層の事実）:</b> <code>video_url</code> は BFF 側で TVER の公開 API フロー
+（session → ranking → callEpisode → statics JSON → streaks_info → playback）を辿って得た HLS。
+現行の主経路は Streaks（2025 年時点）。Streaks の Playback 呼び出しは <code>Origin: https://tver.jp</code> が必須で、
+これを間違えると <code>403 id139</code> が返る。API キーは
+<code>streaks_info_v2.json</code> の月替わりキー（<code>idx = (JST の月 % 6) || 6</code> → <code>key0{idx}</code>）を用いる。
+Streaks を持たない旧作（稀少）は Brightcove（<code>accountID</code> / <code>videoRefID</code> + <code>policyKey</code>）が経路になり、段階 2 以降の対応予定。
+UI 層はこの結果 URL を受け取って再生するだけで、解決ロジックは持たない。
+</div>
+
+<h2>10. アクセシビリティ</h2>
+
+<p>コードから観測できる現状を、対応済みと未対応に分けて事実として示す。</p>
+
+<h3>10.1 現状（対応されている点）</h3>
+<table>
+  <thead><tr><th>観点</th><th>実装箇所</th></tr></thead>
+  <tbody>
+    <tr><td>代替テキスト</td><td><code>ContentCard</code>/<code>GenreContentCard</code> の <code>Image alt={title}</code>、ランクバッジ <code>alt=&#96;${rank}位&#96;</code>、<code>ProfileAvatar</code> の <code>alt={userName}</code></td></tr>
+    <tr><td>aria ラベル</td><td><code>FavoriteButton</code> の <code>aria-label</code>（状態で「追加/削除/ログインしてください」）、ヘッダの <code>aria-label="Global"</code></td></tr>
+    <tr><td>スクリーンリーダ専用</td><td>ハンバーガー/クローズの <code>&lt;span class="sr-only"&gt;Open/Close menu&lt;/span&gt;</code>、装飾アイコンの <code>aria-hidden="true"</code></td></tr>
+    <tr><td>キーボード/フォーカス</td><td>Headless UI の <code>Dialog</code>/<code>Disclosure</code> がフォーカストラップ・Esc 閉じ・ロービングを提供（ヘッダ・各モーダル）</td></tr>
+    <tr><td>フォームラベル</td><td>ログインフォームの各 <code>&lt;label htmlFor&gt;</code>（ログイン ID / パスワード）、エラーは赤系ブロックで明示</td></tr>
+    <tr><td>ダーク配色</td><td>本文は <code>text-gray-900 dark:text-white</code> 等で両テーマの主要テキストを確保</td></tr>
+  </tbody>
+</table>
+
+<h3>10.2 現状（未対応・改善余地のある点）</h3>
+<table>
+  <thead><tr><th>観点</th><th>観測される事実</th></tr></thead>
+  <tbody>
+    <tr><td>ロゴの代替</td><td>ロゴ SVG の <code>sr-only</code> が「Your Company」のまま（Tailwind テンプレート由来の文言）。アプリ名でない</td></tr>
+    <tr><td>コントラスト</td><td>カード副次テキストが <code>text-gray-700 dark:text-gray-400</code> / <code>dark:text-gray-500</code>。小さめ文字で階調差が小さい箇所がある</td></tr>
+    <tr><td>横スクロールの操作性</td><td><code>ContentCardList</code> は <code>overflow-x-auto</code> のみ。スクロールボタンや <code>role</code>/<code>aria</code> は未付与</td></tr>
+    <tr><td>タブ ARIA</td><td><code>TabsWithUnderline</code> は <code>role="tab"/"tabpanel"</code> を持つが <code>aria-selected</code>/<code>aria-controls</code> が無く、本文が Lorem ipsum のプレースホルダ</td></tr>
+    <tr><td>ライブリージョン</td><td>ゲスト制限のカウントダウン（「n 秒後」）に <code>aria-live</code> 相当が無い</td></tr>
+    <tr><td>字幕トラック</td><td><code>VideoPlayer</code> は <code>tracks</code>（captions/subtitles）を受け取らず、字幕トグル UI が無い</td></tr>
+    <tr><td>ローディング表現</td><td>ホーム/エピソードは素の「Loading...」テキスト。<code>LoadingSkeleton</code> は存在するが一覧では未使用</td></tr>
+  </tbody>
+</table>
+
+<h2>11. 改善提案（客観）</h2>
+
+<p>以下はコードから観測できる事実に基づく提案で、優先度は工数と影響の目安。是非の評価ではない。</p>
+
+<h3>11.1 提案一覧</h3>
+
+<table>
+  <thead><tr><th>#</th><th>提案</th><th>根拠（観測事実）</th><th>目安</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>ホームの認証ガードをクライアント <code>router.push</code> からルート境界（middleware / サーバ判定）へ寄せる</td>
+      <td><code>Main.tsx</code> は <code>useEffect</code> で未認証を検知して遷移するため、初回に一瞬ホームが描かれてから飛ぶ経路がある</td>
+      <td>中</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>字幕トラック（<code>tracks[]</code> captions/subtitles）を <code>VideoPlayer</code> へ渡し、字幕トグルを追加</td>
+      <td>ストリーム解決レイヤーで字幕トラック（<code>ResolvedStream.subtitles</code>）を抽出済みだが、<code>VideoPlayer</code> の <code>config</code> は <code>attributes</code> のみで <code>tracks</code> の受け取り未対応</td>
+      <td>中</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>プレイヤーの寸法に <code>100vw</code> ではなく <code>100%</code> ＋アスペクト比指定を検討</td>
+      <td><code>width:100vw</code> は縦スクロールバー幅を含むため、横方向にわずかなはみ出し（横スクロール）が生じ得る</td>
+      <td>小</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>ランクバッジ画像の外部依存（<code>tver.jp</code> の SVG 直リンク）をローカル資産化またはフォールバック付与</td>
+      <td><code>ContentCard</code>/<code>GenreContentCard</code> がレンダ時に外部 URL を都度読み込む</td>
+      <td>小</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>横スクロール一覧にスクロール操作（ボタン/キーボード）と <code>aria</code> ロールを付与</td>
+      <td><code>ContentCardList</code> は <code>overflow-x-auto</code> のみで、ポインタ以外の操作導線が無い</td>
+      <td>中</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>素の「Loading...」を既存 <code>LoadingSkeleton</code>（またはカード形状スケルトン）へ置換</td>
+      <td>ホーム/エピソードは文字のみ。スケルトンは実装済みだが一覧未使用でレイアウトシフトが起きやすい</td>
+      <td>小</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>カウントダウン・トグル等の動的テキストに <code>aria-live</code>、ロゴ <code>sr-only</code> をアプリ名へ修正</td>
+      <td>制限モーダルの残秒表示が読み上げに乗らない。ロゴ代替が「Your Company」のまま</td>
+      <td>小</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>未使用/プレースホルダ UI（<code>TabsWithUnderline</code> の Lorem ipsum 等）の整理または実装完了</td>
+      <td>ダミー本文と不完全な ARIA を持つコンポーネントが残存</td>
+      <td>小</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>カード副次テキストの階調をダーク時に一段明るく（<code>gray-400/500</code> → <code>gray-300</code> 等）調整</td>
+      <td>小さめ副次テキストの階調差が小さい箇所がある</td>
+      <td>小</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>12. 用語・参照</h2>
+<ul>
+  <li><b>Main</b>: ホーム本体（<code>components/atomicDesign/pages/Main.tsx</code>）。ランキング取得 → ラベル別横スクロール。</li>
+  <li><b>ContentCardList / GenreContentCardList</b>: 横スクロール行 / レスポンシブグリッドの一覧 molecule。</li>
+  <li><b>VideoPlayer</b>: <code>react-player</code> ラッパ atom（<code>atoms/VideoPlayer.tsx</code>）。</li>
+  <li><b>ConfirmationModal</b>: Headless UI Dialog ベースの確認モーダル（ゲスト制限に <code>hideButtons</code> で流用）。</li>
+  <li><b>next-themes</b>: テーマ管理（<code>attribute="class"</code>）。切替は <code>ThemeToggleSwitch</code>。</li>
+  <li>関連ドキュメント: 同 <code>docs/reference/02_architecture</code> のシステム構成、データフロー各書。</li>
+</ul>
+
+<footer>
+TVapp UI/UX 設計書 ／ 対象: tvapp-web（xiaovy.tvapp.web, v1.4.0, Next.js 14.2.15） ／
+ブランチ: project/tvapp-cf-zero-cost ／ 記述はコードと調査ブリーフの客観的事実に基づく。
+</footer>
+</div>
+<script>
+  (function(){
+    var t=localStorage.getItem('doc-theme');
+    if(t)document.documentElement.setAttribute('data-theme',t);
+    __sync();
+  })();
+  function __toggle(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var n=d?'light':'dark';
+    document.documentElement.setAttribute('data-theme',n);
+    localStorage.setItem('doc-theme',n);__sync();
+  }
+  function __sync(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var b=document.getElementById('themeToggle');
+    if(b)b.textContent=d?'☀ ライト':'☾ ダーク';
+  }
+</script>
+</body>
+</html>

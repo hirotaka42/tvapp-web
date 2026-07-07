@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, use } from 'react';
 import { VideoPlayer } from '@/components/atomicDesign/atoms/VideoPlayer';
 import { useStreamService } from '@/hooks/useStream';
 import { useEpisodeService } from '@/hooks/useEpisode';
@@ -18,19 +18,21 @@ import { ErrorState } from '@/components/atomicDesign/molecules/ErrorState';
 import { useWatchHistoryData } from '@/contexts/WatchHistoryDataContext';
 import { ConfirmationModal } from '@/components/atomicDesign/molecules/ConfirmationModal';
 import { useRouter } from 'next/navigation';
+import { PHASE2_USER_DATA_ENABLED } from '@/lib/features';
 
 interface SeasonGroupedContents {
     seasonTitle: string;
     contents: ConvertedCardViewContent[];
 }
 
-function EpisodePage({ params }: { params: { episodeId: string } }) {
-    const { user: loginUser } = useFirebaseAuth();
+function EpisodePage(props: { params: Promise<{ episodeId: string }> }) {
+    const params = use(props.params);
+    const { user: loginUser, loading: authLoading } = useFirebaseAuth();
     const { episodeId } = params;
     const router = useRouter();
     const [videoUrl, setVideoUrl] = useState<StreamResponseType | null>(null);
     const [episode, setEpisode] = useState<EpisodeResponseType | null>(null);
-    const streamUrl = useStreamService(episodeId);
+    const { data: streamData, error: streamError, retry: retryStream } = useStreamService(episodeId);
     const episodeInfo = useEpisodeService(episodeId);
     const [seriesTitle, setSeriesTitle] = useState<string>('');
     const [isFavorite, setIsFavorite] = useState<boolean>(false);
@@ -106,10 +108,17 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
     }, [episode]);
 
     useEffect(() => {
-        if (streamUrl) {
-            setVideoUrl(streamUrl);
+        if (streamData) {
+            setVideoUrl(streamData);
         }
-    }, [streamUrl]);
+    }, [streamData]);
+
+    // 未認証(認証解決後)ならログインへ。共有URLをそのまま復帰先に渡す。
+    useEffect(() => {
+        if (!authLoading && !loginUser) {
+            router.replace(`/user/login?redirect=${encodeURIComponent(`/episode/${episodeId}`)}`);
+        }
+    }, [authLoading, loginUser, episodeId, router]);
 
     useEffect(() => {
         if (episodeInfo) {
@@ -121,7 +130,7 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
     // お気に入りの状態を確認するuseEffect
     useEffect(() => {
         const checkFavorite = async () => {
-            if (episodeInfo && loginUser && !loginUser.isAnonymous) {
+            if (episodeInfo && loginUser && PHASE2_USER_DATA_ENABLED) {
                 try {
                     const isFav = await checkIsFavorite(episodeInfo.data.seriesID);
                     setIsFavorite(isFav);
@@ -144,7 +153,7 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
     // 動画再生検知時のコールバック
     const handleVideoPlay = useCallback(async () => {
         console.log('動画再生を検知しました');
-        if (episode && loginUser && !loginUser.isAnonymous) {
+        if (episode && loginUser && PHASE2_USER_DATA_ENABLED) {
             try {
                 const history = await recordHistory({
                     episodeId: episode.data.id,
@@ -165,7 +174,14 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
         }
     }, [episode, loginUser, seriesTitle, recordHistory, addHistoryToList]);
 
-    // ロード中またはユーザー認証中
+    // 認証解決中はローディング表示、未認証はリダイレクト実行中のため何も描画しない
+    if (authLoading) {
+        return (
+            <div className="flex min-h-[50vh] items-center justify-center text-gray-500 dark:text-gray-400">
+                読み込み中...
+            </div>
+        );
+    }
     if (!loginUser) {
         return null;
     }
@@ -214,32 +230,33 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
 
     return (
         <>
-            <div style={{
-                width: '100vw',
-                height: 'calc(100vw * 9 / 16)',
-                position: 'relative',
-                margin: 'auto',
-                backgroundColor: '#000'
-            }}>
-                {videoUrl ? (
-                    <VideoPlayer
-                        url={videoUrl.video_url}
-                        onPlay={handleVideoPlay}
-                        onProgress={handleProgress}
-                        playing={isPlaying && !showLimitModal && !showInitialWarning}
-                        controls={!showLimitModal && !showInitialWarning}
-                    />
-                ) : (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '100%',
-                        height: '100%'
-                    }}>
-                        <div className="text-white text-lg">動画を読み込み中...</div>
-                    </div>
-                )}
+            <div className="w-full bg-black">
+                <div className="relative mx-auto aspect-video w-full max-w-[min(100%,calc((100dvh-8rem)*16/9))]">
+                    {videoUrl ? (
+                        <VideoPlayer
+                            url={videoUrl.video_url}
+                            onPlay={handleVideoPlay}
+                            onProgress={handleProgress}
+                            playing={isPlaying && !showLimitModal && !showInitialWarning}
+                            controls={!showLimitModal && !showInitialWarning}
+                        />
+                    ) : streamError ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                            <p className="text-lg font-semibold text-white">動画を再生できませんでした</p>
+                            <p className="text-sm text-gray-300">{streamError.message}</p>
+                            <button
+                                onClick={retryStream}
+                                className="rounded-lg bg-blue-600 px-5 py-2 font-semibold text-white transition hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-blue-400"
+                            >
+                                再試行
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-lg text-white">動画を読み込み中...</div>
+                        </div>
+                    )}
+                </div>
             </div>
             <div style={
                 {
@@ -255,7 +272,7 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
                         >
                             {seriesTitle}
                         </a>
-                        {!loginUser.isAnonymous && (
+                        {PHASE2_USER_DATA_ENABLED && (
                             <FavoriteButton
                                 seriesId={episode.data.seriesID}
                                 seriesTitle={seriesTitle}
@@ -283,7 +300,7 @@ function EpisodePage({ params }: { params: { episodeId: string } }) {
                     <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">エピソード</h2>
                     {seriesEpisodes.map((season, index) => (
                         <div key={index} className="mb-6">
-                            <h3 className="text-md font-semibold mb-2 text-gray-800 dark:text-gray-200">
+                            <h3 className="text-base font-semibold mb-2 text-gray-800 dark:text-gray-200">
                                 {season.seasonTitle}
                             </h3>
                             <GenreContentCardList contents={season.contents} />

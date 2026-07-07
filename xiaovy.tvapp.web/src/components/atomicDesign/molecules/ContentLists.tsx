@@ -33,7 +33,7 @@ const Example: React.FC<ExampleProps> = ({ contents }) => {
               </div>
               <div className="p-4 leading-normal w-2/3 sm:w-full">
                 <h5
-                  className="mb-2 text-md font-bold tracking-tight text-gray-900 dark:text-white truncate"
+                  className="mb-2 text-base font-bold tracking-tight text-gray-900 dark:text-white truncate"
                   style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                 >
                   {content.title}

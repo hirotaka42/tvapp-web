@@ -6,9 +6,11 @@ import { useTvHomeService } from '@/hooks/useTvHome';
 import { getContentsByLabel, getAllLabels } from '@/utils/Convert/ranking/home/responseParser';
 import { convertRankingToCardData } from "@/utils/Convert/ranking/convertRankingToCardData";
 import { ConvertedContent } from '@/types/CardItem/RankingContent';
-import { ContentCardList } from '@/components/atomicDesign/molecules/ContentCardList';
 import { useAuth } from '@/hooks/useAuth';
 import { useFirebaseAuth } from '@/contexts/AuthContext';
+import { useService } from '@/contexts/ServiceContext';
+import { ComingSoonWorld } from '@/components/atomicDesign/organisms/ComingSoonWorld';
+import { TverHome } from '@/components/atomicDesign/organisms/TverHome';
 
 export const Main: FC = () => {
     const router = useRouter();
@@ -16,6 +18,7 @@ export const Main: FC = () => {
     const { loading } = useFirebaseAuth();
     const session = useSessionService();
     const tvHomeData = useTvHomeService(session);
+    const { service } = useService();
     const [rankingContents, setRankingContents] = useState<Record<string, ConvertedContent[]>>({});
     const [rankingLabels, setRankingLabels] = useState<string[]>([]);
 
@@ -45,17 +48,11 @@ export const Main: FC = () => {
         </div>;
     }
 
-    return (
-        <>
-            {!rankingLabels.length && <div>Loading...</div>}
-            {rankingLabels.map(label => (
-                <div key={label}>
-                    <h2
-                        className="text-md font-bold tracking-tight pl-3 pr-3 mt-1 text-gray-900 dark:text-white truncate"
-                    >{label}</h2>
-                    <ContentCardList contents={rankingContents[label] || []} />
-                </div>
-            ))}
-        </>
-    );
+    if (!rankingLabels.length) {
+        return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+    }
+
+    return service === 'tver'
+        ? <TverHome rankingLabels={rankingLabels} rankingContents={rankingContents} />
+        : <ComingSoonWorld service={service} />;
 };

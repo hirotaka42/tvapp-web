@@ -1,3 +1,10 @@
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
+
+// ローカル `next dev` で Cloudflare のバインディング(env/KV等)を利用可能にする。
+if (process.env.NODE_ENV === 'development') {
+    initOpenNextCloudflareForDev();
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     images: {

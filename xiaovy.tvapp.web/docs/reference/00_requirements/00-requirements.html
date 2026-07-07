@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp 要求整理仕様書</title>
+<style>
+  :root{
+    --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+    --acc:#0969da;--ok:#1a7f37;--warn:#9a6700;--err:#d1242f;
+    --code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+  }
+  html[data-theme="dark"]{
+    --bg:#0b0e14;--panel:#11151f;--line:#252b3b;--tx:#dde3f0;--tx2:#8b93a7;
+    --acc:#7aa2f7;--ok:#9ece6a;--warn:#e0af68;--err:#f7768e;
+    --code-bg:#1a2030;--code-tx:#9fd3ff;--th-bg:#1a2030;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+    font-size:16px;line-height:1.8;letter-spacing:.02em;font-feature-settings:"palt" 1}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 100px}
+  a{color:var(--acc)}
+  h1{font-size:26px;margin:0 0 6px;line-height:1.4}
+  .meta{margin:14px 0 26px;color:var(--tx2);font-size:13px}
+  .tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--tx2);margin:0 6px 6px 0}
+  .tag b{color:var(--tx)}
+  .status-ok{color:var(--ok)}.status-wip{color:var(--warn)}
+  h2{font-size:19px;margin:34px 0 12px;border-left:4px solid var(--acc);padding-left:11px}
+  h3{font-size:16px;margin:22px 0 7px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--th-bg)}
+  code{background:var(--code-bg);color:var(--code-tx);padding:1px 6px;border-radius:5px;font-family:"SF Mono","Consolas",monospace;font-size:13px}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto}
+  pre code{background:none;padding:0}
+  .note{border-left:4px solid var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);padding:10px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+  ul,ol{padding-left:22px}
+  figure{margin:20px 0;text-align:center}
+  figcaption{color:var(--tx);font-size:13px;margin-top:8px}
+  svg{max-width:100%;height:auto}
+  .toc{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 20px 14px 8px;margin:20px 0}
+  .toc>b{display:block;margin:0 0 6px 12px;font-size:13px;color:var(--tx2)}
+  .toc ol{margin:0;padding-left:34px;line-height:1.7}
+  .toc a{text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  footer{margin-top:52px;color:var(--tx2);font-size:12px;border-top:1px solid var(--line);padding-top:20px}
+  #themeToggle{position:fixed;top:14px;right:14px;z-index:10;border:1px solid var(--line);
+    background:var(--panel);color:var(--tx);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer}
+  @media print{
+    html[data-theme="dark"]{
+      --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+      --acc:#0969da;--code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+    }
+    #themeToggle{display:none}
+    a{color:#0550ae}
+  }
+</style>
+</head>
+<body>
+<button id="themeToggle" onclick="__toggle()">☾ ダーク</button>
+<div class="wrap">
+<h1>TVapp 要求整理仕様書</h1>
+<div class="meta">
+  <span class="tag">対象 <b>tvapp-web</b></span>
+  <span class="tag">ブランチ <b>project/tvapp-cf-zero-cost</b></span>
+  <span class="tag">関連 <b>Platform-Stream-Loader / tvapp-bff(廃止候補)</b></span>
+  <span class="tag">version <b>1.4.0</b></span>
+  <span class="tag">ステータス <b class="status-wip">WIP(要求整理・移行検討)</b></span>
+  <span class="tag">区分 <b>reference / 00_requirements</b></span>
+</div>
+
+<div class="note">
+  本書は AGENTS-SHARED §10(中立性)に従い、<b>客観的な技術・構成・データフローの事実</b>のみを記述する。
+  題材の是非の評価や「リスク」の断定は行わない。数値・エンドポイント・ヘッダ等はすべて既存コード
+  (<code>xiaovy.tvapp.web/src</code>)および調査ブリーフに一致させている。
+</div>
+
+<nav class="toc" aria-label="目次">
+  <b>目次</b>
+  <ol>
+    <li><a href="#s1">目的と背景</a></li>
+    <li><a href="#s2">ステークホルダ</a></li>
+    <li><a href="#s3">解決したい課題</a></li>
+    <li><a href="#s4">ユースケース一覧</a></li>
+    <li><a href="#s5">機能要求(FR)</a></li>
+    <li><a href="#s6">非機能要求(NFR)</a></li>
+    <li><a href="#s7">スコープ</a></li>
+    <li><a href="#s8">前提・制約</a></li>
+    <li><a href="#s9">トレーサビリティ(課題 → 要求 → スコープ)</a></li>
+  </ol>
+</nav>
+
+<h2 id="s1">1. 目的と背景</h2>
+<p>
+  TVapp は、公開されている TVER の視聴用 Web/HTTP API を素の HTTP で呼び出し、
+  ランキング・検索・シリーズ・エピソード情報を取得して、ブラウザ上で HLS ストリームを再生する Web アプリケーションである。
+  現行は Next.js 14.2(App Router)のフロント + BFF(API ルート)を中核に、以下 3 リポジトリで構成される。
+</p>
+<table>
+  <thead><tr><th>リポジトリ</th><th>役割</th><th>スタック</th><th>本移行での位置づけ</th></tr></thead>
+  <tbody>
+    <tr><td><b>tvapp-web</b></td><td>フロント + BFF(TVER 代理・ユーザーデータ・再生)</td><td>Next.js 14.2 / TS strict / Tailwind / Firebase</td><td>移行の作業ルート(正本)</td></tr>
+    <tr><td>Platform-Stream-Loader</td><td>ページ URL → m3u8 マニフェスト解決</td><td>Azure Functions(Python) + yt-dlp</td><td>純 TS 実装へ置換して廃止対象</td></tr>
+    <tr><td>tvapp-bff</td><td>旧 BFF(2024 停止)</td><td>.NET7</td><td>移行対象外・廃止候補</td></tr>
+  </tbody>
+</table>
+<p>
+  本要求整理の主眼は、現行機能を保ちつつ運用構成を <b>Cloudflare + Firebase</b> へ移し、
+  外部の重い依存(Azure Functions / yt-dlp / Cosmos DB)を除去して <b>ほぼ $0</b> で運用可能にすることである。
+  「何を作るか(機能)」「どの品質で成立させるか(非機能)」「どこまでやるか(スコープ)」を確定し、
+  後続の設計・実装フェーズの入力とする。
+</p>
+
+<h2 id="s2">2. ステークホルダ</h2>
+<p>本アプリの利用主体・関係者を、Firebase Auth のロール(<code>src/types/User.ts</code> の <code>UserRole</code>)と対応づけて整理する。</p>
+<table>
+  <thead><tr><th>ステークホルダ</th><th>ロール値</th><th>関心事 / 権限</th></tr></thead>
+  <tbody>
+    <tr><td><b>視聴者(一般ユーザー)</b></td><td><code>GENERAL(0)</code> 以上</td><td>ログインして全編視聴・お気に入り・視聴履歴・プロフィール編集。全機能の中心的利用者。</td></tr>
+    <tr><td><b>ゲスト(匿名ユーザー)</b></td><td><code>GUEST(-1)</code></td><td>匿名サインインで閲覧・再生を試せる。再生は <b>30 秒制限</b>。お気に入り/履歴/課金系の一部は不可。</td></tr>
+    <tr><td><b>管理者</b></td><td><code>SUPER_USER(99)</code> 等</td><td>ユーザー検索・ロール更新(<code>/api/admin/*</code>)。監査ログ(<code>AuditLog</code>)を残す。</td></tr>
+    <tr><td>拡張ロール</td><td><code>DL_ENABLED(1)</code> / <code>TV_ENABLED(2)</code> / <code>PREVIEW(10)</code></td><td>ダウンロード有効化・TV 有効化・プレビュー等の段階的な機能開放の枠(将来利用)。</td></tr>
+    <tr><td>運用者(開発/デプロイ担当)</td><td>—</td><td>低コスト・低運用負荷での可用性維持。デプロイ・キー管理・監視。</td></tr>
+    <tr><td>外部提供元(TVER / Streaks / Brightcove / Firebase / Cloudflare)</td><td>—</td><td>依存する外部 API・基盤。可用性・仕様は外部要因で変わりうる。</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s3">3. 解決したい課題</h2>
+<p>現行構成を事実として並べ、本移行で解消を狙う課題を課題 ID(<code>P-n</code>)として定義する。</p>
+<table>
+  <thead><tr><th>ID</th><th>現状(事実)</th><th>狙い</th></tr></thead>
+  <tbody>
+    <tr><td>P-1</td><td>ストリーム解決を外部 Azure Functions + yt-dlp に依存(調査ブリーフ「唯一の重い/課金源」)。</td><td>解決フローを純 TS で API ルート内に内製し、外部関数を不要にする。</td></tr>
+    <tr><td>P-2</td><td>サーバ側ユーザーデータが firebase-admin(gRPC Firestore)前提で、エッジランタイム非互換。</td><td>ID トークン検証を <code>jose</code>+Google 公開鍵に、データを Firestore client SDK + セキュリティルールへ寄せる。</td></tr>
+    <tr><td>P-3</td><td>課金系データが Cosmos DB 依存(<code>/api/cosmosdb/videos</code>)。</td><td>MVP から除外し、必要分は段階的に Firestore へ寄せて Cosmos を廃止する。</td></tr>
+    <tr><td>P-4</td><td>ホスティング/運用構成が固定費・運用負荷を伴う。</td><td>Cloudflare Workers + OpenNext(無料枠 10 万 req/日)へ移し、ほぼ $0 に。</td></tr>
+    <tr><td>P-5</td><td>旧 BFF(tvapp-bff / .NET7)が 2024 停止のまま残存。</td><td>移行対象から外し、廃止候補として整理する。</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s4">4. ユースケース一覧</h2>
+<p>
+  API ルート棚卸し(<code>src/app/api</code>)と UI ページ棚卸し(<code>src/app</code>)から、アクター別のユースケースを抽出する。
+  各ユースケースには実装の裏付け(ルート/ページ)を併記する。
+</p>
+
+<figure>
+<svg viewBox="0 0 900 470" role="img" aria-label="アクターとユースケースの関係図">
+  <!-- system boundary -->
+  <rect x="250" y="20" width="420" height="430" rx="12" style="fill:var(--panel);stroke:var(--line)" stroke-width="1.5"/>
+  <text x="460" y="42" text-anchor="middle" font-size="14" font-weight="bold" fill="currentColor" font-family='"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif'>TVapp(tvapp-web)</text>
+
+  <!-- actors -->
+  <g fill="currentColor" font-size="12" text-anchor="middle" font-family='"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif'>
+    <!-- viewer -->
+    <circle cx="70" cy="120" r="14" style="fill:none;stroke:currentColor" stroke-width="1.6"/>
+    <line x1="70" y1="134" x2="70" y2="168" style="stroke:currentColor" stroke-width="1.6"/>
+    <line x1="48" y1="146" x2="92" y2="146" style="stroke:currentColor" stroke-width="1.6"/>
+    <line x1="70" y1="168" x2="52" y2="192" style="stroke:currentColor" stroke-width="1.6"/>
+    <line x1="70" y1="168" x2="88" y2="192" style="stroke:currentColor" stroke-width="1.6"/>
+    <text x="70" y="212">視聴者</text>
+    <!-- guest -->
+    <circle cx="70" cy="270" r="14" style="fill:none;stroke:currentColor" stroke-width="1.6"/>
+    <line x1="70" y1="284" x2="70" y2="318" style="stroke:currentColor" stroke-width="1.6"/>
+    <line x1="48" y1="296" x2="92" y2="296" style="stroke:currentColor" stroke-width="1.6"/>
+    <line x1="70" y1="318" x2="52" y2="342" style="stroke:currentColor" stroke-width="1.6"/>
+    <line x1="70" y1="318" x2="88" y2="342" style="stroke:currentColor" stroke-width="1.6"/>
+    <text x="70" y="362">ゲスト</text>
+    <!-- admin -->
+    <circle cx="830" cy="120" r="14" style="fill:none;stroke:currentColor" stroke-width="1.6"/>
+    <line x1="830" y1="134" x2="830" y2="168" style="stroke:currentColor" stroke-width="1.6"/>
+    <line x1="808" y1="146" x2="852" y2="146" style="stroke:currentColor" stroke-width="1.6"/>
+    <line x1="830" y1="168" x2="812" y2="192" style="stroke:currentColor" stroke-width="1.6"/>
+    <line x1="830" y1="168" x2="848" y2="192" style="stroke:currentColor" stroke-width="1.6"/>
+    <text x="830" y="212">管理者</text>
+  </g>
+
+  <!-- use cases (ellipses) -->
+  <g font-size="12" text-anchor="middle" fill="currentColor" font-family='"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif'>
+    <ellipse cx="360" cy="70"  rx="88" ry="22" style="fill:var(--bg);stroke:var(--acc)" stroke-width="1.5"/><text x="360" y="75">ホーム閲覧</text>
+    <ellipse cx="360" cy="130" rx="88" ry="22" style="fill:var(--bg);stroke:var(--acc)" stroke-width="1.5"/><text x="360" y="135">キーワード検索</text>
+    <ellipse cx="360" cy="190" rx="88" ry="22" style="fill:var(--bg);stroke:var(--acc)" stroke-width="1.5"/><text x="360" y="195">シリーズ一覧</text>
+    <ellipse cx="360" cy="250" rx="88" ry="22" style="fill:var(--bg);stroke:var(--acc)" stroke-width="1.5"/><text x="360" y="255">エピソード再生</text>
+    <ellipse cx="560" cy="70"  rx="90" ry="22" style="fill:var(--bg);stroke:var(--acc)" stroke-width="1.5"/><text x="560" y="75">認証(登録/ログイン)</text>
+    <ellipse cx="560" cy="130" rx="90" ry="22" style="fill:var(--bg);stroke:var(--acc)" stroke-width="1.5"/><text x="560" y="135">ゲスト利用(30秒)</text>
+    <ellipse cx="560" cy="190" rx="90" ry="22" style="fill:var(--bg);stroke:var(--acc)" stroke-width="1.5"/><text x="560" y="195">お気に入り</text>
+    <ellipse cx="560" cy="250" rx="90" ry="22" style="fill:var(--bg);stroke:var(--acc)" stroke-width="1.5"/><text x="560" y="255">視聴履歴</text>
+    <ellipse cx="460" cy="320" rx="90" ry="22" style="fill:var(--bg);stroke:var(--acc)" stroke-width="1.5"/><text x="460" y="325">プロフィール管理</text>
+    <ellipse cx="460" cy="380" rx="120" ry="22" style="fill:var(--bg);stroke:var(--warn)" stroke-width="1.5"/><text x="460" y="385">ユーザー/ロール管理</text>
+    <ellipse cx="460" cy="425" rx="120" ry="20" style="fill:var(--bg);stroke:var(--tx2)" stroke-width="1.3"/><text x="460" y="430">ライブ m3u 再生(パスワード)</text>
+  </g>
+
+  <!-- associations viewer -->
+  <g style="stroke:var(--tx2)" stroke-width="1.2" fill="none" opacity="0.9">
+    <line x1="92" y1="188" x2="272" y2="80"/>
+    <line x1="92" y1="188" x2="272" y2="132"/>
+    <line x1="92" y1="188" x2="272" y2="190"/>
+    <line x1="92" y1="188" x2="272" y2="248"/>
+    <line x1="92" y1="188" x2="470" y2="130"/>
+    <line x1="92" y1="188" x2="470" y2="190"/>
+    <line x1="92" y1="188" x2="470" y2="250"/>
+    <line x1="92" y1="188" x2="372" y2="318"/>
+    <!-- guest -->
+    <line x1="92" y1="338" x2="272" y2="80"/>
+    <line x1="92" y1="338" x2="272" y2="250"/>
+    <line x1="92" y1="338" x2="470" y2="130"/>
+    <line x1="92" y1="338" x2="470" y2="70"/>
+    <!-- admin -->
+    <line x1="808" y1="188" x2="580" y2="380"/>
+  </g>
+</svg>
+<figcaption>図 1: アクター(視聴者 / ゲスト / 管理者)と主要ユースケース。橙は管理者専用、灰はパスワード制の別機能。</figcaption>
+</figure>
+
+<h3>4.1 ユースケース一覧表</h3>
+<p>実装の裏付けを、UI ページ / コンポーネントと API ルートの 2 列に分けて 1 対 1 で対応づける(「—」は該当なし・クライアント側処理)。</p>
+<table>
+  <thead><tr><th>UC</th><th>ユースケース</th><th>主アクター</th><th>ページ / コンポーネント</th><th>API ルート</th></tr></thead>
+  <tbody>
+    <tr><td>UC-01</td><td>ホーム(ランキング)閲覧</td><td>視聴者</td><td><code>/</code>(<code>Main</code>)</td><td><code>GET /api/service/call/home</code></td></tr>
+    <tr><td>UC-02</td><td>ジャンル別ランキング取得</td><td>視聴者</td><td><code>/</code>(<code>Main</code>)</td><td><code>GET /api/service/call/ranking/episode/detail/[genre]</code></td></tr>
+    <tr><td>UC-03</td><td>キーワード検索</td><td>視聴者 / ゲスト</td><td>検索 UI(<code>Header</code>)</td><td><code>GET /api/service/search</code>(callKeywordSearch)</td></tr>
+    <tr><td>UC-04</td><td>シリーズのエピソード一覧</td><td>視聴者</td><td><code>/series/[seriesId]</code></td><td><code>GET /api/service/call/seriesEpisodes/[seriesId]</code></td></tr>
+    <tr><td>UC-05</td><td>エピソード情報取得</td><td>視聴者</td><td><code>/episode/[episodeId]</code></td><td><code>GET /api/service/call/episode</code>, <code>GET /api/content/episode/[episodeId]</code></td></tr>
+    <tr><td>UC-06</td><td>エピソード再生(HLS)</td><td>視聴者</td><td><code>/episode/[episodeId]</code>(react-player)</td><td>ストリーム解決(現行 <code>/api/service/call/streaminglink</code> → 純 TS へ)</td></tr>
+    <tr><td>UC-07</td><td>ゲスト再生(30 秒制限 + 誘導)</td><td>ゲスト</td><td><code>/episode/[episodeId]</code></td><td>—(クライアント制御: <code>playedSeconds &gt;= 30</code> でモーダル → 遷移)</td></tr>
+    <tr><td>UC-08</td><td>新規登録 / ログイン / ログアウト</td><td>視聴者 / ゲスト</td><td><code>/user/register</code>, <code>/user/login</code>, <code>/user/logout</code></td><td><code>POST /api/User/Register</code></td></tr>
+    <tr><td>UC-09</td><td>ゲスト(匿名)サインインとロール付与</td><td>ゲスト</td><td>ログイン UI</td><td><code>POST /api/User/setGuestRole</code>(Custom Claims <code>role=-1</code>)</td></tr>
+    <tr><td>UC-10</td><td>メール確認 / パスワード再設定 / アクティベート</td><td>視聴者</td><td><code>/user/verify-email</code>, <code>/user/reset-password</code>, <code>/user/activate</code></td><td>—(Firebase Auth)</td></tr>
+    <tr><td>UC-11</td><td>お気に入り登録 / 一覧 / 削除 / 存在確認</td><td>視聴者</td><td><code>/user/favorite</code></td><td><code>/api/User/favorites</code>, <code>/favorites/[seriesId]</code>, <code>/exists</code></td></tr>
+    <tr><td>UC-12</td><td>視聴履歴の記録 / 一覧 / 削除</td><td>視聴者</td><td><code>/user/history</code></td><td><code>/api/User/watch-history</code>, <code>/watch-history/[historyId]</code></td></tr>
+    <tr><td>UC-13</td><td>プロフィール閲覧 / 編集 / 写真アップロード</td><td>視聴者</td><td><code>/user/profile</code>, <code>/profile/edit</code></td><td><code>/api/User/profile</code>, <code>/profile/upload-photo</code>, <code>/profile/photo</code></td></tr>
+    <tr><td>UC-14</td><td>ユーザー検索 / ロール更新</td><td>管理者</td><td><code>/admin/users</code></td><td><code>/api/admin/users/search</code>, <code>/api/admin/updateRole</code></td></tr>
+    <tr><td>UC-15</td><td>ダウンロード済み動画一覧(課金系)</td><td>視聴者(非ゲスト)</td><td>—</td><td><code>GET /api/cosmosdb/videos</code>(匿名は 403。MVP 除外)</td></tr>
+    <tr><td>UC-16</td><td>ライブ m3u 再生(別機能)</td><td>視聴者</td><td><code>/stream</code>(<code>NEXT_PUBLIC_STREAM_PASSWORD</code>)</td><td><code>GET /api/service/stream/fetchM3u</code></td></tr>
+    <tr><td>UC-17</td><td>ヘルスチェック</td><td>運用者</td><td>—</td><td><code>GET /api/health</code></td></tr>
+  </tbody>
+</table>
+
+<h3>4.2 再生ユースケースの内部データフロー(UC-06 の要点)</h3>
+<p>
+  再生は TVER の公開 API を段階的に呼び、最終的に Streaks の playback API から非 DRM の HLS(m3u8)を得る。
+  現行 tvapp-web はストリーム解決部を外部 Azure Functions(<code>/api/service/call/streaminglink</code>)に委譲しているが、
+  移行後はこの全段を純 TS で内製する。呼び出しヘッダ(特に <code>Origin</code>)と月替わりキー選択が要点である。
+</p>
+
+<figure>
+<svg viewBox="0 0 900 360" role="img" aria-label="TVER 視聴のデータフロー">
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g font-size="12.5" fill="currentColor" font-family='"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif'>
+    <!-- boxes -->
+    <g text-anchor="middle">
+      <rect x="30"  y="30" width="180" height="52" rx="8" style="fill:var(--panel);stroke:var(--acc)" stroke-width="1.4"/>
+      <text x="120" y="52">① session 生成</text><text x="120" y="70" font-size="11" fill="currentColor" font-family='"SF Mono","Consolas",monospace'>platform-api / create</text>
+
+      <rect x="360" y="30" width="180" height="52" rx="8" style="fill:var(--panel);stroke:var(--acc)" stroke-width="1.4"/>
+      <text x="450" y="52">② ranking 取得</text><text x="450" y="70" font-size="11" fill="currentColor"><tspan font-family='"SF Mono","Consolas",monospace'>service-api</tspan> / ホーム合成</text>
+
+      <rect x="690" y="30" width="180" height="52" rx="8" style="fill:var(--panel);stroke:var(--acc)" stroke-width="1.4"/>
+      <text x="780" y="52">③ callEpisode</text><text x="780" y="70" font-size="11" fill="currentColor"><tspan font-family='"SF Mono","Consolas",monospace'>version</tspan> 取得</text>
+
+      <rect x="690" y="150" width="180" height="52" rx="8" style="fill:var(--panel);stroke:var(--acc)" stroke-width="1.4"/>
+      <text x="780" y="172">④ statics JSON</text><text x="780" y="190" font-size="11" fill="currentColor"><tspan font-family='"SF Mono","Consolas",monospace'>video</tspan> / <tspan font-family='"SF Mono","Consolas",monospace'>streaks</tspan> 取得</text>
+
+      <rect x="360" y="150" width="180" height="52" rx="8" style="fill:var(--panel);stroke:var(--acc)" stroke-width="1.4"/>
+      <text x="450" y="172">⑤ streaks_info</text><text x="450" y="190" font-size="11" fill="currentColor" font-family='"SF Mono","Consolas",monospace'>api_key key01..06</text>
+
+      <rect x="30"  y="150" width="180" height="52" rx="8" style="fill:var(--panel);stroke:var(--ok)" stroke-width="1.6"/>
+      <text x="120" y="172">⑥ playback 解決</text><text x="120" y="190" font-size="11" fill="currentColor">Streaks → <tspan font-family='"SF Mono","Consolas",monospace'>m3u8</tspan>(clear)</text>
+
+      <rect x="30" y="270" width="840" height="56" rx="8" style="fill:var(--bg);stroke:var(--line)" stroke-width="1.3"/>
+    </g>
+    <text x="45" y="292" font-size="12">キー選択: <tspan font-family='"SF Mono","Consolas",monospace'>idx = (JSTの月 % 6) || 6 → key0{idx}</tspan></text>
+    <text x="45" y="312" font-size="12">⑥ の必須ヘッダ: <tspan font-family='"SF Mono","Consolas",monospace'>Origin: https://tver.jp</tspan> / <tspan font-family='"SF Mono","Consolas",monospace'>X-Streaks-Api-Key</tspan>(誤ると 403 id139)。DRM(key_systems 付き)は除外。</text>
+
+    <!-- arrows -->
+    <g style="stroke:currentColor" stroke-width="1.5" fill="none">
+      <line x1="210" y1="56" x2="356" y2="56" marker-end="url(#ah)"/>
+      <line x1="540" y1="56" x2="686" y2="56" marker-end="url(#ah)"/>
+      <line x1="780" y1="82" x2="780" y2="146" marker-end="url(#ah)"/>
+      <line x1="690" y1="176" x2="544" y2="176" marker-end="url(#ah)"/>
+      <line x1="360" y1="176" x2="214" y2="176" marker-end="url(#ah)"/>
+    </g>
+  </g>
+</svg>
+<figcaption>図 2: 再生時のデータフロー(①→⑥)。移行後は全段を tvapp-web の API ルート内で純 TS 実装する。</figcaption>
+</figure>
+
+<h3>4.3 各ステップの詳細(エンドポイント / 主なヘッダ / 主要レスポンス)</h3>
+<p>
+  図 2 の各段について、外部 TVER / Streaks への実エンドポイント・必須ヘッダ・利用するレスポンスフィールドを併記する。
+  値は調査ブリーフ(実測)および <code>src</code> の実装に一致させている。ヘッダの <code>Origin</code>/<code>Referer</code> はスキーム付きで記す。
+</p>
+<table>
+  <thead><tr><th>段</th><th>エンドポイント</th><th>主なヘッダ</th><th>主要レスポンス(利用フィールド)</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>① session</td>
+      <td><code>POST https://platform-api.tver.jp/v2/api/platform_users/browser/create</code>(body <code>device_type=pc</code>)</td>
+      <td><code>Origin: https://s.tver.jp</code> / <code>Referer: https://s.tver.jp</code></td>
+      <td><code>result.platform_uid</code> / <code>result.platform_token</code></td>
+    </tr>
+    <tr>
+      <td>② ranking</td>
+      <td><code>GET https://service-api.tver.jp/api/v1/callEpisodeRankingDetail/{genre}</code>(genre: drama/variety/anime/documentary/sports)</td>
+      <td><code>x-tver-platform-type: web</code> / <code>Origin: https://tver.jp</code> / <code>Referer: https://tver.jp</code></td>
+      <td>ジャンル別ランキング配列。<code>callHome</code> は空を返すため複数ジャンルを取得してホームを合成する。</td>
+    </tr>
+    <tr>
+      <td>検索</td>
+      <td><code>GET https://platform-api.tver.jp/service/api/v1/callKeywordSearch?keyword=...</code>(BFF <code>/api/service/search</code> 経由)</td>
+      <td><code>x-tver-platform-type: web</code> / <code>Origin: https://tver.jp</code> / <code>Referer: https://tver.jp</code></td>
+      <td>キーワードに合致するエピソード / シリーズの一覧。</td>
+    </tr>
+    <tr>
+      <td>③ callEpisode</td>
+      <td><code>GET https://platform-api.tver.jp/service/api/v1/callEpisode/{episodeId}?platform_uid=&amp;platform_token=&amp;require_data=...</code></td>
+      <td><code>Origin: https://tver.jp</code> / <code>Referer: https://tver.jp</code></td>
+      <td><code>result.episode.content</code>(title / seriesTitle / version / duration / broadcastDateLabel)。<code>version</code> はストリーム解決(④)に必要。</td>
+    </tr>
+    <tr>
+      <td>④ statics JSON</td>
+      <td><code>GET https://statics.tver.jp/content/episode/{episodeId}.json?v={version}</code></td>
+      <td>(公開・追加ヘッダ不要)</td>
+      <td><code>video</code>: { accountID, videoRefID, playerID(Brightcove) } / <code>streaks</code>: { projectID, mediaID, videoRefID }</td>
+    </tr>
+    <tr>
+      <td>⑤ streaks_info</td>
+      <td><code>GET https://player.tver.jp/player/streaks_info_v2.json</code></td>
+      <td>(公開・追加ヘッダ不要)</td>
+      <td><code>{project}.api_key.key01..key06</code>。選択は <code>idx = (JSTの月 % 6) || 6</code> → <code>key0{idx}</code>(月替わり)。</td>
+    </tr>
+    <tr>
+      <td>⑥ playback</td>
+      <td><code>GET https://playback.api.streaks.jp/v1/projects/{projectID}/medias/ref:{videoRefID}</code></td>
+      <td><code>Accept: application/json</code> / <code>Origin: https://tver.jp</code>(必須・誤ると 403 id139) / <code>Referer: https://tver.jp/</code> / <code>X-Streaks-Api-Key: {key}</code></td>
+      <td><code>sources[]</code>(type <code>application/x-mpegURL</code> の <code>src</code> が m3u8。<code>key_systems</code> 付きは DRM のため除外) / 字幕 <code>tracks[]</code>(kind captions/subtitles)。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="s5">5. 機能要求(FR)</h2>
+<p>ユースケースを、後続設計が検証できる粒度の機能要求へ落とす。優先度は MVP=必須 / 段階2=後続。</p>
+<table>
+  <thead><tr><th>ID</th><th>機能要求</th><th>対応 UC</th><th>優先</th></tr></thead>
+  <tbody>
+    <tr><td>FR-01</td><td>TVER セッション(<code>platform_uid</code>/<code>platform_token</code>)を発行できる。Origin/Referer は <code>https://s.tver.jp</code>。</td><td>UC-01,03,04,05</td><td>MVP</td></tr>
+    <tr><td>FR-02</td><td>ジャンル別ランキング(drama/variety/anime/documentary/sports)を <b>ジャンルごとに</b> <code>callEpisodeRankingDetail</code> で複数取得し、ホーム表示用に合成する(<code>callHome</code> は空を返すため)。</td><td>UC-01,02</td><td>MVP</td></tr>
+    <tr><td>FR-03</td><td>キーワードでエピソード/シリーズを検索できる。</td><td>UC-03</td><td>MVP</td></tr>
+    <tr><td>FR-04</td><td>シリーズのエピソード一覧を取得・表示できる。</td><td>UC-04</td><td>MVP</td></tr>
+    <tr><td>FR-05</td><td>エピソード情報(title/seriesTitle/version/duration 等)を <code>callEpisode</code>(<code>platform_uid</code>/<code>platform_token</code>/<code>require_data</code> パラメータ付き)で取得できる。<code>version</code> はストリーム解決に用いる。</td><td>UC-05</td><td>MVP</td></tr>
+    <tr><td>FR-06</td><td>ストリーム解決(①→⑥)を <b>純 TS</b> で内製し、非 DRM の HLS(m3u8)URL と字幕トラックを返す。月替わりキーは JST 月で選択。</td><td>UC-06</td><td>MVP</td></tr>
+    <tr><td>FR-07</td><td>ブラウザで HLS を再生する(react-player)。旧作は Brightcove へフォールバック可能。</td><td>UC-06</td><td>MVP</td></tr>
+    <tr><td>FR-08</td><td>Firebase Auth で新規登録・ログイン・ログアウトができる(email/password)。</td><td>UC-08,10</td><td>MVP</td></tr>
+    <tr><td>FR-09</td><td>匿名(ゲスト)サインインができ、ロール <code>GUEST(-1)</code> を付与する。再生は 30 秒で制限し登録/ログインへ誘導する。</td><td>UC-07,09</td><td>MVP</td></tr>
+    <tr><td>FR-10</td><td>未認証で保護ページにアクセスすると <code>/user/login</code> へ誘導する(<code>Main</code> の挙動)。</td><td>UC-01,08</td><td>MVP</td></tr>
+    <tr><td>FR-11</td><td>サーバ側で Firebase ID トークンを検証する(<code>jose</code> + Google 公開鍵。firebase-admin 非依存)。</td><td>UC-08〜14</td><td>MVP</td></tr>
+    <tr><td>FR-12</td><td>お気に入り(シリーズ)を登録/一覧/削除/存在確認できる(本人所有)。</td><td>UC-11</td><td>段階2</td></tr>
+    <tr><td>FR-13</td><td>視聴履歴を記録/一覧(降順)/削除できる(本人所有)。</td><td>UC-12</td><td>段階2</td></tr>
+    <tr><td>FR-14</td><td>プロフィール閲覧/編集/写真アップロードができる。</td><td>UC-13</td><td>段階2</td></tr>
+    <tr><td>FR-15</td><td>管理者がユーザー検索・ロール更新でき、操作を監査ログに残す。</td><td>UC-14</td><td>段階2</td></tr>
+    <tr><td>FR-16</td><td>ヘルスチェックで稼働状態を返す。</td><td>UC-17</td><td>MVP</td></tr>
+    <tr><td>FR-17</td><td>ライブ m3u 再生(パスワード制)を提供する(別機能・現状維持)。</td><td>UC-16</td><td>段階2</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <b>ユーザーデータの移行方針(FR-11〜FR-15 の裏付け)</b>: 現行は
+  <code>adminAuth.verifyIdToken</code> / <code>adminDb.collection('users').doc(uid)...</code>(firebase-admin)で
+  お気に入り・履歴・プロフィール・ゲストロールを扱う。移行後はトークン検証を <code>jose</code> に置換し、
+  本人所有データは <b>Firestore client SDK + セキュリティルール</b>で直接読み書きする(gRPC Firestore は Workers 非互換のため)。
+</div>
+
+<h2 id="s6">6. 非機能要求(NFR)</h2>
+<table>
+  <thead><tr><th>ID</th><th>区分</th><th>要求(測定可能な形)</th></tr></thead>
+  <tbody>
+    <tr><td>NFR-01</td><td>コスト</td><td>定常運用費を <b>ほぼ $0</b> に保つ。Cloudflare Workers 無料枠(10 万 req/日)内で成立させ、Azure Functions / yt-dlp / Cosmos DB を廃止する。</td></tr>
+    <tr><td>NFR-02</td><td>ホスティング/互換</td><td>Cloudflare Workers + <code>@opennextjs/cloudflare</code> で動作。<code>nodejs_compat</code> 有効。Node 非互換の依存(gRPC firebase-admin 等)を持ち込まない。</td></tr>
+    <tr><td>NFR-03</td><td>可用性</td><td>再生の主経路は Streaks。旧作は Brightcove へフォールバックし、単一経路の失敗で全滅させない。<code>/api/health</code> で稼働確認できる。</td></tr>
+    <tr><td>NFR-04</td><td>地域</td><td>TVER は日本(JP)限定配信。日本 IP からの疎通を前提とする。月替わりキー選択は <b>JST</b> 基準(<code>(JSTの月 % 6) || 6</code>)。</td></tr>
+    <tr><td>NFR-05</td><td>互換ヘッダ</td><td>各外部呼び出しで既定ヘッダを厳守する(<code>Origin</code> はスキーム付き。session=<code>Origin: https://s.tver.jp</code> / ranking・search・series=<code>Origin: https://tver.jp</code> + <code>x-tver-platform-type: web</code> / playback=<code>Origin: https://tver.jp</code> 必須)。</td></tr>
+    <tr><td>NFR-06</td><td>認証セキュリティ</td><td>保護 API は <code>Authorization: Bearer &lt;idToken&gt;</code> を検証する。匿名ユーザーは課金系(<code>/api/cosmosdb/videos</code>)を 403 で拒否する。本人以外のユーザーデータへアクセスさせない。</td></tr>
+    <tr><td>NFR-07</td><td>パフォーマンス</td><td>月替わりキー・公開鍵などの変化の遅い値はキャッシュ(Workers KV or 短期メモリ)して外部呼び出しを削減する。</td></tr>
+    <tr><td>NFR-08</td><td>保守性 / テスト</td><td>TypeScript strict を維持し <code>tsc --noEmit</code> が通ること。テスト FW(vitest)を導入し、ストリーム解決の各段(①セッション〜⑥Playback)を単体テストする。期待値は yt-dlp 2026.03.17 の <code>tver.py</code>/<code>streaks.py</code> を参照実装とし、公式 API の実レスポンスを Fixtures として埋め込み、assertion でフィールド一致・ヘッダ・キー選択(月替わり)を検証する。テストは TDD で先行させ、対象モジュールのカバレッジは最小 80% を目安とする。</td></tr>
+    <tr><td>NFR-09</td><td>設定/秘密情報</td><td>API キー・接続情報は環境変数で管理し、コードに埋め込まない。ゲスト用パスワード等は <code>NEXT_PUBLIC_*</code> の公開範囲を意識して扱う。</td></tr>
+    <tr><td>NFR-10</td><td>UI/テーマ</td><td>next-themes によるテーマ切替を維持。atomic design(atoms/molecules/organisms/pages)構成を保つ。</td></tr>
+  </tbody>
+</table>
+
+<h3>6.1 API アクセス制御(ロール対応)</h3>
+<p>
+  NFR-06 の認可を、API ルート群と必須ロール(<code>UserRole</code> 値)・拒否条件の対応で具体化する。ロール値は
+  <code>GENERAL(0)</code> / <code>GUEST(-1)</code> / <code>SUPER_USER(99)</code>(<code>src/types/User.ts</code>)。
+</p>
+<table>
+  <thead><tr><th>API ルート群</th><th>必須ロール / 認証</th><th>拒否・制限(403 等)</th></tr></thead>
+  <tbody>
+    <tr><td><code>/api/service/*</code>, <code>/api/content/*</code>(TVER 代理・閲覧)</td><td>認証不要(公開)</td><td>—</td></tr>
+    <tr><td><code>/api/health</code></td><td>認証不要(公開)</td><td>—</td></tr>
+    <tr><td>再生 / ストリーム解決</td><td>認証不要(閲覧可)</td><td>ゲスト(<code>GUEST(-1)</code>)は再生 30 秒で制限し登録/ログインへ誘導(FR-09)</td></tr>
+    <tr><td><code>/api/User/favorites*</code>, <code>/api/User/watch-history*</code>, <code>/api/User/profile*</code></td><td><code>GENERAL(0)</code> 以上(<code>Authorization: Bearer &lt;idToken&gt;</code> 検証・本人 <code>uid</code>)</td><td>未認証、および本人以外の <code>uid</code> のデータは拒否</td></tr>
+    <tr><td><code>/api/User/setGuestRole</code></td><td>匿名サインイン済(ゲストロール付与)</td><td>—</td></tr>
+    <tr><td><code>/api/cosmosdb/videos</code>(課金系・MVP 除外)</td><td><code>GENERAL(0)</code> 以上</td><td><code>GUEST(-1)</code> / 匿名は <b>403</b></td></tr>
+    <tr><td><code>/api/admin/*</code></td><td><code>SUPER_USER(99)</code> 以上</td><td>その他すべてのロールは拒否</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s7">7. スコープ</h2>
+<p>移行を「即時 $0 でデプロイできる最小(MVP)」→「ユーザーデータ連携(段階2)」の二段で切る。</p>
+
+<figure>
+<svg viewBox="0 0 900 250" role="img" aria-label="スコープの段階分け">
+  <g font-size="13" fill="currentColor" font-family='"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif'>
+    <rect x="20" y="30" width="270" height="190" rx="10" style="fill:var(--panel);stroke:var(--ok)" stroke-width="1.8"/>
+    <text x="155" y="56" text-anchor="middle" font-weight="bold">MVP(最短デプロイ)</text>
+    <text x="40" y="86" font-size="12.5">・TVER 閲覧(ランキング/検索</text>
+    <text x="40" y="106" font-size="12.5">  /シリーズ/エピソード)</text>
+    <text x="40" y="128" font-size="12.5">・再生(純 TS ストリーム解決)</text>
+    <text x="40" y="150" font-size="12.5">・認証(登録/ログイン/ゲスト)</text>
+    <text x="40" y="172" font-size="12.5">・health / トークン検証(jose)</text>
+    <text x="40" y="200" font-size="12" fill="currentColor">→ Firestore 不要で即時 $0</text>
+
+    <rect x="315" y="30" width="270" height="190" rx="10" style="fill:var(--panel);stroke:var(--acc)" stroke-width="1.8"/>
+    <text x="450" y="56" text-anchor="middle" font-weight="bold">段階2(Firestore 連携)</text>
+    <text x="335" y="86" font-size="12.5">・お気に入り(登録/一覧/削除)</text>
+    <text x="335" y="108" font-size="12.5">・視聴履歴(記録/一覧/削除)</text>
+    <text x="335" y="130" font-size="12.5">・プロフィール(編集/写真)</text>
+    <text x="335" y="152" font-size="12.5">・管理者(検索/ロール/監査)</text>
+    <text x="335" y="174" font-size="12.5">・ライブ m3u(パスワード制)</text>
+    <text x="335" y="200" font-size="12" fill="currentColor">→ client SDK + ルールで本人所有</text>
+
+    <rect x="610" y="30" width="270" height="190" rx="10" style="fill:var(--bg);stroke:var(--err)" stroke-width="1.8"/>
+    <text x="745" y="56" text-anchor="middle" font-weight="bold">対象外 / 廃止</text>
+    <text x="630" y="86" font-size="12.5">・tvapp-bff(.NET7・2024 停止)</text>
+    <text x="630" y="108" font-size="12.5">・Azure Functions + yt-dlp</text>
+    <text x="630" y="130" font-size="12.5">・Cosmos DB(/cosmosdb/videos)</text>
+    <text x="630" y="152" font-size="12.5">・firebase-admin(gRPC)</text>
+    <text x="630" y="180" font-size="12" fill="currentColor">→ 純 TS / jose / Firestore</text>
+    <text x="630" y="200" font-size="12" fill="currentColor">   client へ置換</text>
+  </g>
+</svg>
+<figcaption>図 3: スコープの三分割(MVP / 段階2 / 対象外・廃止)。</figcaption>
+</figure>
+
+<h3>7.1 MVP(第 1 段: 最短デプロイ・即時 $0)</h3>
+<ul>
+  <li>TVER 閲覧: ホーム(ランキング合成)・キーワード検索・シリーズ一覧・エピソード情報(FR-01〜FR-05)。</li>
+  <li>再生: 純 TS のストリーム解決 + HLS 再生(FR-06,07)。Azure Functions/yt-dlp に依存しない。</li>
+  <li>認証: Firebase Auth の登録/ログイン/ログアウト + 匿名ゲスト(30 秒制限)。ID トークン検証は <code>jose</code>(FR-08〜FR-11)。</li>
+  <li>運用: <code>/api/health</code>(FR-16)。<b>Firestore を必要としないため即時 $0 で成立</b>。</li>
+</ul>
+
+<h3>7.2 段階2(第 2 段: Firestore 連携)</h3>
+<ul>
+  <li>お気に入り・視聴履歴・プロフィール(写真含む)を Firestore client SDK + セキュリティルールで本人所有として復元(FR-12〜FR-14)。</li>
+  <li>管理者機能(ユーザー検索・ロール更新・監査ログ)(FR-15)。</li>
+  <li>ライブ m3u 再生(パスワード制)の維持(FR-17)。</li>
+</ul>
+
+<h3>7.3 対象外・廃止</h3>
+<table>
+  <thead><tr><th>対象</th><th>扱い</th><th>理由(事実)</th></tr></thead>
+  <tbody>
+    <tr><td>tvapp-bff(.NET7)</td><td>移行対象外・廃止候補</td><td>2024 停止のレガシー。</td></tr>
+    <tr><td>Platform-Stream-Loader(Azure Functions + yt-dlp)</td><td>廃止(純 TS で置換)</td><td>唯一の重い/課金源。解決フローを内製する。</td></tr>
+    <tr><td>Cosmos DB / <code>/api/cosmosdb/videos</code></td><td>MVP 除外・段階的に Firestore へ</td><td>ダウンロード済み動画一覧の課金系。Workers 構成では外部依存を減らす。</td></tr>
+    <tr><td>firebase-admin(gRPC Firestore)</td><td>置換(<code>jose</code> + client SDK)</td><td>Workers ランタイム非互換のため。</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s8">8. 前提・制約</h2>
+<ul>
+  <li><b>ランタイム/言語</b>: Node v24 / npm 11、TypeScript strict、Next.js 14.2.15(App Router)。<code>tsc --noEmit</code> は通る(健全)。</li>
+  <li><b>テスト</b>: 現状テスト FW 未導入。vitest を導入し、ストリーム解決を TDD で実装する。各段の期待値は公式 API 実レスポンスの Fixtures で固定し、参照実装(下記 yt-dlp)と突き合わせる(NFR-08)。</li>
+  <li><b>ブランチ</b>: 作業は <code>project/tvapp-cf-zero-cost</code> 配下(例 <code>feature/tvapp-streaks-resolver</code>)。submodule は detached。</li>
+  <li><b>外部依存の可変性 / 参照実装</b>: TVER / Streaks / Brightcove の API 仕様・キー・可用性は外部要因で変わりうる(月替わりキー・ヘッダ要件など)。<b>yt-dlp 2026.03.17 の <code>tver.py</code>/<code>streaks.py</code> を参照実装とし、月替わりキー選択・必須ヘッダ・レスポンス構造の検証基準とする</b>。将来の drift(仕様変更)はこの参照実装との差分で追跡する。</li>
+  <li><b>地域</b>: TVER は JP 限定。日本 IP を前提とし、キー選択は JST 基準(NFR-04)。</li>
+  <li><b>文書/コミット</b>: ドキュメントは AGENTS-SHARED §8 準拠の自己完結 HTML。コミットは日本語・AI 署名なし(§2/§3)。本書は事実のみ(§10)。</li>
+</ul>
+
+<h2 id="s9">9. トレーサビリティ(課題 → 要求 → スコープ)</h2>
+<p>課題が要求とスコープにどう対応するかを一覧化し、後続フェーズの抜け漏れ検証の起点とする。</p>
+<table>
+  <thead><tr><th>課題</th><th>関連する主な要求</th><th>スコープ</th></tr></thead>
+  <tbody>
+    <tr><td>P-1 ストリーム解決の外部依存</td><td>FR-06, FR-07, NFR-01, NFR-08</td><td>MVP</td></tr>
+    <tr><td>P-2 firebase-admin のエッジ非互換</td><td>FR-11〜FR-15, NFR-02, NFR-06</td><td>MVP(検証)+ 段階2(データ)</td></tr>
+    <tr><td>P-3 Cosmos DB 依存</td><td>FR-15(段階的移行), NFR-01, NFR-02</td><td>MVP 除外 → 段階2</td></tr>
+    <tr><td>P-4 固定費・運用負荷</td><td>NFR-01, NFR-02, NFR-03, NFR-07</td><td>MVP</td></tr>
+    <tr><td>P-5 旧 BFF 残存</td><td>—(廃止整理)</td><td>対象外</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  本要求整理は後続の仕様(<code>01_spec</code>)・アーキテクチャ(<code>02_architecture</code>)・設計決定(<code>03_decisions</code>)の入力となる。
+  数値・エンドポイント・ヘッダ等は既存コードと調査ブリーフに一致させており、外部 API 仕様の変化に応じて追随更新する。
+</div>
+
+<footer>
+  TVapp 要求整理仕様書 — reference/00_requirements。対象 tvapp-web / ブランチ project/tvapp-cf-zero-cost。
+  記述は客観的事実に限る(AGENTS-SHARED §10)。更新履歴は Git に委ねる。
+</footer>
+</div>
+<script>
+  (function(){
+    var t=localStorage.getItem('doc-theme');
+    if(t)document.documentElement.setAttribute('data-theme',t);
+    __sync();
+  })();
+  function __toggle(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var n=d?'light':'dark';
+    document.documentElement.setAttribute('data-theme',n);
+    localStorage.setItem('doc-theme',n);__sync();
+  }
+  function __sync(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var b=document.getElementById('themeToggle');
+    if(b)b.textContent=d?'☀ ライト':'☾ ダーク';
+  }
+</script>
+</body>
+</html>

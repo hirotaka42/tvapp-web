@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tvapp-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    // 日本リージョンの Azure Function(Platform-Stream-Loader)へストリーム解決を委譲。
+    // Cloudflare Workers は非JP egress で地域制限に弾かれるため。ホスト名は秘密ではない。
+    // 鍵(AZURE_FUNCTION_STREEAMING_CODE_KEY)は `wrangler secret put` で別途登録(暗号化)。
+    "AZURE_FUNCTION_STREEAMING": "https://platform-stream-loader.azurewebsites.net"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

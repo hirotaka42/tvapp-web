@@ -5,7 +5,11 @@ import {
   User,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInAnonymously,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
   signOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -13,12 +17,19 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
+// メールリンク(passwordless)送信時に、送信先メールを控えておく localStorage キー
+const EMAIL_LINK_STORAGE_KEY = 'emailForSignIn';
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<UserCredential>;
   signUp: (email: string, password: string) => Promise<UserCredential>;
-  signInAsGuest: () => Promise<UserCredential>;
+  signInWithGoogle: () => Promise<UserCredential>;
+  // メールリンク(パスワードなし)
+  sendEmailSignInLink: (email: string) => Promise<void>;
+  isEmailSignInLink: (url: string) => boolean;
+  completeEmailLinkSignIn: (url: string, email?: string) => Promise<UserCredential>;
   logout: () => Promise<void>;
   clearAllAuthState: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -26,11 +37,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// ローカル開発専用の認証バイパス。
+// 本番(NODE_ENV=production)では絶対に無効。かつ明示フラグ時のみ有効。
+// Firebase 設定なしで TVER のブラウズ/再生を確認するための開発用アフォーダンス。
+const DEV_BYPASS_AUTH =
+  process.env.NODE_ENV !== 'production' &&
+  process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === '1';
+
+const DEV_MOCK_USER = {
+  uid: 'dev-local-user',
+  email: 'dev@localhost',
+  emailVerified: true,
+  isAnonymous: false,
+  displayName: 'Local Dev',
+  getIdToken: async () => 'dev-local-token',
+  getIdTokenResult: async () => ({ claims: { role: 99 }, token: 'dev-local-token' }),
+} as unknown as User;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (DEV_BYPASS_AUTH) {
+      // 開発用: 常にログイン済み扱い(Firebase 未設定でも UI を通す)
+      setUser(DEV_MOCK_USER);
+      setLoading(false);
+      return;
+    }
     if (!auth) {
       setLoading(false);
       return;
@@ -68,23 +102,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return userCredential;
   };
 
-  /**
-   * ゲスト（匿名）ログイン
-   * Firebase匿名認証を使用してログインします
-   * ロール-1をカスタムクレイムとして設定
-   */
-  const signInAsGuest = async () => {
-    if (!auth) throw new Error('Firebase Auth is not initialized');
-    const userCredential = await signInAnonymously(auth);
-
-    // ゲストユーザーのロール設定はサーバー側で実施するため、
-    // ここではトークンを取得・保存
-    const token = await userCredential.user.getIdToken();
+  // IDトークンを localStorage に保存（暫定対応・各サインイン共通）
+  const saveIdToken = async (user: User) => {
+    const token = await user.getIdToken();
     const tokenName = process.env.NEXT_PUBLIC_IDTOKEN_NAME;
     if (tokenName) {
       localStorage.setItem(tokenName, token);
     }
+  };
 
+  /** Google アカウントでログイン */
+  const signInWithGoogle = async () => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    await saveIdToken(userCredential.user);
+    return userCredential;
+  };
+
+  /** メールリンク(パスワードなし): サインインリンクをメール送信 */
+  const sendEmailSignInLink = async (email: string) => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
+    const actionCodeSettings = {
+      url: `${window.location.origin}/user/login`,
+      handleCodeInApp: true,
+    };
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    window.localStorage.setItem(EMAIL_LINK_STORAGE_KEY, email);
+  };
+
+  /** 現在の URL がメールリンクのサインインリンクかどうか */
+  const isEmailSignInLink = (url: string) => {
+    if (!auth) return false;
+    return isSignInWithEmailLink(auth, url);
+  };
+
+  /** メールリンク(パスワードなし): 遷移先でサインインを完了 */
+  const completeEmailLinkSignIn = async (url: string, email?: string) => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
+    const mail = email || window.localStorage.getItem(EMAIL_LINK_STORAGE_KEY) || '';
+    if (!mail) throw new Error('サインインに使用したメールアドレスが必要です');
+    const userCredential = await signInWithEmailLink(auth, mail, url);
+    window.localStorage.removeItem(EMAIL_LINK_STORAGE_KEY);
+    await saveIdToken(userCredential.user);
     return userCredential;
   };
 
@@ -173,7 +233,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signIn,
     signUp,
-    signInAsGuest,
+    signInWithGoogle,
+    sendEmailSignInLink,
+    isEmailSignInLink,
+    completeEmailLinkSignIn,
     logout,
     clearAllAuthState,
     resetPassword

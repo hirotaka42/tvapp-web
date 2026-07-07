@@ -28,6 +28,7 @@ import { UserProfile } from '@/types/User';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useFavoritesData } from '@/contexts/FavoritesDataContext';
 import { useWatchHistory } from '@/hooks/useWatchHistory';
+import { PHASE2_USER_DATA_ENABLED } from '@/lib/features';
 import { useWatchHistoryData } from '@/contexts/WatchHistoryDataContext';
 import { WatchHistoryResponse } from '@/types/WatchHistory';
 
@@ -60,7 +61,7 @@ export default function Header() {
   const { user, clearAllAuthState } = useFirebaseAuth();
 
   useEffect(() => {
-    if (user && !user.isAnonymous) {
+    if (user && PHASE2_USER_DATA_ENABLED) {
       fetchFavorites();
       fetchWatchHistory();
     }
@@ -68,7 +69,7 @@ export default function Header() {
 
   // fetchFavoritesから取得したお気に入りを共有Contextに同期
   useEffect(() => {
-    if (user && !user.isAnonymous) {
+    if (user && PHASE2_USER_DATA_ENABLED) {
       (async () => {
         try {
           const response = await fetch('/api/User/favorites', {
@@ -89,7 +90,7 @@ export default function Header() {
 
   // 視聴履歴を共有Contextに同期
   useEffect(() => {
-    if (user && !user.isAnonymous) {
+    if (user && PHASE2_USER_DATA_ENABLED) {
       (async () => {
         try {
           const response = await fetch('/api/User/watch-history?limit=20&offset=0', {
@@ -113,7 +114,7 @@ export default function Header() {
   // プロフィール情報取得
   useEffect(() => {
     const fetchProfile = async () => {
-      if (user && !user.isAnonymous && profileService) {
+      if (user && PHASE2_USER_DATA_ENABLED && profileService) {
         try {
           const profileData = await profileService.getProfile();
           setProfile(profileData);

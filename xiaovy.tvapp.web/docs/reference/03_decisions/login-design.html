@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp — ログイン(デザインモック)</title>
+<!--
+  TVapp ログイン画面 — 作り込みモック
+  対象: tvapp-web / docs/reference/03_decisions
+  ダーク基調・上質。Google ログイン / メール+パスワード / パスワードなし(メールリンク)。
+  自己完結(外部 CSS / CDN / JS フレームワーク不使用)。人物・メールはすべて架空。
+  デモ動作: パスワード欄に "password" と入力して送信すると認証エラー例を表示。
+-->
+<style>
+/* ============================================================
+   0. トークン & リセット
+   ============================================================ */
+:root{
+  --bg:#07080d; --bg-up:#0c0e16; --card:#0e1119;
+  --panel:rgba(255,255,255,.05); --panel-up:rgba(255,255,255,.09);
+  --line:rgba(255,255,255,.11); --line-soft:rgba(255,255,255,.06);
+  --tx:#e9edf5; --tx2:#8e98ac; --tx3:#66707f;
+  --acc:#e9b862; --acc2:#c8912e; --acc-ink:#251604;
+  --acc-soft:rgba(233,184,98,.14); --glow:rgba(233,184,98,.3);
+  --err:#f57d7d; --err-soft:rgba(245,125,125,.11);
+  --ok:#6fd598;
+  --tver:#e9b862; --abema:#1fe887; --yt:#ff4d4d; --nico:#ff9327;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+  font-feature-settings:"palt" 1;
+  line-height:1.7;letter-spacing:.02em;
+  background:var(--bg);color:var(--tx);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font:inherit}
+img,svg{display:block}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:6px}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ============================================================
+   1. 全体レイアウト(左ブランド / 右フォーム)
+   ============================================================ */
+.shell{display:grid;grid-template-columns:minmax(380px,46%) 1fr;min-height:100vh}
+@media(max-width:920px){.shell{grid-template-columns:1fr}}
+
+/* ============================================================
+   2. 左 — ブランドパネル
+   ============================================================ */
+.brand{
+  position:relative;overflow:hidden;isolation:isolate;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:44px 48px 36px;
+  background:
+    radial-gradient(90% 70% at 8% -10%,rgba(42,78,134,.4),transparent 62%),
+    radial-gradient(70% 55% at 100% 105%,rgba(233,184,98,.1),transparent 60%),
+    linear-gradient(165deg,#0b1020 0%,#080b14 48%,#06070d 100%);
+  border-right:1px solid var(--line-soft);
+}
+.brand::after{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.014) 0 1px,transparent 1px 3px);
+}
+/* 波モチーフ(背景の大きな流れ) */
+.brand-wave{position:absolute;left:-8%;right:-8%;bottom:-4%;z-index:-1;opacity:.6;pointer-events:none}
+.brand-wave path{fill:none;stroke-linecap:round}
+
+.b-top{display:flex;align-items:center;gap:11px}
+.lg-tile{fill:url(#lg)}
+.wm{font-family:"Avenir Next","Segoe UI",sans-serif;font-size:23px;font-weight:800;letter-spacing:.015em;line-height:1}
+.wm-sub{
+  display:block;font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:9px;font-weight:600;letter-spacing:.34em;color:var(--tx3);
+  text-transform:uppercase;margin-top:4px;
+}
+
+.b-mid{max-width:30em;padding:34px 0}
+.b-k{
+  display:inline-block;
+  font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:11px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--acc);border:1px solid rgba(233,184,98,.35);border-radius:999px;
+  padding:3px 14px;margin-bottom:18px;
+  animation:rise .6s .05s ease both;
+}
+.b-catch{
+  font-size:clamp(26px,2.6vw,34px);font-weight:800;line-height:1.42;
+  text-wrap:balance;margin-bottom:14px;
+  animation:rise .6s .12s ease both;
+}
+.b-catch em{
+  font-style:normal;
+  background:linear-gradient(120deg,#f2cd85,#d99a33);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.b-cp{font-size:13.5px;color:var(--tx2);max-width:34em;animation:rise .6s .19s ease both}
+
+/* 4 サービスのミニスクリーン(雰囲気ビジュアル) */
+.screens{
+  position:relative;height:210px;margin-top:34px;max-width:430px;
+  animation:rise .7s .26s ease both;
+}
+.scr{
+  position:absolute;width:196px;aspect-ratio:16/9;border-radius:11px;
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 18px 44px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.14);
+  overflow:hidden;
+  animation:bob 7s ease-in-out infinite;
+}
+.scr::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(130% 95% at 84% -12%,rgba(255,255,255,.26),transparent 55%);
+}
+.scr i{
+  position:absolute;left:11px;top:8px;font-style:normal;
+  font-family:"Avenir Next Condensed","Arial Narrow",sans-serif;
+  font-size:10px;font-weight:700;letter-spacing:.18em;color:rgba(255,255,255,.88);
+  text-transform:uppercase;
+}
+.scr b{
+  position:absolute;left:11px;bottom:7px;
+  color:#fff;font-size:12px;font-weight:700;letter-spacing:.04em;
+  text-shadow:0 1px 8px rgba(0,0,0,.5);
+}
+.scr .ply{
+  position:absolute;right:9px;bottom:8px;width:20px;height:20px;border-radius:50%;
+  background:rgba(0,0,0,.45);display:grid;place-items:center;
+}
+.s-tver{left:0;top:8px;z-index:4;transform:rotate(-3deg);background:linear-gradient(140deg,#0e5470,#187ba0 36%,#0b3057 72%,#071a30)}
+.s-abema{left:150px;top:0;z-index:3;transform:rotate(2.2deg);background:linear-gradient(140deg,#05452a,#0ba25e 55%,#02351f);animation-delay:-1.8s}
+.s-yt{left:52px;top:96px;z-index:5;transform:rotate(1.4deg);background:linear-gradient(140deg,#8c1622,#d81f2f 42%,#3c0a10);animation-delay:-3.4s}
+.s-nico{left:214px;top:104px;z-index:2;transform:rotate(-2deg);background:linear-gradient(140deg,#ff9a2a,#d86a0a 52%,#5c2a04);animation-delay:-5s}
+@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -8px}}
+
+.b-points{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px;animation:rise .7s .33s ease both}
+.b-points span{
+  font-size:11.5px;font-weight:600;color:var(--tx2);
+  border:1px solid var(--line);border-radius:999px;padding:3px 13px;
+  background:rgba(255,255,255,.03);
+}
+.b-ft{font-size:10.5px;color:var(--tx3);line-height:1.9}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media(max-width:1120px){.scr{width:172px}.s-abema{left:132px}.s-yt{left:44px;top:88px}.s-nico{left:190px;top:96px}.screens{height:196px}}
+@media(max-width:920px){
+  .brand{padding:26px 24px 22px;border-right:none;border-bottom:1px solid var(--line-soft)}
+  .b-mid{padding:18px 0 4px}
+  .b-catch{font-size:22px;margin-bottom:8px}
+  .screens,.b-points,.b-ft{display:none}
+}
+
+/* ============================================================
+   3. 右 — 認証パネル
+   ============================================================ */
+.auth{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:18px;padding:56px 32px 40px;
+  background:
+    radial-gradient(640px 420px at 82% -80px,rgba(233,184,98,.07),transparent 68%),
+    var(--bg);
+}
+@media(max-width:920px){.auth{padding:34px 18px 30px}}
+.card{
+  width:100%;max-width:432px;
+  background:linear-gradient(175deg,var(--bg-up),var(--card));
+  border:1px solid var(--line);border-radius:20px;
+  padding:36px 38px 30px;
+  box-shadow:0 30px 80px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.05);
+  animation:rise .55s .1s ease both;
+}
+@media(max-width:480px){.card{padding:28px 22px 24px}}
+.card h1{font-size:22px;font-weight:800;line-height:1.4}
+.card .lead{font-size:13px;color:var(--tx2);margin:2px 0 24px}
+
+/* --- Google ボタン --- */
+.g-btn{
+  display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
+  background:#f5f6f8;color:#1b1f27;font-size:14px;font-weight:700;
+  border-radius:11px;padding:11.5px 16px;
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
+}
+.g-btn:hover{filter:brightness(1.04);transform:translateY(-1px);box-shadow:0 10px 26px rgba(0,0,0,.35)}
+.g-btn:active{transform:none}
+.g-btn:disabled{opacity:.6;cursor:progress}
+
+.or{
+  display:flex;align-items:center;gap:14px;margin:20px 0 18px;
+  font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--tx3);
+}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+
+/* --- フォーム --- */
+.field{margin-bottom:16px}
+.f-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.field label{font-size:12.5px;font-weight:700;color:var(--tx2)}
+.f-top a{font-size:11.5px;font-weight:600;color:var(--acc)}
+.f-top a:hover{text-decoration:underline}
+.f-in{position:relative}
+.f-in input{
+  width:100%;
+  background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  color:var(--tx);padding:11px 14px;font-size:14px;line-height:1.5;
+  transition:border-color .18s ease,background .18s ease,box-shadow .18s ease;
+}
+.f-in input::placeholder{color:var(--tx3)}
+.f-in input:focus{outline:none;border-color:var(--acc);background:var(--panel-up);box-shadow:0 0 0 3px var(--acc-soft)}
+.f-in input[aria-invalid="true"]{border-color:var(--err);box-shadow:0 0 0 3px var(--err-soft)}
+.f-in input[type="password"],.f-in input[data-eye]{padding-right:46px}
+.eye{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  display:grid;place-items:center;width:34px;height:34px;border-radius:8px;color:var(--tx3);
+  transition:color .15s ease,background .15s ease;
+}
+.eye:hover{color:var(--tx);background:var(--panel-up)}
+.f-err{
+  display:flex;align-items:flex-start;gap:6px;
+  font-size:11.5px;font-weight:600;color:var(--err);margin-top:6px;line-height:1.55;
+}
+.f-err svg{flex:0 0 auto;margin-top:3px}
+.f-hint{
+  display:flex;align-items:center;gap:6px;
+  font-size:11.5px;font-weight:600;color:var(--acc);margin-top:6px;
+}
+.shake{animation:shake .4s ease}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-6px)}45%{transform:translateX(5px)}70%{transform:translateX(-3px)}88%{transform:translateX(2px)}}
+
+/* --- 認証エラーバナー --- */
+.banner{
+  display:flex;gap:10px;align-items:flex-start;
+  background:var(--err-soft);border:1px solid rgba(245,125,125,.35);
+  border-radius:11px;padding:11px 14px;margin-bottom:18px;
+  font-size:12.5px;line-height:1.6;color:#f5b9b9;
+  animation:rise .3s ease both;
+}
+.banner svg{flex:0 0 auto;margin-top:3px}
+.banner b{color:var(--err);display:block;font-size:12.5px}
+
+/* --- 記憶チェック --- */
+.remember{display:flex;align-items:center;gap:9px;margin:2px 0 20px;cursor:pointer;user-select:none}
+.remember input{position:absolute;opacity:0;width:1px;height:1px}
+.cbx{
+  width:18px;height:18px;border-radius:5px;flex:0 0 auto;
+  border:1.5px solid var(--line);background:var(--panel);
+  display:grid;place-items:center;transition:background .15s ease,border-color .15s ease;
+}
+.cbx svg{opacity:0;transition:opacity .15s ease}
+.remember input:checked + .cbx{background:linear-gradient(160deg,var(--acc),var(--acc2));border-color:transparent}
+.remember input:checked + .cbx svg{opacity:1}
+.remember input:focus-visible + .cbx{outline:2px solid var(--acc);outline-offset:2px}
+.remember span{font-size:12.5px;color:var(--tx2)}
+
+/* --- 送信ボタン --- */
+.submit{
+  position:relative;display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;border-radius:11px;padding:12.5px 16px;
+  background:linear-gradient(160deg,var(--acc),var(--acc2));color:var(--acc-ink);
+  font-size:14.5px;font-weight:800;letter-spacing:.04em;
+  box-shadow:0 10px 30px var(--glow);
+  transition:transform .16s ease,filter .16s ease,box-shadow .16s ease;
+}
+.submit:hover{filter:brightness(1.07);transform:translateY(-1px)}
+.submit:active{transform:none}
+.submit[aria-busy="true"]{pointer-events:none;filter:saturate(.75) brightness(.94)}
+.spin{
+  width:17px;height:17px;border-radius:50%;flex:0 0 auto;
+  border:2.5px solid rgba(37,22,4,.25);border-top-color:var(--acc-ink);
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* --- モード切替 / 新規登録 --- */
+.alt{margin-top:16px;text-align:center}
+.alt button{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:13px;font-weight:700;color:var(--acc);
+  padding:6px 10px;border-radius:8px;
+  transition:background .15s ease;
+}
+.alt button:hover{background:var(--acc-soft)}
+.signup{
+  margin-top:18px;padding-top:18px;border-top:1px solid var(--line-soft);
+  text-align:center;font-size:12.5px;color:var(--tx2);
+}
+.signup a{color:var(--acc);font-weight:700}
+.signup a:hover{text-decoration:underline}
+
+/* --- メールリンク送信完了 --- */
+.sent{text-align:center;padding:8px 0 4px;animation:rise .4s ease both}
+.sent-ic{
+  width:64px;height:64px;border-radius:50%;margin:6px auto 16px;
+  background:var(--acc-soft);border:1px solid rgba(233,184,98,.4);
+  display:grid;place-items:center;
+}
+.sent-ic svg{stroke:var(--acc)}
+.sent-ic .ck{stroke-dasharray:34;stroke-dashoffset:34;animation:draw .55s .25s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.sent h2{font-size:17.5px;font-weight:800;margin-bottom:6px}
+.sent p{font-size:12.5px;color:var(--tx2);line-height:1.8}
+.sent .addr{color:var(--tx);font-weight:700}
+.resend{margin-top:18px;display:flex;flex-direction:column;gap:9px;align-items:center}
+.resend button{
+  font-size:12.5px;font-weight:700;color:var(--acc);
+  padding:7px 18px;border-radius:999px;border:1px solid rgba(233,184,98,.4);
+  transition:background .15s ease,opacity .15s ease;
+}
+.resend button:hover:not(:disabled){background:var(--acc-soft)}
+.resend button:disabled{opacity:.45;cursor:default}
+.resend .back{border:none;color:var(--tx2);font-weight:600}
+.resend .back:hover{color:var(--tx);background:none;text-decoration:underline}
+
+/* --- ログイン成功 --- */
+.done{text-align:center;padding:10px 0 6px;animation:rise .4s ease both}
+.done .avt{
+  width:64px;height:64px;border-radius:50%;margin:4px auto 14px;
+  display:grid;place-items:center;font-size:26px;font-weight:700;
+  background:linear-gradient(155deg,var(--acc),var(--acc2));color:var(--acc-ink);
+  box-shadow:0 14px 36px var(--glow);
+  animation:pop .45s cubic-bezier(.5,1.6,.4,1) both;
+}
+@keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.done h2{font-size:18px;font-weight:800;margin-bottom:4px}
+.done p{font-size:12.5px;color:var(--tx2)}
+.done .go{
+  display:inline-flex;align-items:center;gap:8px;margin-top:18px;
+  background:linear-gradient(160deg,var(--acc),var(--acc2));color:var(--acc-ink);
+  font-size:13.5px;font-weight:800;border-radius:11px;padding:11px 26px;
+  box-shadow:0 10px 30px var(--glow);
+  transition:transform .16s ease,filter .16s ease;
+}
+.done .go:hover{filter:brightness(1.07);transform:translateY(-1px)}
+
+/* --- 脚注・法務 --- */
+.legal{font-size:11px;color:var(--tx3);text-align:center;line-height:2;max-width:432px}
+.legal a{color:var(--tx2);font-weight:600}
+.legal a:hover{color:var(--acc)}
+.mocknote{
+  font-size:10.5px;color:var(--tx3);text-align:center;max-width:432px;line-height:1.9;
+  border-top:1px dashed var(--line-soft);padding-top:12px;
+}
+
+/* --- トースト --- */
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(16px);
+  z-index:400;opacity:0;pointer-events:none;
+  background:var(--bg-up);border:1px solid var(--line);border-radius:12px;
+  padding:11px 20px;font-size:12.5px;font-weight:600;color:var(--tx);
+  box-shadow:0 16px 44px rgba(0,0,0,.55);
+  transition:opacity .25s ease,transform .25s ease;
+  max-width:calc(100vw - 32px);text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (prefers-reduced-motion: reduce){
+  *{transition:none!important;animation:none!important}
+  .sent-ic .ck{stroke-dashoffset:0}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2cd85"/><stop offset="1" stop-color="#b97b1f"/>
+    </linearGradient>
+    <linearGradient id="wv1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e9b862" stop-opacity=".28"/><stop offset="1" stop-color="#e9b862" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="wv2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7da4d8" stop-opacity=".2"/><stop offset="1" stop-color="#7da4d8" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<main class="shell">
+
+  <!-- ============ 左 — ブランドパネル ============ -->
+  <aside class="brand">
+    <svg class="brand-wave" viewBox="0 0 900 260" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 150c110-70 220-70 330 0s220 70 330 0 160-52 240-24" stroke="url(#wv1)" stroke-width="2.5"/>
+      <path d="M0 205c110-70 220-70 330 0s220 70 330 0 160-52 240-24" stroke="url(#wv2)" stroke-width="2"/>
+    </svg>
+
+    <div class="b-top">
+      <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true">
+        <rect class="lg-tile" x="1" y="1" width="30" height="30" rx="9"/>
+        <path d="M6 13c2.6-3.2 5.2-3.2 7.8 0s5.2 3.2 7.8 0c1.3-1.6 2.8-2.3 4.7-1.5" stroke="#251604" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path d="M6 20.5c2.6-3.2 5.2-3.2 7.8 0s5.2 3.2 7.8 0c1.3-1.6 2.8-2.3 4.7-1.5" stroke="#251604" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".45"/>
+      </svg>
+      <span><span class="wm">TVapp</span><span class="wm-sub">Multi Stream Viewer</span></span>
+    </div>
+
+    <div class="b-mid">
+      <span class="b-k">TVER・ABEMA・YouTube・niconico</span>
+      <p class="b-catch">テレビも、配信も。<br>4つの世界を、<em>ひとつの画面</em>で。</p>
+      <p class="b-cp">サービスを切り替えるたびに、アプリの空気が変わる。検索もマイリストも横断で。今夜見るものは、もう迷わない。</p>
+
+      <div class="screens" aria-hidden="true">
+        <div class="scr s-tver"><i>TVER</i><b>海辺のアンサンブル</b><span class="ply"><svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 1v6l5-3Z" fill="#fff"/></svg></span></div>
+        <div class="scr s-abema"><i>ABEMA</i><b>頂上決戦 2026</b><span class="ply"><svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 1v6l5-3Z" fill="#fff"/></svg></span></div>
+        <div class="scr s-yt"><i>YouTube</i><b>無人島サバイバル</b><span class="ply"><svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 1v6l5-3Z" fill="#fff"/></svg></span></div>
+        <div class="scr s-nico"><i>niconico</i><b>カレイドスコープ・ナイト</b><span class="ply"><svg width="8" height="8" viewBox="0 0 8 8"><path d="M2 1v6l5-3Z" fill="#fff"/></svg></span></div>
+      </div>
+
+      <div class="b-points" aria-label="TVapp の特長">
+        <span>4サービス対応</span><span>横断検索</span><span>横断マイリスト</span><span>視聴履歴の同期</span>
+      </div>
+    </div>
+
+    <p class="b-ft">© 2026 TVapp — 本画面はビジュアル検討用モックです。<br>番組・人物・メールアドレスはすべて架空のものです。</p>
+  </aside>
+
+  <!-- ============ 右 — ログイン ============ -->
+  <section class="auth" aria-label="ログイン">
+    <div class="card" id="card">
+
+      <!-- 状態 1: フォーム -->
+      <div id="pane-form">
+        <h1 id="ttl">おかえりなさい</h1>
+        <p class="lead" id="lead">TVapp アカウントでログインします</p>
+
+        <button class="g-btn" id="gbtn" type="button">
+          <svg width="19" height="19" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.5 0 6.7 1.2 9.2 3.6l6.8-6.8C35.9 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.2C12.4 13.4 17.7 9.5 24 9.5Z"/>
+            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6C44.1 38 46.5 31.9 46.5 24.5Z"/>
+            <path fill="#FBBC05" d="M10.5 28.6a14.5 14.5 0 0 1 0-9.2l-7.9-6.2a24 24 0 0 0 0 21.6l7.9-6.2Z"/>
+            <path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.6-5.8l-7.7-6c-2.1 1.5-4.8 2.3-7.9 2.3-6.3 0-11.6-3.9-13.5-9.9l-7.9 6.2C6.5 42.6 14.6 48 24 48Z"/>
+          </svg>
+          <span id="gbtn-t">Google でログイン</span>
+        </button>
+
+        <div class="or" aria-hidden="true">または</div>
+
+        <div class="banner" id="banner" role="alert" hidden>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="#f57d7d" stroke-width="1.5"/><path d="M8 4.8v3.9" stroke="#f57d7d" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.2" r=".9" fill="#f57d7d"/></svg>
+          <span><b>ログインできませんでした</b>メールアドレスまたはパスワードが正しくありません。入力内容をご確認ください。</span>
+        </div>
+
+        <form id="form" novalidate>
+          <div class="field">
+            <div class="f-top"><label for="email">メールアドレス</label></div>
+            <div class="f-in">
+              <input id="email" name="email" type="email" autocomplete="email" inputmode="email"
+                     placeholder="you@example.com" aria-describedby="email-err">
+            </div>
+            <p class="f-err" id="email-err" hidden>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.8v3.9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="11.2" r=".9" fill="currentColor"/></svg>
+              <span id="email-err-t">メールアドレスを入力してください</span>
+            </p>
+          </div>
+
+          <div class="field" id="pw-field">
+            <div class="f-top">
+              <label for="pw">パスワード</label>
+              <a href="#" id="forgot">パスワードをお忘れですか?</a>
+            </div>
+            <div class="f-in">
+              <input id="pw" name="password" type="password" autocomplete="current-password" data-eye
+                     placeholder="8文字以上" aria-describedby="pw-err pw-caps">
+              <button class="eye" type="button" id="eye" aria-label="パスワードを表示" aria-pressed="false">
+                <svg id="eye-open" width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1.8 10S4.8 4.6 10 4.6 18.2 10 18.2 10 15.2 15.4 10 15.4 1.8 10 1.8 10Z"/><circle cx="10" cy="10" r="2.6"/></svg>
+                <svg id="eye-shut" width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" hidden aria-hidden="true"><path d="M1.8 10S4.8 4.6 10 4.6 18.2 10 18.2 10a15.6 15.6 0 0 1-2.5 2.8M10 15.4c-5.2 0-8.2-5.4-8.2-5.4a15 15 0 0 1 2.6-3M3 17 17 3" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <p class="f-err" id="pw-err" hidden>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.8v3.9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="11.2" r=".9" fill="currentColor"/></svg>
+              <span id="pw-err-t">パスワードを入力してください</span>
+            </p>
+            <p class="f-hint" id="pw-caps" hidden>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2.5 13.5 8h-3v5.5h-5V8h-3L8 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+              Caps Lock がオンになっています
+            </p>
+          </div>
+
+          <label class="remember" id="remember-row">
+            <input type="checkbox" id="remember" checked>
+            <span class="cbx" aria-hidden="true">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.4 6.4 5 9l4.6-6" stroke="#251604" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span>このブラウザでログイン状態を保持する</span>
+          </label>
+
+          <button class="submit" id="submit" type="submit">
+            <span class="spin" id="spin" hidden aria-hidden="true"></span>
+            <span id="submit-t">ログイン</span>
+          </button>
+        </form>
+
+        <div class="alt">
+          <button type="button" id="mode">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.8" y="3.4" width="12.4" height="9.2" rx="1.6"/><path d="m2.4 4.4 5.6 4.4 5.6-4.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span id="mode-t">パスワードなしでログイン(メールリンク)</span>
+          </button>
+        </div>
+
+        <p class="signup">アカウントをお持ちでない方は <a href="#" id="signup">新規登録(無料)</a></p>
+      </div>
+
+      <!-- 状態 2: メールリンク送信完了 -->
+      <div class="sent" id="pane-sent" hidden>
+        <div class="sent-ic">
+          <svg width="30" height="30" viewBox="0 0 32 32" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3.5" y="7" width="25" height="18" rx="3"/>
+            <path d="m4.5 9 11.5 8.6L27.5 9"/>
+            <path class="ck" d="m11 17.5 3.6 3.7 7-7.6" stroke="#6fd598" transform="translate(3.4 5.8)"/>
+          </svg>
+        </div>
+        <h2>ログインリンクを送信しました</h2>
+        <p><span class="addr" id="sent-addr">you@example.com</span> 宛にメールをお送りしました。<br>メール内のリンクを開くと、パスワードなしでログインできます。<br>リンクの有効期限は 15 分です。</p>
+        <div class="resend">
+          <button type="button" id="resend" disabled>再送信(60秒)</button>
+          <button type="button" class="back" id="sent-back">別の方法でログインする</button>
+        </div>
+      </div>
+
+      <!-- 状態 3: ログイン成功 -->
+      <div class="done" id="pane-done" hidden>
+        <span class="avt" aria-hidden="true">兒</span>
+        <h2>おかえりなさい、兒玉さん</h2>
+        <p>ログインに成功しました。前回の続きから、どうぞ。</p>
+        <a class="go" href="./multiservice-home.html">
+          ホームを開く
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3 7h8M7.5 3.5 11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+
+    </div>
+
+    <p class="legal"><a href="#">利用規約</a> と <a href="#">プライバシーポリシー</a> に同意のうえログインしてください。</p>
+    <p class="mocknote">本画面は検討用モックです。送信先はなく、フォームはデモ動作します<br>(パスワード欄に「password」と入力して送信すると、認証エラー時の表示を確認できます)。</p>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+"use strict";
+
+var form = document.getElementById("form");
+var email = document.getElementById("email");
+var pw = document.getElementById("pw");
+var pwField = document.getElementById("pw-field");
+var rememberRow = document.getElementById("remember-row");
+var submit = document.getElementById("submit");
+var submitT = document.getElementById("submit-t");
+var spin = document.getElementById("spin");
+var banner = document.getElementById("banner");
+var paneForm = document.getElementById("pane-form");
+var paneSent = document.getElementById("pane-sent");
+var paneDone = document.getElementById("pane-done");
+var toast = document.getElementById("toast");
+var mode = "password"; // "password" | "magic"
+var busy = false;
+var toastTimer = null;
+
+/* ---------- ユーティリティ ---------- */
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add("show");
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(function(){ toast.classList.remove("show"); }, 3200);
+}
+function setErr(input, errEl, errTxtEl, msg){
+  var wrap = input.closest(".f-in");
+  if (msg) {
+    input.setAttribute("aria-invalid", "true");
+    errTxtEl.textContent = msg;
+    errEl.hidden = false;
+    wrap.classList.remove("shake");
+    void wrap.offsetWidth; /* reflow で再生し直す */
+    wrap.classList.add("shake");
+  } else {
+    input.removeAttribute("aria-invalid");
+    errEl.hidden = true;
+  }
+}
+function validEmail(v){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+}
+
+/* ---------- バリデーション ---------- */
+function checkEmail(){
+  var v = email.value.trim();
+  var e = document.getElementById("email-err");
+  var t = document.getElementById("email-err-t");
+  if (!v) { setErr(email, e, t, "メールアドレスを入力してください"); return false; }
+  if (!validEmail(v)) { setErr(email, e, t, "メールアドレスの形式が正しくありません"); return false; }
+  setErr(email, e, t, null); return true;
+}
+function checkPw(){
+  if (mode !== "password") return true;
+  var v = pw.value;
+  var e = document.getElementById("pw-err");
+  var t = document.getElementById("pw-err-t");
+  if (!v) { setErr(pw, e, t, "パスワードを入力してください"); return false; }
+  if (v.length < 8) { setErr(pw, e, t, "パスワードは 8 文字以上です"); return false; }
+  setErr(pw, e, t, null); return true;
+}
+email.addEventListener("blur", function(){ if (email.value) checkEmail(); });
+email.addEventListener("input", function(){
+  if (email.getAttribute("aria-invalid")) checkEmail();
+});
+pw.addEventListener("input", function(){
+  if (pw.getAttribute("aria-invalid")) checkPw();
+});
+
+/* Caps Lock 検知 */
+pw.addEventListener("keyup", function(e){
+  var caps = e.getModifierState && e.getModifierState("CapsLock");
+  document.getElementById("pw-caps").hidden = !caps;
+});
+pw.addEventListener("blur", function(){
+  document.getElementById("pw-caps").hidden = true;
+});
+
+/* パスワード表示切替 */
+var eye = document.getElementById("eye");
+eye.addEventListener("click", function(){
+  var show = pw.type === "password";
+  pw.type = show ? "text" : "password";
+  eye.setAttribute("aria-pressed", show ? "true" : "false");
+  eye.setAttribute("aria-label", show ? "パスワードを隠す" : "パスワードを表示");
+  document.getElementById("eye-open").hidden = show;
+  document.getElementById("eye-shut").hidden = !show;
+  pw.focus();
+});
+
+/* ---------- モード切替(パスワード ⇄ メールリンク) ---------- */
+var modeBtn = document.getElementById("mode");
+function setMode(m){
+  mode = m;
+  var magic = m === "magic";
+  pwField.hidden = magic;
+  rememberRow.hidden = magic;
+  banner.hidden = true;
+  document.getElementById("ttl").textContent = magic ? "メールリンクでログイン" : "おかえりなさい";
+  document.getElementById("lead").textContent = magic
+    ? "パスワードは不要です。ログイン用リンクをメールでお送りします"
+    : "TVapp アカウントでログインします";
+  submitT.textContent = magic ? "ログインリンクを送信" : "ログイン";
+  document.getElementById("mode-t").textContent = magic
+    ? "パスワードでログインに戻る"
+    : "パスワードなしでログイン(メールリンク)";
+}
+modeBtn.addEventListener("click", function(){
+  setMode(mode === "password" ? "magic" : "password");
+  email.focus();
+});
+
+/* ---------- 送信 ---------- */
+function setBusy(b, label){
+  busy = b;
+  submit.setAttribute("aria-busy", b ? "true" : "false");
+  spin.hidden = !b;
+  if (label) submitT.textContent = label;
+  submit.disabled = b;
+}
+form.addEventListener("submit", function(e){
+  e.preventDefault();
+  if (busy) return;
+  banner.hidden = true;
+  var okE = checkEmail();
+  var okP = checkPw();
+  if (!okE || !okP) {
+    (!okE ? email : pw).focus();
+    return;
+  }
+  if (mode === "magic") {
+    setBusy(true, "送信しています…");
+    window.setTimeout(function(){
+      setBusy(false, "ログインリンクを送信");
+      document.getElementById("sent-addr").textContent = email.value.trim();
+      paneForm.hidden = true;
+      paneSent.hidden = false;
+      startResendTimer();
+    }, 1300);
+  } else {
+    setBusy(true, "ログインしています…");
+    window.setTimeout(function(){
+      setBusy(false, "ログイン");
+      if (pw.value === "password") { /* デモ: 認証失敗パス */
+        banner.hidden = false;
+        pw.value = "";
+        pw.focus();
+      } else {
+        paneForm.hidden = true;
+        paneDone.hidden = false;
+      }
+    }, 1400);
+  }
+});
+
+/* ---------- 再送信カウントダウン ---------- */
+var resendBtn = document.getElementById("resend");
+var resendTimer = null;
+function startResendTimer(){
+  var left = 60;
+  resendBtn.disabled = true;
+  resendBtn.textContent = "再送信(" + left + "秒)";
+  window.clearInterval(resendTimer);
+  resendTimer = window.setInterval(function(){
+    left -= 1;
+    if (left <= 0) {
+      window.clearInterval(resendTimer);
+      resendBtn.disabled = false;
+      resendBtn.textContent = "メールを再送信";
+    } else {
+      resendBtn.textContent = "再送信(" + left + "秒)";
+    }
+  }, 1000);
+}
+resendBtn.addEventListener("click", function(){
+  showToast("ログインリンクを再送信しました(デモ)");
+  startResendTimer();
+});
+document.getElementById("sent-back").addEventListener("click", function(){
+  window.clearInterval(resendTimer);
+  paneSent.hidden = true;
+  paneForm.hidden = false;
+  email.focus();
+});
+
+/* ---------- Google / その他ダミー導線 ---------- */
+var gbtn = document.getElementById("gbtn");
+gbtn.addEventListener("click", function(){
+  if (gbtn.disabled) return;
+  gbtn.disabled = true;
+  document.getElementById("gbtn-t").textContent = "Google に接続しています…";
+  window.setTimeout(function(){
+    gbtn.disabled = false;
+    document.getElementById("gbtn-t").textContent = "Google でログイン";
+    paneForm.hidden = true;
+    paneDone.hidden = false;
+  }, 1100);
+});
+document.getElementById("forgot").addEventListener("click", function(e){
+  e.preventDefault();
+  showToast("デモ: パスワード再設定メールの導線です");
+});
+document.getElementById("signup").addEventListener("click", function(e){
+  e.preventDefault();
+  showToast("デモ: 新規登録画面への導線です");
+});
+document.addEventListener("click", function(e){
+  var a = e.target && e.target.closest ? e.target.closest('a[href="#"]') : null;
+  if (a && a.id !== "forgot" && a.id !== "signup") e.preventDefault();
+});
+})();
+</script>
+</body>
+</html>

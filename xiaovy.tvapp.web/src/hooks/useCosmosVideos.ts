@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { VideoDownload, VideoDownloadResponse } from '@/types/VideoDownload';
 import { useFirebaseAuth } from '@/contexts/AuthContext';
+import { PHASE2_USER_DATA_ENABLED } from '@/lib/features';
 
 // グローバルキャッシュ（コンポーネント間で共有）
 let cachedData: VideoDownload[] | null = null;
@@ -38,6 +39,12 @@ export const useCosmosVideos = () => {
   };
 
   const fetchVideos = async (retryCount = 0) => {
+    // 段階2(DBリスト/Cosmos)が無効なら取得しない(存在しないルートへの404回避)
+    if (!PHASE2_USER_DATA_ENABLED) {
+      setVideos([]);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);

@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="ja" data-v="a">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp ホーム画面 — ビジュアル方向性比較(A / B / C)</title>
+<style>
+/* ============================================================
+   TVapp ホーム画面 ビジュアル方向性 比較モック
+   A: シネマティック・ダーク / B: クリーン・ライト / C: ボールド・ビビッド
+   自己完結・単一 HTML(外部依存なし)
+   ============================================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+  font-feature-settings:"palt" 1;
+  line-height:1.7;
+  letter-spacing:.02em;
+  background:#0c0e12;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font:inherit}
+ul{list-style:none}
+[hidden]{display:none!important}
+img,svg{display:block}
+:focus-visible{outline:none}
+.cmp :focus-visible{outline:2px solid #8ab4ff;outline-offset:2px;border-radius:6px}
+#va :focus-visible{outline:2px solid #e8b45a;outline-offset:3px;border-radius:4px}
+#vb :focus-visible{outline:2px solid #0284c7;outline-offset:3px;border-radius:4px}
+#vc :focus-visible{outline:3px solid #d81b6a;outline-offset:3px;border-radius:4px}
+
+/* ------------------------------------------------------------
+   比較チューム(レビュー用クローム)— sticky タブバー
+   ------------------------------------------------------------ */
+.cmp{
+  position:sticky;top:0;z-index:120;
+  display:flex;align-items:center;gap:20px;
+  padding:10px 22px;
+  background:linear-gradient(180deg,#14171d,#101318);
+  border-bottom:1px solid rgba(255,255,255,.09);
+  box-shadow:0 6px 24px rgba(0,0,0,.45);
+}
+.cmp-id{display:flex;flex-direction:column;min-width:0;line-height:1.35}
+.cmp-k{
+  font-family:"Avenir Next Condensed","Arial Narrow","Segoe UI",sans-serif;
+  font-size:10px;font-weight:600;letter-spacing:.32em;color:#7d8698;text-transform:uppercase;
+}
+.cmp-t{font-size:13.5px;font-weight:700;color:#e8ecf4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp-m{font-size:10.5px;color:#6b7484;letter-spacing:.05em}
+.cmp-tabs{
+  display:flex;gap:6px;margin-left:auto;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:12px;padding:4px;
+}
+.cmp-tab{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 15px;border-radius:9px;
+  color:#9aa3b4;transition:background .18s ease,color .18s ease;
+}
+.cmp-tab b{
+  display:grid;place-items:center;
+  width:22px;height:22px;border-radius:7px;flex:0 0 auto;
+  font-family:"Avenir Next Condensed","Arial Narrow","Segoe UI",sans-serif;
+  font-size:13px;font-weight:700;
+  background:rgba(255,255,255,.1);color:#c9d1e0;
+  transition:background .18s ease,color .18s ease;
+}
+.cmp-tab span{font-size:12.5px;font-weight:600;white-space:nowrap}
+.cmp-tab:hover{color:#dfe5ef}
+.cmp-tab[aria-selected="true"]{color:#f5f7fb}
+.cmp-tab[data-v="a"][aria-selected="true"]{background:rgba(232,180,90,.14)}
+.cmp-tab[data-v="a"][aria-selected="true"] b{background:linear-gradient(160deg,#f4cd85,#cf9337);color:#241503}
+.cmp-tab[data-v="b"][aria-selected="true"]{background:rgba(56,169,240,.14)}
+.cmp-tab[data-v="b"][aria-selected="true"] b{background:linear-gradient(160deg,#7cd0ff,#1a8ed8);color:#04263d}
+.cmp-tab[data-v="c"][aria-selected="true"]{background:rgba(255,46,136,.15)}
+.cmp-tab[data-v="c"][aria-selected="true"] b{background:linear-gradient(160deg,#ff7cb4,#e0176e);color:#fff}
+.cmp-hint{font-size:10.5px;color:#5d6575;letter-spacing:.08em;white-space:nowrap}
+.cmp-hint kbd{
+  font-family:inherit;font-size:10px;font-weight:700;color:#aab3c4;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+  border-radius:4px;padding:1px 5px;margin:0 1px;
+}
+@media(max-width:960px){.cmp-hint{display:none}.cmp-m{display:none}}
+@media(max-width:760px){
+  .cmp{gap:12px;padding:9px 14px}
+  .cmp-t{font-size:12px}.cmp-k{display:none}
+  .cmp-tab{padding:6px 9px}.cmp-tab span{display:none}
+}
+
+/* ------------------------------------------------------------
+   共通スケルトン(3 案で共有する骨格。見た目は各案で上書き)
+   ------------------------------------------------------------ */
+.stage{min-height:100vh}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+@media(max-width:640px){.wrap{padding:0 16px}}
+
+.intent{margin:22px auto 4px;max-width:1240px;padding:0 28px}
+@media(max-width:640px){.intent{padding:0 16px}}
+.intent-in{border-radius:14px;padding:16px 22px 15px}
+.intent-k{font-size:10.5px;font-weight:700;letter-spacing:.28em}
+.intent-t{font-size:16px;font-weight:800;margin:1px 0 3px}
+.intent-c{font-size:13px;max-width:66em}
+.intent-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.intent-chips span{font-size:11px;font-weight:700;padding:2px 11px;border-radius:999px}
+
+.hdr{display:flex;align-items:center;gap:22px;padding:14px 0}
+.logo{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.wm{
+  font-family:"Avenir Next","Segoe UI",sans-serif;
+  font-size:21px;font-weight:800;letter-spacing:.015em;line-height:1;
+}
+.search{flex:1 1 140px;min-width:0;max-width:520px;position:relative;margin:0 auto}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none}
+.search input{width:100%;border:none;line-height:1.4}
+.hact{display:flex;align-items:center;gap:10px;flex:0 0 auto;margin-left:auto}
+.icb{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;transition:background .18s ease}
+.user{display:flex;align-items:center;gap:9px;border-radius:999px;padding:4px 12px 4px 4px;transition:background .18s ease,border-color .18s ease}
+.avt{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;font-size:14px;font-weight:700;flex:0 0 auto}
+.unm{font-size:13px;font-weight:600;white-space:nowrap}
+@media(max-width:760px){.unm{display:none}.search{max-width:none}}
+@media(max-width:560px){.hdr{gap:12px}}
+@media(max-width:470px){
+  .hdr{gap:10px}
+  .icb{width:34px;height:34px}
+  .hact{gap:6px}
+  #va .hact .icb:first-of-type{display:none}
+  .search input{padding-left:36px;font-size:12.5px}
+  .search svg{left:12px}
+}
+
+.gnav{display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}
+.gnav::-webkit-scrollbar{display:none}
+.gnav a{flex:0 0 auto;font-size:13px;font-weight:600;padding:6px 16px;border-radius:999px;transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease}
+
+.hero{position:relative}
+.hero-k{font-size:11.5px;font-weight:700;letter-spacing:.22em}
+.hero-cp{font-size:14px;max-width:36em}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px}
+.hero-meta li{font-size:11.5px;font-weight:600;padding:3px 12px;border-radius:999px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:9px;font-weight:700;transition:transform .18s ease,box-shadow .18s ease,background .18s ease,filter .18s ease,color .18s ease}
+
+.sec{margin:36px 0}
+.sech{display:flex;align-items:baseline;gap:16px;margin-bottom:14px}
+.sech h3{font-weight:800;line-height:1.3}
+.more{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;white-space:nowrap;transition:color .18s ease,background .18s ease,transform .18s ease}
+.row{display:flex;gap:18px;overflow-x:auto;padding:8px 4px 18px;scroll-snap-type:x proximity}
+.card{flex:0 0 258px;scroll-snap-align:start}
+.clk{display:block;position:relative;transition:transform .22s ease}
+.thw{position:relative}
+.th{position:relative;aspect-ratio:16/9;overflow:hidden;transition:border-color .22s ease,box-shadow .22s ease,filter .22s ease}
+.th::before{
+  content:"";position:absolute;inset:0;z-index:1;
+  background:
+    radial-gradient(130% 95% at 84% -12%, rgba(255,255,255,.30), transparent 55%),
+    radial-gradient(150% 130% at 10% 115%, rgba(0,0,0,.42), transparent 62%);
+}
+.tht{
+  position:absolute;left:13px;bottom:10px;z-index:2;
+  color:#fff;font-weight:800;font-size:15.5px;line-height:1.34;letter-spacing:.045em;
+  text-shadow:0 2px 12px rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.4);
+}
+.tht.c{left:12px;right:12px;bottom:auto;top:50%;transform:translateY(-50%);text-align:center}
+.dur{
+  position:absolute;right:8px;bottom:8px;z-index:3;
+  font-size:10.5px;font-weight:600;letter-spacing:.06em;line-height:1.5;
+  background:rgba(0,0,0,.66);color:#fff;padding:1px 8px;border-radius:4px;
+}
+.ep{
+  position:absolute;left:8px;top:8px;z-index:3;
+  font-size:10.5px;font-weight:700;line-height:1.5;letter-spacing:.04em;
+  background:rgba(0,0,0,.55);color:#fff;padding:1px 8px;border-radius:4px;
+}
+.cm h4{font-size:14.5px;font-weight:700;line-height:1.45;margin-bottom:1px}
+.st{font-size:11.5px;line-height:1.55}
+.lf{font-size:11px;font-weight:600;line-height:1.55;margin-top:2px}
+.rank{position:absolute;z-index:4}
+
+.ft{text-align:center;padding:38px 20px 46px;font-size:11px;line-height:2}
+.ft nav{display:flex;justify-content:center;gap:22px;font-weight:600}
+
+/* ------------------------------------------------------------
+   番組キーアート(CSS グラデ)— 3 案で共通。中身は同じ、器だけ変える
+   ------------------------------------------------------------ */
+.t-d1{background:linear-gradient(300deg,rgba(255,214,140,.24),transparent 42%),linear-gradient(140deg,#0e5470 0%,#177a9e 36%,#0b3057 70%,#071a30 100%)}
+.t-d2{background:linear-gradient(135deg,#571325 0%,#8c2038 46%,#230b14 100%)}
+.t-d3{background:linear-gradient(150deg,#8fb4e4 0%,#a09cd6 48%,#5c6cae 100%)}
+.t-d4{background:linear-gradient(295deg,rgba(232,180,90,.34),transparent 38%),linear-gradient(120deg,#0c1626 0%,#25354e 56%,#0b1120 100%)}
+.t-d5{background:linear-gradient(140deg,#c9681d 0%,#8f4013 52%,#4c1d0b 100%)}
+.t-d6{background:radial-gradient(58% 82% at 72% 24%,rgba(226,232,255,.5),transparent 56%),linear-gradient(160deg,#26275e 0%,#151538 56%,#05060f 100%)}
+.t-v1{background:linear-gradient(135deg,#ff8a00 0%,#ffc400 58%,#ff5d3a 100%)}
+.t-v2{background:linear-gradient(140deg,#9130ad 0%,#5c2cd2 54%,#241a52 100%)}
+.t-v3{background:linear-gradient(135deg,#12994f 0%,#0a5c3c 60%,#08331f 100%)}
+.t-v4{background:linear-gradient(118deg,#0e93a8 0%,#0e93a8 45%,#e8a83c 55%,#c97e22 100%)}
+.t-v5{background:linear-gradient(135deg,#1c48c8 0%,#0aa2d8 58%,#063a75 100%)}
+.t-v6{background:linear-gradient(150deg,#e03a5e 0%,#f07f3c 52%,#8a2040 100%)}
+.t-n1{background:linear-gradient(135deg,#c22326 0%,#7c1215 55%,#320708 100%)}
+.t-n2{background:linear-gradient(145deg,#5c6b80 0%,#2c3648 55%,#141b26 100%)}
+.t-n3{background:linear-gradient(135deg,#123f8c 0%,#0d5f9e 55%,#082346 100%)}
+.t-n4{background:linear-gradient(140deg,#8a7a62 0%,#5c5044 55%,#2b241c 100%)}
+.t-n5{background:linear-gradient(140deg,#0c6b58 0%,#0a4a44 55%,#062a28 100%)}
+.t-n6{background:linear-gradient(115deg,#5f9e2f 0%,#3f7d2a 42%,#2b9ac9 58%,#1a6b9e 100%)}
+
+/* ============================================================
+   案 A — シネマティック・ダーク
+   ============================================================ */
+#va{background:#05070d;color:#dbe2ee}
+#va .intent-in{background:#0b0f18;border:1px solid rgba(232,180,90,.22);border-left:3px solid #e8b45a}
+#va .intent-k{color:#caa25a}
+#va .intent-t{color:#f1e8d6}
+#va .intent-c{color:#97a1b4}
+#va .intent-chips span{background:rgba(232,180,90,.1);border:1px solid rgba(232,180,90,.3);color:#e3c184}
+#va .mock{background:radial-gradient(1000px 520px at 50% -180px,rgba(42,78,134,.4),transparent 70%),#05070d;margin-top:18px}
+
+#va .hdr{border-bottom:1px solid rgba(255,255,255,.06)}
+#va .logo-tile{fill:url(#lg-a)}
+#va .wm{color:#f2f5fa}
+#va .search input{
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;color:#e7ecf5;padding:9px 16px 9px 42px;font-size:13px;
+  transition:border-color .18s ease,background .18s ease;
+}
+#va .search input::placeholder{color:#6a7486}
+#va .search input:focus{border-color:rgba(232,180,90,.55);background:rgba(255,255,255,.09);outline:none}
+#va .search svg{stroke:#7c8699}
+#va .icb{color:#9aa5b8;border:1px solid transparent}
+#va .icb:hover{background:rgba(255,255,255,.08);color:#e8edf5}
+#va .user{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#d6dce8}
+#va .user:hover{background:rgba(255,255,255,.09);border-color:rgba(232,180,90,.4)}
+#va .avt{background:linear-gradient(155deg,#f0c87e,#c08a2e);color:#241503}
+#va .gnav{border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:0;margin-bottom:4px}
+#va .gnav a{color:#8792a6;border-radius:0;padding:8px 14px 13px;border-bottom:2px solid transparent}
+#va .gnav a:hover{color:#e6ebf4}
+#va .gnav a[aria-current="page"]{color:#f4e9d2;border-bottom-color:#e8b45a}
+
+#va .hero{min-height:462px;display:flex;align-items:flex-end;overflow:hidden}
+#va .hero-art{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(90deg,#04070f 4%,rgba(4,7,15,.62) 42%,rgba(4,7,15,0) 72%),
+    linear-gradient(0deg,#05070d 2%,rgba(5,7,13,0) 44%),
+    radial-gradient(72% 100% at 78% 8%,rgba(126,206,244,.34),transparent 58%),
+    linear-gradient(140deg,#0e5470 0%,#187ba0 34%,#0b3057 68%,#06182c 100%);
+}
+#va .hero-art::after{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.016) 0 1px,transparent 1px 3px);
+}
+#va .hero-deco{
+  position:absolute;right:-14px;bottom:22px;
+  font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:700;
+  font-size:128px;line-height:1;letter-spacing:.04em;color:rgba(255,255,255,.05);
+  user-select:none;white-space:nowrap;
+}
+#va .hero-in{position:relative;z-index:2;width:100%;padding:120px 0 54px}
+#va .hero-k{color:#e5bd6d}
+#va .hero h2{font-size:46px;font-weight:800;line-height:1.22;color:#f7f9fc;margin:8px 0 10px;text-shadow:0 4px 30px rgba(0,0,0,.5)}
+#va .hero-cp{color:#b9c3d4;margin-bottom:16px}
+#va .hero-meta{margin-bottom:24px}
+#va .hero-meta li{color:#c8d0df;border:1px solid rgba(255,255,255,.22);background:rgba(8,12,20,.35)}
+#va .btn{border-radius:9px;font-size:14px;padding:11px 26px}
+#va .btn-p{background:linear-gradient(160deg,#f2ca82,#d99a33);color:#231402;box-shadow:0 8px 28px rgba(217,154,51,.32)}
+#va .btn-p:hover{filter:brightness(1.07);transform:translateY(-1px);box-shadow:0 12px 34px rgba(217,154,51,.42)}
+#va .btn-g{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.24);color:#e9edf5}
+#va .btn-g:hover{background:rgba(255,255,255,.15);transform:translateY(-1px)}
+
+#va .sech h3{font-size:20px;color:#f0f3f8;display:flex;align-items:center;gap:11px}
+#va .sech h3::before{content:"";width:4px;height:19px;border-radius:2px;background:linear-gradient(180deg,#f0c87e,#b97b1f);flex:0 0 auto}
+#va .more{color:#8b95a9}
+#va .more:hover{color:#eddfc2}
+#va .card{flex-basis:296px;padding-left:46px}
+#va .th{border-radius:9px;border:1px solid rgba(255,255,255,.09)}
+#va .rank{
+  left:-49px;bottom:-8px;
+  font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:700;
+  font-size:86px;line-height:.82;letter-spacing:-.05em;
+  background:linear-gradient(180deg,#e9eef8 0%,#97a2ba 52%,#414c63 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 5px 14px rgba(0,0,0,.6));
+}
+#va .r1{background:linear-gradient(180deg,#ffe4a6 0%,#e0a648 52%,#7c5013 100%);-webkit-background-clip:text;background-clip:text}
+#va .clk:hover{transform:translateY(-4px)}
+#va .clk:hover .th{border-color:rgba(232,180,90,.6);box-shadow:0 14px 38px rgba(0,0,0,.55),0 4px 22px rgba(232,180,90,.14);filter:brightness(1.07)}
+#va .cm{padding:10px 2px 0}
+#va .cm h4{color:#e9edf4}
+#va .clk:hover h4{color:#f3dfae}
+#va .st{color:#7f8a9e}
+#va .lf{color:#c5a262}
+#va .row::-webkit-scrollbar{height:6px}
+#va .row::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:3px}
+#va .row::-webkit-scrollbar-track{background:transparent}
+#va .row{scrollbar-color:rgba(255,255,255,.16) transparent;scrollbar-width:thin}
+#va .ft{color:#5b6478;border-top:1px solid rgba(255,255,255,.05);margin-top:20px}
+#va .ft nav a{color:#7d8799}
+#va .ft nav a:hover{color:#d8ac5e}
+@media(max-width:760px){#va .hero h2{font-size:32px}#va .hero-in{padding-top:80px}#va .hero-deco{font-size:76px}}
+
+/* ============================================================
+   案 B — クリーン・ライト
+   ============================================================ */
+#vb{background:#fff;color:#0f172a}
+#vb .intent-in{background:#f0f9ff;border:1px solid #bae6fd;border-left:3px solid #0284c7}
+#vb .intent-k{color:#0369a1}
+#vb .intent-t{color:#0c4a6e}
+#vb .intent-c{color:#47586e}
+#vb .intent-chips span{background:#fff;border:1px solid #bae6fd;color:#0369a1}
+#vb .mock{margin-top:18px}
+
+#vb .hdr{border-bottom:1px solid #e8edf3}
+#vb .logo-tile{fill:url(#lg-b)}
+#vb .wm{color:#0f172a}
+#vb .search input{
+  background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;
+  color:#0f172a;padding:9px 18px 9px 42px;font-size:13px;
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;
+}
+#vb .search input::placeholder{color:#94a3b8}
+#vb .search input:focus{outline:none;background:#fff;border-color:#7dd3fc;box-shadow:0 0 0 3px rgba(2,132,199,.16)}
+#vb .search svg{stroke:#94a3b8}
+#vb .icb{color:#64748b}
+#vb .icb:hover{background:#f1f5f9;color:#0f172a}
+#vb .user{border:1px solid #e2e8f0;background:#fff;color:#334155}
+#vb .user:hover{background:#f0f9ff;border-color:#7dd3fc}
+#vb .avt{background:#e0f2fe;color:#0369a1;box-shadow:inset 0 0 0 1px #bae6fd}
+#vb .gnav{padding-top:14px}
+#vb .gnav a{color:#64748b;background:#fff}
+#vb .gnav a:hover{background:#f1f5f9;color:#0f172a}
+#vb .gnav a[aria-current="page"]{background:#e0f2fe;color:#0369a1}
+
+#vb .hero{margin-top:16px}
+#vb .hero-in{
+  display:grid;grid-template-columns:1fr 1.15fr;overflow:hidden;
+  border-radius:20px;border:1px solid #e2e8f0;background:#fff;
+  box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 34px rgba(15,23,42,.06);
+}
+#vb .hero-tx{padding:38px 40px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(160deg,#f0f9ff,#fff 62%)}
+#vb .hero-k{color:#0284c7}
+#vb .hero h2{font-size:32px;font-weight:800;line-height:1.3;color:#0f172a;margin:6px 0 8px}
+#vb .hero-cp{color:#5b6b80;font-size:13.5px;margin-bottom:14px}
+#vb .hero-meta{margin-bottom:22px}
+#vb .hero-meta li{color:#475569;background:#f1f5f9;border:1px solid #e2e8f0}
+#vb .btn{border-radius:999px;font-size:13.5px;padding:10px 24px}
+#vb .btn-p{background:#0284c7;color:#fff;box-shadow:0 6px 18px rgba(2,132,199,.28)}
+#vb .btn-p:hover{background:#026da5;transform:translateY(-1px);box-shadow:0 9px 22px rgba(2,132,199,.34)}
+#vb .btn-g{background:#fff;border:1px solid #cbd5e1;color:#334155}
+#vb .btn-g:hover{border-color:#7dd3fc;background:#f0f9ff;color:#0369a1}
+#vb .hero-art{
+  position:relative;min-height:300px;
+  background:
+    radial-gradient(70% 110% at 76% 6%,rgba(180,232,255,.42),transparent 58%),
+    linear-gradient(140deg,#0e5470 0%,#187ba0 36%,#0b3057 72%,#071a30 100%);
+}
+#vb .hero-art .hat{
+  position:absolute;left:32px;bottom:26px;color:#fff;
+  font-size:24px;font-weight:800;line-height:1.4;letter-spacing:.05em;
+  text-shadow:0 2px 16px rgba(0,0,0,.45);
+}
+#vb .hero-art .hep{
+  position:absolute;left:32px;top:24px;font-size:11px;font-weight:700;letter-spacing:.08em;
+  background:rgba(255,255,255,.92);color:#0c4a6e;padding:3px 12px;border-radius:999px;
+}
+
+#vb .sec{margin:40px 0}
+#vb .sech h3{font-size:19px;color:#0f172a}
+#vb .sech .cnt{font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:.14em;align-self:center}
+#vb .more{color:#0284c7}
+#vb .more:hover{color:#014e78}
+#vb .more:hover svg{transform:translateX(2px)}
+#vb .more svg{transition:transform .18s ease}
+#vb .card{flex-basis:246px}
+#vb .th{border-radius:13px;border:1px solid #e2e8f0}
+#vb .ep{left:auto;right:8px}
+#vb .rank{
+  top:8px;left:8px;
+  min-width:25px;height:25px;padding:0 7px;border-radius:8px;
+  display:grid;place-items:center;
+  font-size:12.5px;font-weight:800;line-height:1;
+}
+#vb .r1{background:#0284c7;color:#fff;box-shadow:0 2px 8px rgba(2,132,199,.4)}
+#vb .r2{background:#334155;color:#fff}
+#vb .r3{background:#7d8fa5;color:#fff}
+#vb .r4,#vb .r5,#vb .r6{background:rgba(255,255,255,.92);color:#475569;box-shadow:inset 0 0 0 1px #dbe3ec}
+#vb .clk{border-radius:15px}
+#vb .clk:hover{transform:translateY(-3px)}
+#vb .clk:hover .th{border-color:#7dd3fc;box-shadow:0 10px 28px rgba(15,23,42,.12)}
+#vb .cm{padding:9px 4px 0}
+#vb .cm h4{color:#0f172a;font-size:14px}
+#vb .clk:hover h4{color:#0369a1}
+#vb .st{color:#64748b}
+#vb .lf{color:#c2410c}
+#vb .row::-webkit-scrollbar{height:6px}
+#vb .row::-webkit-scrollbar-thumb{background:#dbe3ec;border-radius:3px}
+#vb .row::-webkit-scrollbar-track{background:transparent}
+#vb .row{scrollbar-color:#dbe3ec transparent;scrollbar-width:thin}
+#vb .ft{color:#94a3b8;border-top:1px solid #e8edf3;margin-top:26px;background:#fafcfe}
+#vb .ft nav a{color:#64748b}
+#vb .ft nav a:hover{color:#0284c7}
+@media(max-width:820px){#vb .hero-in{grid-template-columns:1fr}#vb .hero-art{min-height:220px;order:-1}#vb .hero-tx{padding:26px 24px 30px}}
+
+/* ============================================================
+   案 C — ボールド・ビビッド
+   ============================================================ */
+#vc{
+  background:#fffaf0;color:#141414;
+  background-image:radial-gradient(rgba(13,13,13,.055) 1.2px,transparent 1.3px);
+  background-size:22px 22px;
+}
+#vc .intent-in{background:#fff3bf;border:2px solid #0d0d0d;box-shadow:4px 4px 0 #0d0d0d}
+#vc .intent-k{color:#8a6d00}
+#vc .intent-t{color:#0d0d0d}
+#vc .intent-c{color:#3d3d3d}
+#vc .intent-chips span{background:#fff;border:2px solid #0d0d0d;color:#0d0d0d}
+#vc .mock{margin-top:20px}
+
+#vc .hdr-bg{background:#0d0d0d;color:#fff}
+#vc .logo-tile{fill:url(#lg-c)}
+#vc .wm{color:#fff}
+#vc .wm i{font-style:normal;color:#ffd400}
+#vc .search input{
+  background:#fff;border:2px solid #0d0d0d;border-radius:999px;
+  color:#0d0d0d;padding:8px 18px 8px 42px;font-size:13px;font-weight:600;
+  transition:box-shadow .18s ease;
+}
+#vc .search input::placeholder{color:#8a8a8a}
+#vc .search input:focus{outline:none;box-shadow:0 0 0 3px #ffd400}
+#vc .search svg{stroke:#0d0d0d}
+#vc .icb{color:#fff;position:relative}
+#vc .icb:hover{background:rgba(255,255,255,.16)}
+#vc .icb .dot{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:#ff2e88;border:1.5px solid #0d0d0d}
+#vc .user{background:#fff;color:#0d0d0d;border:2px solid #0d0d0d}
+#vc .user:hover{background:#ffd400}
+#vc .avt{background:#ff2e88;color:#fff;border:2px solid #0d0d0d;font-weight:800}
+#vc .unm{font-weight:800}
+#vc .gnav{padding:14px 0 6px}
+#vc .gnav a{background:#fff;border:2px solid #0d0d0d;color:#0d0d0d;font-weight:800;box-shadow:2.5px 2.5px 0 #0d0d0d}
+#vc .gnav a:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 #0d0d0d;background:#e9fbff}
+#vc .gnav a[aria-current="page"]{background:#ff2e88;color:#fff}
+
+#vc .hero{padding-top:26px}
+#vc .hero-in{display:grid;grid-template-columns:1fr 1.05fr;gap:36px;align-items:center}
+#vc .hero-k{
+  display:inline-block;transform:rotate(-2.5deg);
+  background:#ffd400;border:2.5px solid #0d0d0d;border-radius:8px;
+  padding:4px 16px;color:#0d0d0d;font-size:12.5px;letter-spacing:.14em;
+  box-shadow:3px 3px 0 #0d0d0d;
+}
+#vc .hero h2{
+  font-size:48px;font-weight:800;line-height:1.18;letter-spacing:.01em;
+  color:#0d0d0d;margin:16px 0 10px;
+}
+#vc .hero h2 em{
+  font-style:normal;
+  background:linear-gradient(transparent 55%,#ffd400 55% 92%,transparent 92%);
+}
+#vc .hero-cp{color:#3d3d3d;font-weight:600;margin-bottom:14px}
+#vc .hero-meta{margin-bottom:22px}
+#vc .hero-meta li{background:#fff;border:2px solid #0d0d0d;color:#0d0d0d;font-weight:700}
+#vc .btn{border-radius:999px;font-size:14px;font-weight:800;padding:11px 26px;border:2.5px solid #0d0d0d}
+#vc .btn-p{background:#ffd400;color:#0d0d0d;box-shadow:4px 4px 0 #0d0d0d}
+#vc .btn-p:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #0d0d0d}
+#vc .btn-g{background:#fff;color:#0d0d0d;box-shadow:4px 4px 0 #0d0d0d}
+#vc .btn-g:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #0d0d0d;background:#ffe9f3}
+#vc .hero-art{
+  position:relative;aspect-ratio:16/10;border:3px solid #0d0d0d;border-radius:18px;
+  transform:rotate(1.2deg);box-shadow:9px 9px 0 #ff2e88;overflow:hidden;
+  background:
+    radial-gradient(70% 110% at 76% 4%,rgba(180,232,255,.4),transparent 58%),
+    linear-gradient(140deg,#0e5470 0%,#187ba0 36%,#0b3057 72%,#071a30 100%);
+}
+#vc .hero-art .hat{
+  position:absolute;left:26px;bottom:22px;color:#fff;
+  font-size:27px;font-weight:800;line-height:1.35;letter-spacing:.05em;
+  text-shadow:0 2px 16px rgba(0,0,0,.5);
+}
+#vc .hero-art .hep{
+  position:absolute;right:-12px;top:18px;transform:rotate(6deg);
+  background:#ff2e88;color:#fff;border:2.5px solid #0d0d0d;border-radius:10px;
+  padding:5px 22px 5px 16px;font-size:13px;font-weight:800;letter-spacing:.06em;
+  box-shadow:3px 3px 0 rgba(0,0,0,.35);
+}
+#vc .tick{margin-top:34px;background:#0d0d0d;color:#fff;overflow:hidden;border-top:3px solid #0d0d0d;border-bottom:3px solid #0d0d0d}
+#vc .tick-in{display:flex;width:max-content;animation:vc-tick 26s linear infinite}
+#vc .tick-seq{display:flex;align-items:center;gap:44px;padding:8px 22px;white-space:nowrap;font-size:12.5px;font-weight:700;letter-spacing:.08em}
+#vc .tick-seq b{color:#ffd400;font-weight:800}
+#vc .tick-seq .up{color:#ff7cb4}
+@keyframes vc-tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+#vc .sec{margin:44px 0}
+#vc .sec.g1{--acc:#ff2e88;--mk:#ffd0e4}
+#vc .sec.g2{--acc:#0091d8;--mk:#bdedff}
+#vc .sec.g3{--acc:#6c2bd9;--mk:#e2d4ff}
+#vc .sech{align-items:center}
+#vc .sech h3{
+  font-size:26px;font-weight:800;font-style:italic;letter-spacing:.01em;
+  background:linear-gradient(transparent 58%,var(--mk,#ffd400) 58% 94%,transparent 94%);
+  padding-right:8px;
+}
+#vc .sech .top6{
+  font-family:"Avenir Next Condensed","Arial Narrow","Segoe UI",sans-serif;
+  font-size:12px;font-weight:700;letter-spacing:.2em;
+  background:#0d0d0d;color:#fff;border-radius:6px;padding:3px 11px;
+  transform:rotate(-2deg);
+}
+#vc .more{background:#0d0d0d;color:#fff;border-radius:999px;padding:7px 18px;border:2px solid #0d0d0d}
+#vc .more:hover{background:var(--acc,#ff2e88);transform:translate(-1px,-1px);box-shadow:3px 3px 0 #0d0d0d}
+#vc .row{padding:16px 8px 24px;gap:22px}
+#vc .card{flex-basis:264px}
+#vc .clk{background:#fff;border:2.5px solid #0d0d0d;border-radius:16px;padding:10px 10px 12px;box-shadow:5px 5px 0 var(--acc,#0d0d0d)}
+#vc .clk:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--acc,#0d0d0d)}
+#vc .th{border-radius:9px;border:2px solid #0d0d0d}
+#vc .ep{left:auto;right:8px}
+#vc .rank{
+  top:-15px;left:-15px;width:44px;height:44px;border-radius:50%;
+  display:grid;place-items:center;transform:rotate(-9deg);
+  border:2.5px solid #0d0d0d;font-size:19px;font-weight:800;line-height:1;color:#0d0d0d;
+  box-shadow:2.5px 2.5px 0 rgba(13,13,13,.85);background:#fff;
+}
+#vc .r1{background:#ffd400;width:50px;height:50px;font-size:23px;top:-18px;left:-18px}
+#vc .r2{background:#dbe2ea}
+#vc .r3{background:#f4a261}
+#vc .hot{
+  position:absolute;right:-9px;top:-13px;z-index:5;transform:rotate(5deg);
+  background:#ff2e88;color:#fff;border:2px solid #0d0d0d;border-radius:7px;
+  padding:1px 9px;font-size:10.5px;font-weight:800;letter-spacing:.08em;
+}
+#vc .cm{padding:9px 4px 0}
+#vc .cm h4{font-size:14.5px;font-weight:800;color:#0d0d0d}
+#vc .st{color:#5a5a5a;font-weight:600}
+#vc .lf{color:#d81b6a;font-weight:800}
+#vc .row::-webkit-scrollbar{height:9px}
+#vc .row::-webkit-scrollbar-thumb{background:#0d0d0d;border-radius:5px;border:2px solid #fffaf0}
+#vc .row::-webkit-scrollbar-track{background:transparent}
+#vc .row{scrollbar-color:#0d0d0d transparent}
+#vc .ft{background:#0d0d0d;color:#b9b9b9;margin-top:34px}
+#vc .ft nav a{color:#fff}
+#vc .ft nav a:hover{color:#ffd400}
+@media(max-width:880px){
+  #vc .hero-in{grid-template-columns:1fr;gap:26px}
+  #vc .hero h2{font-size:36px}
+  #vc .hero-art{transform:rotate(0)}
+}
+
+/* ------------------------------------------------------------
+   動きを減らす設定への配慮
+   ------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce){
+  *{transition:none!important;animation:none!important}
+  #vc .tick-in{transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- SVG グラデ定義(ロゴタイル用・共有) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="lg-a" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2ca82"/><stop offset="1" stop-color="#b97b1f"/>
+    </linearGradient>
+    <linearGradient id="lg-b" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="lg-c" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff2e88"/><stop offset=".55" stop-color="#ff5d3a"/><stop offset="1" stop-color="#ffd400"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ============ 比較用クローム(sticky タブ) ============ -->
+<header class="cmp">
+  <div class="cmp-id">
+    <span class="cmp-k">Design Review</span>
+    <span class="cmp-t">TVapp ホーム画面 — ビジュアル方向性の比較</span>
+    <span class="cmp-m">tvapp-web / docs/reference/03_decisions / ステータス: 検討中(意思決定用モック)</span>
+  </div>
+  <div class="cmp-tabs" role="tablist" aria-label="デザイン案の切替">
+    <button class="cmp-tab" id="tab-a" role="tab" data-v="a" aria-selected="true" aria-controls="va"><b>A</b><span>シネマティック・ダーク</span></button>
+    <button class="cmp-tab" id="tab-b" role="tab" data-v="b" aria-selected="false" aria-controls="vb" tabindex="-1"><b>B</b><span>クリーン・ライト</span></button>
+    <button class="cmp-tab" id="tab-c" role="tab" data-v="c" aria-selected="false" aria-controls="vc" tabindex="-1"><b>C</b><span>ボールド・ビビッド</span></button>
+  </div>
+  <span class="cmp-hint"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> キーで切替</span>
+</header>
+
+<!-- ================================================================
+     案 A — シネマティック・ダーク
+     ================================================================ -->
+<section class="stage" id="va" role="tabpanel" aria-labelledby="tab-a">
+
+  <div class="intent">
+    <div class="intent-in">
+      <p class="intent-k">案 A の狙い</p>
+      <p class="intent-t">シネマティック・ダーク — コンテンツを主役に、UI は闇に溶ける</p>
+      <p class="intent-c">黒〜濃紺の没入型。大きなヒーローと繊細なグロー・金の差し色でサムネイルを最大限に引き立て、夜のリビングで「今夜の一本」をじっくり選ぶ体験に寄せる。落ち着いた上質感(Netflix / U-NEXT 系)。</p>
+      <div class="intent-chips"><span>没入</span><span>上質</span><span>夜のゴールデンタイム</span><span>サムネが主役</span></div>
+    </div>
+  </div>
+
+  <div class="mock">
+    <div class="wrap">
+      <header class="hdr">
+        <a class="logo" href="#" aria-label="TVapp ホーム">
+          <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+            <rect class="logo-tile" x="1" y="1" width="28" height="28" rx="8"/>
+            <path d="M5.5 12.2c2.4-3 4.9-3 7.3 0s4.9 3 7.3 0c1.2-1.5 2.6-2.2 4.4-1.4" stroke="#0a0c12" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+            <path d="M5.5 19.2c2.4-3 4.9-3 7.3 0s4.9 3 7.3 0c1.2-1.5 2.6-2.2 4.4-1.4" stroke="#0a0c12" stroke-width="2.3" fill="none" stroke-linecap="round" opacity=".45"/>
+          </svg>
+          <span class="wm">TVapp</span>
+        </a>
+        <div class="search" role="search">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.6" stroke-width="1.7"/><path d="m10.6 10.6 3.2 3.2" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <input type="search" placeholder="番組名・出演者・キーワードで検索" aria-label="番組名・出演者・キーワードで検索">
+        </div>
+        <div class="hact">
+          <button class="icb" aria-label="テレビに接続(キャスト)">
+            <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h12a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 16 16h-5.5"/><path d="M2.5 9.5c3.3 0 6 2.7 6 6"/><path d="M2.5 12.7a2.8 2.8 0 0 1 2.8 2.8"/><circle cx="2.9" cy="15.6" r=".6" fill="currentColor" stroke="none"/></svg>
+          </button>
+          <button class="icb" aria-label="お知らせ">
+            <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.8a5 5 0 0 0-5 5v3.2l-1.4 2.6a.6.6 0 0 0 .5.9h11.8a.6.6 0 0 0 .5-.9L15 11V7.8a5 5 0 0 0-5-5Z"/><path d="M8.2 16.5a1.9 1.9 0 0 0 3.6 0"/></svg>
+          </button>
+          <button class="user" aria-label="アカウントメニュー(兒玉さん、ログイン中)" aria-haspopup="menu">
+            <span class="avt" aria-hidden="true">兒</span>
+            <span class="unm">兒玉</span>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <nav class="gnav" aria-label="ジャンル">
+        <a href="#" aria-current="page">ホーム</a><a href="#">ドラマ</a><a href="#">バラエティ</a><a href="#">アニメ</a><a href="#">報道・ドキュメンタリー</a><a href="#">スポーツ</a><a href="#">マイリスト</a>
+      </nav>
+    </div>
+
+    <section class="hero" aria-label="今週の注目番組">
+      <div class="hero-art" aria-hidden="true"><span class="hero-deco">ENSEMBLE</span></div>
+      <div class="wrap hero-in">
+        <p class="hero-k">今週の注目 — 見逃し配信中</p>
+        <h2>海辺のアンサンブル</h2>
+        <p class="hero-cp">潮騒の町に集まった、他人同士の“家族”。六つの秘密が、最終章で静かに重なりはじめる。</p>
+        <ul class="hero-meta">
+          <li>フジテレビ</li><li>金曜 21:00</li><li>全10話・第8話まで配信中</li><li>字幕あり</li>
+        </ul>
+        <div class="hero-cta">
+          <a class="btn btn-p" href="#"><svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.8v10.4L12 7 3 1.8Z" fill="currentColor"/></svg>第8話を再生</a>
+          <a class="btn btn-g" href="#"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>マイリストに追加</a>
+        </div>
+      </div>
+    </section>
+
+    <main class="wrap">
+
+      <section class="sec" aria-label="ドラマランキング">
+        <div class="sech">
+          <h3>ドラマランキング</h3>
+          <a class="more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+        <div class="row">
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r1" aria-label="1位">1</span>
+              <div class="th t-d1" aria-hidden="true"><span class="tht">海辺の<br>アンサンブル</span><span class="ep">第8話</span><span class="dur">45:58</span></div></div>
+            <div class="cm"><h4>海辺のアンサンブル</h4><p class="st">フジテレビ・7月3日(金)放送</p><p class="lf">配信終了まで あと4日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r2" aria-label="2位">2</span>
+              <div class="th t-d2" aria-hidden="true"><span class="tht">偽装の家族、<br>本物の嘘</span><span class="ep">第10話</span><span class="dur">48:12</span></div></div>
+            <div class="cm"><h4>偽装の家族、本物の嘘</h4><p class="st">TBS・7月1日(水)放送</p><p class="lf">配信終了まで あと2日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r3" aria-label="3位">3</span>
+              <div class="th t-d3" aria-hidden="true"><span class="tht">透明な<br>わたしたち</span><span class="ep">第5話</span><span class="dur">46:03</span></div></div>
+            <div class="cm"><h4>透明なわたしたち</h4><p class="st">日本テレビ・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r4" aria-label="4位">4</span>
+              <div class="th t-d4" aria-hidden="true"><span class="tht">刑事一ノ瀬<br>最終章</span><span class="ep">最終回SP</span><span class="dur">54:20</span></div></div>
+            <div class="cm"><h4>刑事一ノ瀬 最終章</h4><p class="st">テレビ朝日・7月2日(木)放送</p><p class="lf">配信終了まで あと3日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r5" aria-label="5位">5</span>
+              <div class="th t-d5" aria-hidden="true"><span class="tht">まほろば食堂へ<br>ようこそ</span><span class="ep">第13話</span><span class="dur">34:45</span></div></div>
+            <div class="cm"><h4>まほろば食堂へようこそ</h4><p class="st">読売テレビ・6月30日(火)放送</p><p class="lf">配信終了まで あと1日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r6" aria-label="6位">6</span>
+              <div class="th t-d6" aria-hidden="true"><span class="tht c">クジラの骨を<br>拾う夜</span><span class="ep">第4話</span><span class="dur">24:58</span></div></div>
+            <div class="cm"><h4>クジラの骨を拾う夜</h4><p class="st">カンテレ・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+          </a></article>
+        </div>
+      </section>
+
+      <section class="sec" aria-label="バラエティランキング">
+        <div class="sech">
+          <h3>バラエティランキング</h3>
+          <a class="more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+        <div class="row">
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r1" aria-label="1位">1</span>
+              <div class="th t-v1" aria-hidden="true"><span class="tht">全力!リアクション王<br>決定戦 2026夏</span><span class="ep">SP</span><span class="dur">1:03:22</span></div></div>
+            <div class="cm"><h4>全力!リアクション王決定戦 2026夏</h4><p class="st">日本テレビ・7月5日(日)放送</p><p class="lf">配信終了まで あと6日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r2" aria-label="2位">2</span>
+              <div class="th t-v2" aria-hidden="true"><span class="tht">深夜の<br>ハシゴ酒</span><span class="dur">42:11</span></div></div>
+            <div class="cm"><h4>深夜のハシゴ酒</h4><p class="st">テレビ東京・7月2日(木)放送</p><p class="lf">配信終了まで あと3日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r3" aria-label="3位">3</span>
+              <div class="th t-v3" aria-hidden="true"><span class="tht">芸人トーク<br>サミット</span><span class="dur">46:40</span></div></div>
+            <div class="cm"><h4>芸人トークサミット</h4><p class="st">テレビ朝日・7月3日(金)放送</p><p class="lf">配信終了まで あと4日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r4" aria-label="4位">4</span>
+              <div class="th t-v4" aria-hidden="true"><span class="tht">世界ふしぎ<br>食紀行</span><span class="dur">52:08</span></div></div>
+            <div class="cm"><h4>世界ふしぎ食紀行</h4><p class="st">TBS・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r5" aria-label="5位">5</span>
+              <div class="th t-v5" aria-hidden="true"><span class="tht">マヂカルクイズ<br>研究所</span><span class="dur">47:15</span></div></div>
+            <div class="cm"><h4>マヂカルクイズ研究所</h4><p class="st">フジテレビ・7月1日(水)放送</p><p class="lf">配信終了まで あと2日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r6" aria-label="6位">6</span>
+              <div class="th t-v6" aria-hidden="true"><span class="tht">終点まで<br>乗ってみた</span><span class="dur">58:30</span></div></div>
+            <div class="cm"><h4>終点まで乗ってみた</h4><p class="st">テレビ東京・6月29日(月)放送</p><p class="lf">本日 23:59 配信終了</p></div>
+          </a></article>
+        </div>
+      </section>
+
+      <section class="sec" aria-label="報道・ドキュメンタリーランキング">
+        <div class="sech">
+          <h3>報道／ドキュメンタリーランキング</h3>
+          <a class="more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+        <div class="row">
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r1" aria-label="1位">1</span>
+              <div class="th t-n1" aria-hidden="true"><span class="tht">緊急救命24時<br>密着SP</span><span class="dur">1:48:00</span></div></div>
+            <div class="cm"><h4>緊急救命24時 密着SP</h4><p class="st">フジテレビ・7月5日(日)放送</p><p class="lf">配信終了まで あと6日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r2" aria-label="2位">2</span>
+              <div class="th t-n2" aria-hidden="true"><span class="tht">交差点の<br>48時間</span><span class="dur">28:44</span></div></div>
+            <div class="cm"><h4>交差点の48時間</h4><p class="st">テレビ東京・7月2日(木)放送</p><p class="lf">配信終了まで あと3日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r3" aria-label="3位">3</span>
+              <div class="th t-n3" aria-hidden="true"><span class="tht">サンデー<br>深層NEWS</span><span class="dur">55:00</span></div></div>
+            <div class="cm"><h4>サンデー深層NEWS</h4><p class="st">日本テレビ・7月5日(日)放送</p><p class="lf">配信終了まで あと6日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r4" aria-label="4位">4</span>
+              <div class="th t-n4" aria-hidden="true"><span class="tht">戦後81年<br>語り継ぐ声</span><span class="dur">49:30</span></div></div>
+            <div class="cm"><h4>戦後81年 語り継ぐ声</h4><p class="st">TBS・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r5" aria-label="5位">5</span>
+              <div class="th t-n5" aria-hidden="true"><span class="tht">気候クライシス<br>現場から</span><span class="dur">44:12</span></div></div>
+            <div class="cm"><h4>気候クライシス 現場から</h4><p class="st">テレビ朝日・7月3日(金)放送</p><p class="lf">配信終了まで あと4日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r6" aria-label="6位">6</span>
+              <div class="th t-n6" aria-hidden="true"><span class="tht">ローカル鉄道と<br>生きる町</span><span class="dur">47:50</span></div></div>
+            <div class="cm"><h4>ローカル鉄道と生きる町</h4><p class="st">読売テレビ・7月1日(水)放送</p><p class="lf">配信終了まで あと2日</p></div>
+          </a></article>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="ft">
+      <nav><a href="#">ヘルプ</a><a href="#">利用規約</a><a href="#">プライバシー</a><a href="#">運営会社</a></nav>
+      <p>© 2026 TVapp — 本画面はビジュアル検討用モックです。番組・ランキング・人物はすべて架空のものです。</p>
+    </footer>
+  </div>
+</section>
+
+<!-- ================================================================
+     案 B — クリーン・ライト
+     ================================================================ -->
+<section class="stage" id="vb" role="tabpanel" aria-labelledby="tab-b" hidden>
+
+  <div class="intent">
+    <div class="intent-in">
+      <p class="intent-k">案 B の狙い</p>
+      <p class="intent-t">クリーン・ライト — 白と余白で「すっと読める」軽快さを最優先</p>
+      <p class="intent-c">白基調・広い余白・角丸。カードの境界は薄いリングだけに抑え、朝昼夜いつ開いても疲れない高可読の器にする。爽やかで万人向け、家族の共用端末にも馴染む(TVer / NHK+ 系)。</p>
+      <div class="intent-chips"><span>軽快</span><span>高可読</span><span>万人向け</span><span>清潔感</span></div>
+    </div>
+  </div>
+
+  <div class="mock">
+    <div class="wrap">
+      <header class="hdr">
+        <a class="logo" href="#" aria-label="TVapp ホーム">
+          <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+            <rect class="logo-tile" x="1" y="1" width="28" height="28" rx="9"/>
+            <path d="M5.5 12.2c2.4-3 4.9-3 7.3 0s4.9 3 7.3 0c1.2-1.5 2.6-2.2 4.4-1.4" stroke="#fff" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+            <path d="M5.5 19.2c2.4-3 4.9-3 7.3 0s4.9 3 7.3 0c1.2-1.5 2.6-2.2 4.4-1.4" stroke="#fff" stroke-width="2.3" fill="none" stroke-linecap="round" opacity=".55"/>
+          </svg>
+          <span class="wm">TVapp</span>
+        </a>
+        <div class="search" role="search">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.6" stroke-width="1.7"/><path d="m10.6 10.6 3.2 3.2" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <input type="search" placeholder="番組名・出演者・キーワードで検索" aria-label="番組名・出演者・キーワードで検索">
+        </div>
+        <div class="hact">
+          <button class="icb" aria-label="お知らせ">
+            <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.8a5 5 0 0 0-5 5v3.2l-1.4 2.6a.6.6 0 0 0 .5.9h11.8a.6.6 0 0 0 .5-.9L15 11V7.8a5 5 0 0 0-5-5Z"/><path d="M8.2 16.5a1.9 1.9 0 0 0 3.6 0"/></svg>
+          </button>
+          <button class="user" aria-label="アカウントメニュー(兒玉さん、ログイン中)" aria-haspopup="menu">
+            <span class="avt" aria-hidden="true">兒</span>
+            <span class="unm">兒玉</span>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <nav class="gnav" aria-label="ジャンル">
+        <a href="#" aria-current="page">ホーム</a><a href="#">ドラマ</a><a href="#">バラエティ</a><a href="#">アニメ</a><a href="#">報道・ドキュメンタリー</a><a href="#">スポーツ</a><a href="#">マイリスト</a>
+      </nav>
+
+      <section class="hero" aria-label="今週の注目番組">
+        <div class="hero-in">
+          <div class="hero-tx">
+            <p class="hero-k">今週の注目 — 見逃し配信中</p>
+            <h2>海辺のアンサンブル</h2>
+            <p class="hero-cp">潮騒の町に集まった、他人同士の“家族”。六つの秘密が、最終章で静かに重なりはじめる。</p>
+            <ul class="hero-meta">
+              <li>フジテレビ</li><li>金曜 21:00</li><li>全10話・第8話まで配信中</li><li>字幕あり</li>
+            </ul>
+            <div class="hero-cta">
+              <a class="btn btn-p" href="#"><svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.8v10.4L12 7 3 1.8Z" fill="currentColor"/></svg>第8話を再生</a>
+              <a class="btn btn-g" href="#"><svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>マイリスト</a>
+            </div>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <span class="hep">見逃し無料</span>
+            <span class="hat">海辺の<br>アンサンブル</span>
+          </div>
+        </div>
+      </section>
+
+      <main>
+
+        <section class="sec" aria-label="ドラマランキング">
+          <div class="sech">
+            <h3>ドラマランキング</h3><span class="cnt">TOP 6</span>
+            <a class="more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+          <div class="row">
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r1" aria-label="1位">1</span>
+                <div class="th t-d1" aria-hidden="true"><span class="tht">海辺の<br>アンサンブル</span><span class="ep">第8話</span><span class="dur">45:58</span></div></div>
+              <div class="cm"><h4>海辺のアンサンブル</h4><p class="st">フジテレビ・7月3日(金)放送</p><p class="lf">配信終了まで あと4日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r2" aria-label="2位">2</span>
+                <div class="th t-d2" aria-hidden="true"><span class="tht">偽装の家族、<br>本物の嘘</span><span class="ep">第10話</span><span class="dur">48:12</span></div></div>
+              <div class="cm"><h4>偽装の家族、本物の嘘</h4><p class="st">TBS・7月1日(水)放送</p><p class="lf">配信終了まで あと2日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r3" aria-label="3位">3</span>
+                <div class="th t-d3" aria-hidden="true"><span class="tht">透明な<br>わたしたち</span><span class="ep">第5話</span><span class="dur">46:03</span></div></div>
+              <div class="cm"><h4>透明なわたしたち</h4><p class="st">日本テレビ・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r4" aria-label="4位">4</span>
+                <div class="th t-d4" aria-hidden="true"><span class="tht">刑事一ノ瀬<br>最終章</span><span class="ep">最終回SP</span><span class="dur">54:20</span></div></div>
+              <div class="cm"><h4>刑事一ノ瀬 最終章</h4><p class="st">テレビ朝日・7月2日(木)放送</p><p class="lf">配信終了まで あと3日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r5" aria-label="5位">5</span>
+                <div class="th t-d5" aria-hidden="true"><span class="tht">まほろば食堂へ<br>ようこそ</span><span class="ep">第13話</span><span class="dur">34:45</span></div></div>
+              <div class="cm"><h4>まほろば食堂へようこそ</h4><p class="st">読売テレビ・6月30日(火)放送</p><p class="lf">配信終了まで あと1日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r6" aria-label="6位">6</span>
+                <div class="th t-d6" aria-hidden="true"><span class="tht c">クジラの骨を<br>拾う夜</span><span class="ep">第4話</span><span class="dur">24:58</span></div></div>
+              <div class="cm"><h4>クジラの骨を拾う夜</h4><p class="st">カンテレ・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+            </a></article>
+          </div>
+        </section>
+
+        <section class="sec" aria-label="バラエティランキング">
+          <div class="sech">
+            <h3>バラエティランキング</h3><span class="cnt">TOP 6</span>
+            <a class="more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+          <div class="row">
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r1" aria-label="1位">1</span>
+                <div class="th t-v1" aria-hidden="true"><span class="tht">全力!リアクション王<br>決定戦 2026夏</span><span class="ep">SP</span><span class="dur">1:03:22</span></div></div>
+              <div class="cm"><h4>全力!リアクション王決定戦 2026夏</h4><p class="st">日本テレビ・7月5日(日)放送</p><p class="lf">配信終了まで あと6日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r2" aria-label="2位">2</span>
+                <div class="th t-v2" aria-hidden="true"><span class="tht">深夜の<br>ハシゴ酒</span><span class="dur">42:11</span></div></div>
+              <div class="cm"><h4>深夜のハシゴ酒</h4><p class="st">テレビ東京・7月2日(木)放送</p><p class="lf">配信終了まで あと3日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r3" aria-label="3位">3</span>
+                <div class="th t-v3" aria-hidden="true"><span class="tht">芸人トーク<br>サミット</span><span class="dur">46:40</span></div></div>
+              <div class="cm"><h4>芸人トークサミット</h4><p class="st">テレビ朝日・7月3日(金)放送</p><p class="lf">配信終了まで あと4日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r4" aria-label="4位">4</span>
+                <div class="th t-v4" aria-hidden="true"><span class="tht">世界ふしぎ<br>食紀行</span><span class="dur">52:08</span></div></div>
+              <div class="cm"><h4>世界ふしぎ食紀行</h4><p class="st">TBS・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r5" aria-label="5位">5</span>
+                <div class="th t-v5" aria-hidden="true"><span class="tht">マヂカルクイズ<br>研究所</span><span class="dur">47:15</span></div></div>
+              <div class="cm"><h4>マヂカルクイズ研究所</h4><p class="st">フジテレビ・7月1日(水)放送</p><p class="lf">配信終了まで あと2日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r6" aria-label="6位">6</span>
+                <div class="th t-v6" aria-hidden="true"><span class="tht">終点まで<br>乗ってみた</span><span class="dur">58:30</span></div></div>
+              <div class="cm"><h4>終点まで乗ってみた</h4><p class="st">テレビ東京・6月29日(月)放送</p><p class="lf">本日 23:59 配信終了</p></div>
+            </a></article>
+          </div>
+        </section>
+
+        <section class="sec" aria-label="報道・ドキュメンタリーランキング">
+          <div class="sech">
+            <h3>報道／ドキュメンタリーランキング</h3><span class="cnt">TOP 6</span>
+            <a class="more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          </div>
+          <div class="row">
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r1" aria-label="1位">1</span>
+                <div class="th t-n1" aria-hidden="true"><span class="tht">緊急救命24時<br>密着SP</span><span class="dur">1:48:00</span></div></div>
+              <div class="cm"><h4>緊急救命24時 密着SP</h4><p class="st">フジテレビ・7月5日(日)放送</p><p class="lf">配信終了まで あと6日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r2" aria-label="2位">2</span>
+                <div class="th t-n2" aria-hidden="true"><span class="tht">交差点の<br>48時間</span><span class="dur">28:44</span></div></div>
+              <div class="cm"><h4>交差点の48時間</h4><p class="st">テレビ東京・7月2日(木)放送</p><p class="lf">配信終了まで あと3日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r3" aria-label="3位">3</span>
+                <div class="th t-n3" aria-hidden="true"><span class="tht">サンデー<br>深層NEWS</span><span class="dur">55:00</span></div></div>
+              <div class="cm"><h4>サンデー深層NEWS</h4><p class="st">日本テレビ・7月5日(日)放送</p><p class="lf">配信終了まで あと6日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r4" aria-label="4位">4</span>
+                <div class="th t-n4" aria-hidden="true"><span class="tht">戦後81年<br>語り継ぐ声</span><span class="dur">49:30</span></div></div>
+              <div class="cm"><h4>戦後81年 語り継ぐ声</h4><p class="st">TBS・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r5" aria-label="5位">5</span>
+                <div class="th t-n5" aria-hidden="true"><span class="tht">気候クライシス<br>現場から</span><span class="dur">44:12</span></div></div>
+              <div class="cm"><h4>気候クライシス 現場から</h4><p class="st">テレビ朝日・7月3日(金)放送</p><p class="lf">配信終了まで あと4日</p></div>
+            </a></article>
+            <article class="card"><a class="clk" href="#">
+              <div class="thw"><span class="rank r6" aria-label="6位">6</span>
+                <div class="th t-n6" aria-hidden="true"><span class="tht">ローカル鉄道と<br>生きる町</span><span class="dur">47:50</span></div></div>
+              <div class="cm"><h4>ローカル鉄道と生きる町</h4><p class="st">読売テレビ・7月1日(水)放送</p><p class="lf">配信終了まで あと2日</p></div>
+            </a></article>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <footer class="ft">
+      <nav><a href="#">ヘルプ</a><a href="#">利用規約</a><a href="#">プライバシー</a><a href="#">運営会社</a></nav>
+      <p>© 2026 TVapp — 本画面はビジュアル検討用モックです。番組・ランキング・人物はすべて架空のものです。</p>
+    </footer>
+  </div>
+</section>
+
+<!-- ================================================================
+     案 C — ボールド・ビビッド
+     ================================================================ -->
+<section class="stage" id="vc" role="tabpanel" aria-labelledby="tab-c" hidden>
+
+  <div class="intent">
+    <div class="intent-in">
+      <p class="intent-k">案 C の狙い</p>
+      <p class="intent-t">ボールド・ビビッド — ランキングを主役に、テレビをお祭りにする</p>
+      <p class="intent-c">高コントラスト・高彩度・大きなタイポ。ランクバッジをステッカーのように立たせ、「いま盛り上がっている」熱量で若年層の指を止める。太い輪郭とハードシャドウでエンタメの勢いを画面に出す(ABEMA / 若年エンタメ系)。</p>
+      <div class="intent-chips"><span>熱量</span><span>ランキング主役</span><span>若年向け</span><span>高彩度</span></div>
+    </div>
+  </div>
+
+  <div class="mock">
+    <div class="hdr-bg">
+      <div class="wrap">
+        <header class="hdr">
+          <a class="logo" href="#" aria-label="TVapp ホーム">
+            <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+              <rect class="logo-tile" x="1" y="1" width="28" height="28" rx="9"/>
+              <path d="M5.5 12.2c2.4-3 4.9-3 7.3 0s4.9 3 7.3 0c1.2-1.5 2.6-2.2 4.4-1.4" stroke="#0d0d0d" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <path d="M5.5 19.2c2.4-3 4.9-3 7.3 0s4.9 3 7.3 0c1.2-1.5 2.6-2.2 4.4-1.4" stroke="#0d0d0d" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".5"/>
+            </svg>
+            <span class="wm">TV<i>app</i></span>
+          </a>
+          <div class="search" role="search">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4.6" stroke-width="2"/><path d="m10.6 10.6 3.2 3.2" stroke-width="2" stroke-linecap="round"/></svg>
+            <input type="search" placeholder="番組名・出演者・キーワードで検索" aria-label="番組名・出演者・キーワードで検索">
+          </div>
+          <div class="hact">
+            <button class="icb" aria-label="お知らせ(新着あり)">
+              <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.8a5 5 0 0 0-5 5v3.2l-1.4 2.6a.6.6 0 0 0 .5.9h11.8a.6.6 0 0 0 .5-.9L15 11V7.8a5 5 0 0 0-5-5Z"/><path d="M8.2 16.5a1.9 1.9 0 0 0 3.6 0"/></svg>
+              <span class="dot" aria-hidden="true"></span>
+            </button>
+            <button class="user" aria-label="アカウントメニュー(兒玉さん、ログイン中)" aria-haspopup="menu">
+              <span class="avt" aria-hidden="true">兒</span>
+              <span class="unm">兒玉</span>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </header>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <nav class="gnav" aria-label="ジャンル">
+        <a href="#" aria-current="page">ホーム</a><a href="#">ドラマ</a><a href="#">バラエティ</a><a href="#">アニメ</a><a href="#">報道・ドキュメンタリー</a><a href="#">スポーツ</a><a href="#">マイリスト</a>
+      </nav>
+
+      <section class="hero" aria-label="今週の注目番組">
+        <div class="hero-in">
+          <div class="hero-tx">
+            <p class="hero-k">今週の爆推し</p>
+            <h2>見ないと、<br><em>乗り遅れる。</em></h2>
+            <p class="hero-cp">「海辺のアンサンブル」第8話がついに配信。六つの秘密が重なる最終章、SNS の考察が止まらない。</p>
+            <ul class="hero-meta">
+              <li>フジテレビ</li><li>金曜 21:00</li><li>第8話まで無料</li>
+            </ul>
+            <div class="hero-cta">
+              <a class="btn btn-p" href="#"><svg width="13" height="13" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.8v10.4L12 7 3 1.8Z" fill="currentColor"/></svg>いますぐ再生</a>
+              <a class="btn btn-g" href="#"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>マイリスト</a>
+            </div>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <span class="hep">第8話 配信中!</span>
+            <span class="hat">海辺の<br>アンサンブル</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="tick" aria-hidden="true">
+      <div class="tick-in">
+        <div class="tick-seq"><span><b>急上昇</b> 全力!リアクション王決定戦 2026夏 <span class="up">▲</span></span><span>海辺のアンサンブル 第8話 <span class="up">▲</span></span><span>緊急救命24時 密着SP <span class="up">▲</span></span><span>深夜のハシゴ酒 <span class="up">▲</span></span><span>透明なわたしたち <span class="up">▲</span></span><span><b>まもなく終了</b> 終点まで乗ってみた — 本日 23:59 まで</span></div>
+        <div class="tick-seq"><span><b>急上昇</b> 全力!リアクション王決定戦 2026夏 <span class="up">▲</span></span><span>海辺のアンサンブル 第8話 <span class="up">▲</span></span><span>緊急救命24時 密着SP <span class="up">▲</span></span><span>深夜のハシゴ酒 <span class="up">▲</span></span><span>透明なわたしたち <span class="up">▲</span></span><span><b>まもなく終了</b> 終点まで乗ってみた — 本日 23:59 まで</span></div>
+      </div>
+    </div>
+
+    <main class="wrap">
+
+      <section class="sec g1" aria-label="ドラマランキング">
+        <div class="sech">
+          <h3>ドラマランキング</h3><span class="top6">TOP 6</span>
+          <a class="more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+        <div class="row">
+          <article class="card"><a class="clk" href="#">
+            <span class="hot" aria-hidden="true">急上昇</span>
+            <div class="thw"><span class="rank r1" aria-label="1位">1</span>
+              <div class="th t-d1" aria-hidden="true"><span class="tht">海辺の<br>アンサンブル</span><span class="ep">第8話</span><span class="dur">45:58</span></div></div>
+            <div class="cm"><h4>海辺のアンサンブル</h4><p class="st">フジテレビ・7月3日(金)放送</p><p class="lf">配信終了まで あと4日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r2" aria-label="2位">2</span>
+              <div class="th t-d2" aria-hidden="true"><span class="tht">偽装の家族、<br>本物の嘘</span><span class="ep">第10話</span><span class="dur">48:12</span></div></div>
+            <div class="cm"><h4>偽装の家族、本物の嘘</h4><p class="st">TBS・7月1日(水)放送</p><p class="lf">配信終了まで あと2日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <span class="hot" aria-hidden="true">急上昇</span>
+            <div class="thw"><span class="rank r3" aria-label="3位">3</span>
+              <div class="th t-d3" aria-hidden="true"><span class="tht">透明な<br>わたしたち</span><span class="ep">第5話</span><span class="dur">46:03</span></div></div>
+            <div class="cm"><h4>透明なわたしたち</h4><p class="st">日本テレビ・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r4" aria-label="4位">4</span>
+              <div class="th t-d4" aria-hidden="true"><span class="tht">刑事一ノ瀬<br>最終章</span><span class="ep">最終回SP</span><span class="dur">54:20</span></div></div>
+            <div class="cm"><h4>刑事一ノ瀬 最終章</h4><p class="st">テレビ朝日・7月2日(木)放送</p><p class="lf">配信終了まで あと3日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r5" aria-label="5位">5</span>
+              <div class="th t-d5" aria-hidden="true"><span class="tht">まほろば食堂へ<br>ようこそ</span><span class="ep">第13話</span><span class="dur">34:45</span></div></div>
+            <div class="cm"><h4>まほろば食堂へようこそ</h4><p class="st">読売テレビ・6月30日(火)放送</p><p class="lf">配信終了まで あと1日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r6" aria-label="6位">6</span>
+              <div class="th t-d6" aria-hidden="true"><span class="tht c">クジラの骨を<br>拾う夜</span><span class="ep">第4話</span><span class="dur">24:58</span></div></div>
+            <div class="cm"><h4>クジラの骨を拾う夜</h4><p class="st">カンテレ・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+          </a></article>
+        </div>
+      </section>
+
+      <section class="sec g2" aria-label="バラエティランキング">
+        <div class="sech">
+          <h3>バラエティランキング</h3><span class="top6">TOP 6</span>
+          <a class="more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+        <div class="row">
+          <article class="card"><a class="clk" href="#">
+            <span class="hot" aria-hidden="true">急上昇</span>
+            <div class="thw"><span class="rank r1" aria-label="1位">1</span>
+              <div class="th t-v1" aria-hidden="true"><span class="tht">全力!リアクション王<br>決定戦 2026夏</span><span class="ep">SP</span><span class="dur">1:03:22</span></div></div>
+            <div class="cm"><h4>全力!リアクション王決定戦 2026夏</h4><p class="st">日本テレビ・7月5日(日)放送</p><p class="lf">配信終了まで あと6日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r2" aria-label="2位">2</span>
+              <div class="th t-v2" aria-hidden="true"><span class="tht">深夜の<br>ハシゴ酒</span><span class="dur">42:11</span></div></div>
+            <div class="cm"><h4>深夜のハシゴ酒</h4><p class="st">テレビ東京・7月2日(木)放送</p><p class="lf">配信終了まで あと3日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r3" aria-label="3位">3</span>
+              <div class="th t-v3" aria-hidden="true"><span class="tht">芸人トーク<br>サミット</span><span class="dur">46:40</span></div></div>
+            <div class="cm"><h4>芸人トークサミット</h4><p class="st">テレビ朝日・7月3日(金)放送</p><p class="lf">配信終了まで あと4日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r4" aria-label="4位">4</span>
+              <div class="th t-v4" aria-hidden="true"><span class="tht">世界ふしぎ<br>食紀行</span><span class="dur">52:08</span></div></div>
+            <div class="cm"><h4>世界ふしぎ食紀行</h4><p class="st">TBS・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r5" aria-label="5位">5</span>
+              <div class="th t-v5" aria-hidden="true"><span class="tht">マヂカルクイズ<br>研究所</span><span class="dur">47:15</span></div></div>
+            <div class="cm"><h4>マヂカルクイズ研究所</h4><p class="st">フジテレビ・7月1日(水)放送</p><p class="lf">配信終了まで あと2日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r6" aria-label="6位">6</span>
+              <div class="th t-v6" aria-hidden="true"><span class="tht">終点まで<br>乗ってみた</span><span class="dur">58:30</span></div></div>
+            <div class="cm"><h4>終点まで乗ってみた</h4><p class="st">テレビ東京・6月29日(月)放送</p><p class="lf">本日 23:59 配信終了</p></div>
+          </a></article>
+        </div>
+      </section>
+
+      <section class="sec g3" aria-label="報道・ドキュメンタリーランキング">
+        <div class="sech">
+          <h3>報道／ドキュメンタリーランキング</h3><span class="top6">TOP 6</span>
+          <a class="more" href="#">もっと見る<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+        <div class="row">
+          <article class="card"><a class="clk" href="#">
+            <span class="hot" aria-hidden="true">急上昇</span>
+            <div class="thw"><span class="rank r1" aria-label="1位">1</span>
+              <div class="th t-n1" aria-hidden="true"><span class="tht">緊急救命24時<br>密着SP</span><span class="dur">1:48:00</span></div></div>
+            <div class="cm"><h4>緊急救命24時 密着SP</h4><p class="st">フジテレビ・7月5日(日)放送</p><p class="lf">配信終了まで あと6日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r2" aria-label="2位">2</span>
+              <div class="th t-n2" aria-hidden="true"><span class="tht">交差点の<br>48時間</span><span class="dur">28:44</span></div></div>
+            <div class="cm"><h4>交差点の48時間</h4><p class="st">テレビ東京・7月2日(木)放送</p><p class="lf">配信終了まで あと3日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r3" aria-label="3位">3</span>
+              <div class="th t-n3" aria-hidden="true"><span class="tht">サンデー<br>深層NEWS</span><span class="dur">55:00</span></div></div>
+            <div class="cm"><h4>サンデー深層NEWS</h4><p class="st">日本テレビ・7月5日(日)放送</p><p class="lf">配信終了まで あと6日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r4" aria-label="4位">4</span>
+              <div class="th t-n4" aria-hidden="true"><span class="tht">戦後81年<br>語り継ぐ声</span><span class="dur">49:30</span></div></div>
+            <div class="cm"><h4>戦後81年 語り継ぐ声</h4><p class="st">TBS・7月4日(土)放送</p><p class="lf">配信終了まで あと5日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r5" aria-label="5位">5</span>
+              <div class="th t-n5" aria-hidden="true"><span class="tht">気候クライシス<br>現場から</span><span class="dur">44:12</span></div></div>
+            <div class="cm"><h4>気候クライシス 現場から</h4><p class="st">テレビ朝日・7月3日(金)放送</p><p class="lf">配信終了まで あと4日</p></div>
+          </a></article>
+          <article class="card"><a class="clk" href="#">
+            <div class="thw"><span class="rank r6" aria-label="6位">6</span>
+              <div class="th t-n6" aria-hidden="true"><span class="tht">ローカル鉄道と<br>生きる町</span><span class="dur">47:50</span></div></div>
+            <div class="cm"><h4>ローカル鉄道と生きる町</h4><p class="st">読売テレビ・7月1日(水)放送</p><p class="lf">配信終了まで あと2日</p></div>
+          </a></article>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="ft">
+      <nav><a href="#">ヘルプ</a><a href="#">利用規約</a><a href="#">プライバシー</a><a href="#">運営会社</a></nav>
+      <p>© 2026 TVapp — 本画面はビジュアル検討用モックです。番組・ランキング・人物はすべて架空のものです。</p>
+    </footer>
+  </div>
+</section>
+
+<script>
+(function () {
+  "use strict";
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".cmp-tab"));
+  var panels = {
+    a: document.getElementById("va"),
+    b: document.getElementById("vb"),
+    c: document.getElementById("vc")
+  };
+
+  function select(v, focusTab) {
+    if (!panels[v]) return;
+    tabs.forEach(function (t) {
+      var on = t.getAttribute("data-v") === v;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      if (on && focusTab) t.focus();
+    });
+    Object.keys(panels).forEach(function (k) {
+      panels[k].hidden = (k !== v);
+    });
+    document.documentElement.setAttribute("data-v", v);
+    try { history.replaceState(null, "", "#" + v); } catch (e) { /* file:// 等では無視 */ }
+  }
+
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () { select(t.getAttribute("data-v")); });
+    t.addEventListener("keydown", function (e) {
+      var i = tabs.indexOf(t), n = null;
+      if (e.key === "ArrowRight") n = (i + 1) % tabs.length;
+      if (e.key === "ArrowLeft") n = (i - 1 + tabs.length) % tabs.length;
+      if (n !== null) {
+        e.preventDefault();
+        select(tabs[n].getAttribute("data-v"), true);
+      }
+    });
+  });
+
+  // 数字キー 1 / 2 / 3 で切替(入力中は無効)
+  document.addEventListener("keydown", function (e) {
+    var el = document.activeElement;
+    if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    if (e.key === "1") select("a");
+    if (e.key === "2") select("b");
+    if (e.key === "3") select("c");
+  });
+
+  // モック内のダミーリンクで画面が飛ばないように(タブ切替体験の保護)
+  document.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href="#"]') : null;
+    if (a) e.preventDefault();
+  });
+
+  var h = (location.hash || "").replace("#", "");
+  select(panels[h] ? h : "a");
+})();
+</script>
+</body>
+</html>

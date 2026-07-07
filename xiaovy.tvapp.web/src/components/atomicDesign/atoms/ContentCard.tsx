@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface ContentCardProps {
   id: string;
@@ -14,51 +15,40 @@ interface ContentCardProps {
 const ContentCard: React.FC<ContentCardProps> = (props) => {
   const { id, seriesTitle, title, thumbnail, productionProviderName, broadcastDateLabel, rank } = props;
   return (
-    <a
+    <Link
       href={`/episode/${id}`}
-      className="flex flex-col items-center rounded-lg min-w-[164px] max-w-[260px] hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700 bg-white"
+      className="group flex w-40 shrink-0 flex-col rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:w-52"
     >
-      <div className="relative w-1/3 pt-7 sm:w-full flex-shrink-0 aspect-w-16 aspect-h-9 min-h-[92.25px] min-w-[164px] max-h-[146px] max-w-[260px]">
+      <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gray-100 ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
         <Image
           alt={title}
           src={thumbnail}
-          width={480}
-          height={270}
-          className="object-cover rounded-lg sm:rounded-none sm:rounded-t-lg"
+          fill
+          sizes="(max-width: 640px) 160px, 208px"
+          className="object-cover transition-transform duration-200 group-hover:scale-105"
           unoptimized
         />
-        {(rank !== undefined && rank !== 0) && (
-        <Image
-          alt={`${rank}位`}
-          src={`https://tver.jp/images/PC_img_ranking_${rank}.svg`}
-          width={48}  // 適切なサイズに調整
-          height={48} // 適切なサイズに調整
-          className="absolute -translate-x-1/3 -translate-y-1/7 min-h-12 max-h-12 min-w-12 max-w-12 left-0 top-0"
-          unoptimized
-        />
+        {rank !== undefined && rank !== 0 && (
+          <Image
+            alt={`${rank}位`}
+            src={`https://tver.jp/images/PC_img_ranking_${rank}.svg`}
+            width={40}
+            height={40}
+            className="absolute left-1 top-1 h-10 w-10"
+            unoptimized
+          />
         )}
       </div>
-      <div className="p-0 leading-normal w-2/3 sm:w-full min-w-[164px] max-w-[260px]">
-        <h5
-          className="text-md font-bold tracking-tight text-gray-900 dark:text-white truncate"
-          style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-        >
+      <div className="px-1 py-2">
+        <h5 className="truncate text-sm font-bold tracking-tight text-gray-900 dark:text-white">
           {seriesTitle}
         </h5>
-        <p
-          className="font-normal text-gray-700 dark:text-gray-400 truncate"
-          style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-        >
-          {title}
-        </p>
-        <p
-          className="font-normal text-gray-700 dark:text-gray-400 truncate"
-          style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-        >
+        <p className="truncate text-xs text-gray-500 dark:text-gray-400">{title}</p>
+        <p className="truncate text-xs text-gray-500 dark:text-gray-400">
           {productionProviderName} {broadcastDateLabel}
         </p>
       </div>
-    </a>
+    </Link>
   );
 };
 

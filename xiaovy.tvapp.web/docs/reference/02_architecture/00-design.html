@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp 設計書(詳細設計)</title>
+<style>
+  :root{
+    --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+    --acc:#0969da;--ok:#1a7f37;--warn:#9a6700;--err:#d1242f;
+    --code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+  }
+  html[data-theme="dark"]{
+    --bg:#0b0e14;--panel:#11151f;--line:#252b3b;--tx:#dde3f0;--tx2:#8b93a7;
+    --acc:#7aa2f7;--ok:#9ece6a;--warn:#e0af68;--err:#f7768e;
+    --code-bg:#1a2030;--code-tx:#9fd3ff;--th-bg:#1a2030;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+    font-size:16px;line-height:1.8;letter-spacing:.02em;font-feature-settings:"palt" 1}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 100px}
+  a{color:var(--acc)}
+  h1{font-size:26px;margin:0 0 6px;line-height:1.4}
+  .meta{margin:14px 0 26px;color:var(--tx2);font-size:13px}
+  .tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--tx2);margin:0 6px 6px 0}
+  .tag b{color:var(--tx)}
+  .status-ok{color:var(--ok)}.status-wip{color:var(--warn)}
+  h2{font-size:19px;margin:34px 0 12px;border-left:4px solid var(--acc);padding-left:11px}
+  h3{font-size:16px;margin:22px 0 7px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--th-bg)}
+  code{background:var(--code-bg);color:var(--code-tx);padding:1px 6px;border-radius:5px;font-family:"SF Mono","Consolas",monospace;font-size:13px}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto}
+  pre code{background:none;padding:0}
+  .note{border-left:4px solid var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);padding:10px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+  ul,ol{padding-left:22px}
+  figure{margin:20px 0;text-align:center}
+  figcaption{color:var(--tx2);font-size:13px;margin-top:8px}
+  svg{max-width:100%;height:auto;font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif}
+  @media (max-width:600px){figure{overflow-x:auto;-webkit-overflow-scrolling:touch}figure svg{min-width:560px}}
+  footer{margin-top:52px;color:var(--tx2);font-size:12px;border-top:1px solid var(--line);padding-top:20px}
+  #themeToggle{position:fixed;top:14px;right:14px;z-index:10;border:1px solid var(--line);
+    background:var(--panel);color:var(--tx);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer}
+  @media print{
+    html[data-theme="dark"]{
+      --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+      --acc:#0969da;--code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;
+    }
+    #themeToggle{display:none}
+    a{color:#0550ae}
+  }
+</style>
+</head>
+<body>
+<button id="themeToggle" aria-label="テーマを切り替え" onclick="__toggle()">☾ ダーク</button>
+<div class="wrap">
+<h1>TVapp 設計書(詳細設計)</h1>
+<div class="meta">
+  <span class="tag">対象 <b>tvapp-web (xiaovy.tvapp.web)</b></span>
+  <span class="tag">ブランチ <b>project/tvapp-cf-zero-cost</b></span>
+  <span class="tag">関連 <b>Platform-Stream-Loader(除去対象) / TVER 公開API / Firebase / Streaks</b></span>
+  <span class="tag">スタック <b>Next.js 14.2 App Router / TS strict / Tailwind</b></span>
+  <span class="tag">ステータス <b class="status-wip">WIP(移行設計)</b></span>
+</div>
+
+<div class="note">
+  本書は tvapp-web の<strong>詳細設計</strong>を扱う。レイヤ構成、DI(依存注入)、ストリーム解決モジュール(純TS)、
+  認証、Cloudflare/OpenNext 構成、firebase-admin/Cosmos 除去方針を、実コードとブリーフの事実に基づいて記述する。
+  記述は客観的事実(技術・構成・依存・データフロー)に徹し、題材の是非は扱わない。
+</div>
+
+<h2>1. 概要とスコープ</h2>
+<p>
+  tvapp-web は Next.js 14.2 の App Router 構成で、<strong>フロントエンド(React クライアント)と BFF(App Router の API ルート)</strong>を
+  1 リポジトリに同居させる。TVER の公開 API を BFF が代理し、フロントは自ドメインの <code>/api/*</code> だけを叩く。
+  現行(version 1.4.0)は次の 3 系統に依存している。
+</p>
+<ul>
+  <li><strong>TVER 公開 API 代理</strong>: セッション発行・ランキング・エピソード情報・静的コンテンツ・検索。</li>
+  <li><strong>ストリーム解決</strong>: 現状は外部 Azure Functions(Platform-Stream-Loader / yt-dlp)へ委譲。</li>
+  <li><strong>ユーザーデータ / 認証</strong>: Firebase Auth(クライアント)+ firebase-admin(サーバ: Firestore / Storage / ID トークン検証)、
+    課金メタは Cosmos DB。</li>
+</ul>
+<p>
+  本設計の目的は、この構成を <strong>Cloudflare Workers + <code>@opennextjs/cloudflare</code></strong> 上で動く形へ移行し、
+  ストリーム解決を<strong>純 TypeScript</strong> で API ルート内に内製化して Azure Functions / yt-dlp / Cosmos を除去することにある。
+  MVP は「TVER 閲覧 + 純TS再生 + Firebase Auth(login/register/guest)」で、Firestore を必要とせず即時に成立する。
+  お気に入り / 視聴履歴 / プロフィール / 管理画面は段階 2 とする。
+</p>
+
+<h2>2. レイヤ構成</h2>
+<p>
+  クライアントは <strong>components(Atomic Design)→ hooks → contexts(DI 境界)→ services(<code>I*Service</code> + implementation)</strong>
+  の順に依存し、services は自ドメインの <strong>app/api ルート(BFF)</strong>を <code>fetch</code> する。BFF から先が TVER / Firebase / Streaks
+  などの外部境界である。関心事を層で分離し、UI から外部 API の詳細を隠蔽するのが基本方針。
+</p>
+
+<figure>
+<svg viewBox="0 0 900 470" role="img" aria-label="tvapp-web のレイヤ構成図">
+  <title>tvapp-web のレイヤ構成図</title>
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L9,5 L0,10 z" fill="var(--acc)"/>
+    </marker>
+  </defs>
+  <g font-family="inherit" font-size="14" text-rendering="geometricPrecision">
+    <!-- band 1 -->
+    <rect x="150" y="20" width="600" height="56" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="450" y="44" text-anchor="middle" fill="var(--tx)" font-weight="bold">components(Atomic Design)</text>
+    <text x="450" y="64" text-anchor="middle" fill="var(--tx2)" font-size="12">atoms / molecules / organisms / pages(Main, VideoPlayer, Header, ContentCardList …)</text>
+    <text x="120" y="52" text-anchor="end" fill="var(--tx2)" font-size="12">UI 層</text>
+
+    <!-- band 2 -->
+    <rect x="150" y="96" width="600" height="52" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="450" y="118" text-anchor="middle" fill="var(--tx)" font-weight="bold">hooks</text>
+    <text x="450" y="137" text-anchor="middle" fill="var(--tx2)" font-size="12">useStreamService / useSession / useRanking / useEpisode / useAuth …</text>
+    <text x="120" y="126" text-anchor="end" fill="var(--tx2)" font-size="12">状態 / 副作用</text>
+
+    <!-- band 3 -->
+    <rect x="150" y="168" width="600" height="52" rx="10" fill="var(--panel)" stroke="var(--acc)" stroke-dasharray="5 3"/>
+    <text x="450" y="190" text-anchor="middle" fill="var(--tx)" font-weight="bold">contexts(DI 境界)</text>
+    <text x="450" y="209" text-anchor="middle" fill="var(--tx2)" font-size="12">createContext&lt;I*Service | null&gt; — providers.tsx で実装を注入</text>
+    <text x="120" y="198" text-anchor="end" fill="var(--tx2)" font-size="12">DI</text>
+
+    <!-- band 4 -->
+    <rect x="150" y="240" width="600" height="52" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="450" y="262" text-anchor="middle" fill="var(--tx)" font-weight="bold">services(interface + implementation)</text>
+    <text x="450" y="281" text-anchor="middle" fill="var(--tx2)" font-size="12">IStreamService … / StreamService … — fetch('/api/…')</text>
+    <text x="120" y="270" text-anchor="end" fill="var(--tx2)" font-size="12">ドメイン</text>
+
+    <!-- band 5 -->
+    <rect x="150" y="312" width="600" height="52" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="450" y="334" text-anchor="middle" fill="var(--tx)" font-weight="bold">app/api ルート(BFF)</text>
+    <text x="450" y="353" text-anchor="middle" fill="var(--tx2)" font-size="12">service/session, service/call/*, content/*, User/*, utils/verify-token …</text>
+    <text x="120" y="342" text-anchor="end" fill="var(--tx2)" font-size="12">BFF</text>
+
+    <!-- band 6 -->
+    <rect x="150" y="384" width="600" height="60" rx="10" fill="none" stroke="var(--tx2)"/>
+    <text x="450" y="408" text-anchor="middle" fill="var(--tx)" font-weight="bold">外部境界</text>
+    <text x="450" y="428" text-anchor="middle" fill="var(--tx2)" font-size="12">TVER 公開 API / Streaks Playback API / Firebase Auth / (段階2)Firestore</text>
+    <text x="120" y="418" text-anchor="end" fill="var(--tx2)" font-size="12">External</text>
+
+    <!-- arrows -->
+    <line x1="450" y1="76" x2="450" y2="94" stroke="var(--acc)" marker-end="url(#ar)"/>
+    <line x1="450" y1="148" x2="450" y2="166" stroke="var(--acc)" marker-end="url(#ar)"/>
+    <line x1="450" y1="220" x2="450" y2="238" stroke="var(--acc)" marker-end="url(#ar)"/>
+    <line x1="450" y1="292" x2="450" y2="310" stroke="var(--acc)" marker-end="url(#ar)"/>
+    <line x1="450" y1="364" x2="450" y2="382" stroke="var(--acc)" marker-end="url(#ar)"/>
+  </g>
+</svg>
+<figcaption>図1: 依存の向き(上が依存元 / 下が依存先)。contexts が DI 境界となり、UI 側は具象実装を知らない。</figcaption>
+</figure>
+
+<h3>2.1 主な API ルート(現行 → 移行後)</h3>
+<table>
+  <thead><tr><th>系統</th><th>ルート</th><th>現行の実体</th><th>移行後</th></tr></thead>
+  <tbody>
+    <tr><td>セッション</td><td><code>POST /api/service/session</code></td><td>TVER <code>browser/create</code> 代理</td><td>変更なし</td></tr>
+    <tr><td>ホーム</td><td><code>GET /api/service/call/home</code></td><td>ランキング合成(callHome は空)</td><td>変更なし</td></tr>
+    <tr><td>ランキング</td><td><code>…/ranking/episode/detail/[genre]</code></td><td>TVER <code>callEpisodeRankingDetail</code></td><td>変更なし</td></tr>
+    <tr><td>エピソード</td><td><code>GET /api/service/call/episode</code></td><td>TVER <code>callEpisode</code>(version 取得)</td><td>変更なし</td></tr>
+    <tr><td>静的JSON</td><td><code>…/content/episode/[episodeId]</code></td><td>statics.tver.jp(現状 <code>?v=</code> 無し)</td><td><code>?v={version}</code> を付与</td></tr>
+    <tr><td><strong>ストリーム</strong></td><td><code>GET /api/service/call/streaminglink</code></td><td><strong>Azure Functions(yt-dlp)へ委譲</strong></td><td><strong>純TS解決に差替</strong></td></tr>
+    <tr><td>ユーザー</td><td><code>User/profile* / favorites* / watch-history*</code></td><td>firebase-admin(Firestore/Storage)</td><td>段階2で Firestore client + rules</td></tr>
+    <tr><td>課金</td><td><code>GET /api/cosmosdb/videos</code></td><td>Cosmos DB</td><td>MVP 除外(段階的に Firestore)</td></tr>
+  </tbody>
+</table>
+
+<h2>3. サービス層とインタフェース分離</h2>
+<p>
+  各ドメインは <code>src/services/I&lt;Name&gt;Service.ts</code> にインタフェースを、
+  <code>src/services/implementation/&lt;Name&gt;Service.ts</code> に実装クラスを置く
+  (ファイル名の実例: <code>ISessionService.ts</code> / <code>SessionService.ts</code>。シリーズのみ実装ファイルが
+  <code>SeriseService.ts</code> という綴りだが、公開クラス名は <code>SeriesService</code>)。実装は<strong>自ドメインの API ルートを叩く薄いクライアント</strong>で、
+  TVER などの外部詳細は BFF 側に閉じる。
+</p>
+<p>例として <code>IStreamService</code> は <code>getVideoUrl(episodeId)</code> の 1 メソッドだけを公開する。</p>
+<pre><code>// src/services/IStreamService.ts
+export interface IStreamService {
+  getVideoUrl: (episodeId: string) =&gt; Promise&lt;StreamResponseType&gt;;
+}
+
+// src/services/implementation/StreamService.ts(抜粋)
+export class StreamService implements IStreamService {
+  async getVideoUrl(episodeId: string): Promise&lt;StreamResponseType&gt; {
+    const url = `/api/service/call/streaminglink?` +
+      new URLSearchParams({ episodeId }).toString();
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('IdToken')}`,
+      },
+    });
+    if (!response.ok) throw new Error('インターネット接続がありません');
+    return (await response.json()) as StreamResponseType;
+  }
+}</code></pre>
+<p>
+  同様に <code>SessionService.getSessionToken()</code> は <code>POST /api/service/session</code> を叩いて
+  <code>{ platformUid, platformToken }</code> を得る。<strong>サービス実装は「1 メソッド = 1 API ルート」対応</strong>を基本とし、
+  外部 API の合成やヘッダ付与(Origin など)は必ず BFF 側で行う。
+</p>
+
+<h2>4. DI:providers.tsx によるコンテキスト注入</h2>
+<p>
+  依存注入は React Context で行う。<code>src/contexts/&lt;Name&gt;Context.ts</code> が
+  <code>createContext&lt;I&lt;Name&gt;Service | null&gt;(null)</code> を定義し、
+  <code>src/app/providers.tsx</code> が実装インスタンスを <code>useMemo</code> で生成して各 Provider の <code>value</code> に流し込む。
+  hooks は <code>useContext(...Context)</code> でインタフェース越しに実装を受け取り、具象クラスに直接依存しない。
+</p>
+<pre><code>// src/app/providers.tsx(抜粋)
+const streamService = useMemo(() =&gt; new StreamService(), []);   // 再生成防止
+
+return (
+  &lt;ThemeProvider attribute="class"&gt;
+    &lt;AuthProvider&gt;
+      &lt;FavoritesDataProvider&gt;
+        &lt;WatchHistoryDataProvider&gt;
+          &lt;SessionServiceContext.Provider value={sessionService}&gt;
+            {/* … TvHome / Series / Episode / Ranking … */}
+            &lt;StreamServiceContext.Provider value={streamService}&gt;
+              {/* … Profile / Favorite / WatchHistory … */}
+              &lt;Toaster position="bottom-right" /&gt;
+              {children}
+            &lt;/StreamServiceContext.Provider&gt;
+          &lt;/SessionServiceContext.Provider&gt;
+        &lt;/WatchHistoryDataProvider&gt;
+      &lt;/FavoritesDataProvider&gt;
+    &lt;/AuthProvider&gt;
+  &lt;/ThemeProvider&gt;
+);</code></pre>
+
+<figure>
+<svg viewBox="0 0 900 360" role="img" aria-label="providers.tsx の Provider 入れ子構造">
+  <title>providers.tsx の Provider 入れ子構造</title>
+  <g font-family="inherit" font-size="13" text-rendering="geometricPrecision">
+    <rect x="20" y="16" width="860" height="328" rx="12" fill="none" stroke="var(--tx2)"/>
+    <text x="34" y="36" fill="var(--tx2)">ThemeProvider(next-themes / attribute="class")</text>
+
+    <rect x="44" y="48" width="812" height="278" rx="11" fill="none" stroke="var(--acc)"/>
+    <text x="58" y="68" fill="var(--acc)">AuthProvider(Firebase Auth 状態 / onAuthStateChanged)</text>
+
+    <rect x="68" y="80" width="764" height="228" rx="10" fill="none" stroke="var(--line)"/>
+    <text x="82" y="100" fill="var(--tx2)">FavoritesDataProvider ▸ WatchHistoryDataProvider(クライアント状態)</text>
+
+    <rect x="92" y="112" width="716" height="180" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="450" y="134" text-anchor="middle" fill="var(--tx)" font-weight="bold">9 個の *ServiceContext.Provider(入れ子)</text>
+    <text x="450" y="156" text-anchor="middle" fill="var(--tx2)">Session ▸ TvHome ▸ Series ▸ Episode ▸ Ranking ▸</text>
+    <text x="450" y="176" text-anchor="middle" fill="var(--tx2)">Stream ▸ Profile ▸ Favorite ▸ WatchHistory</text>
+    <text x="450" y="200" text-anchor="middle" fill="var(--tx2)" font-size="12">各 value = useMemo(() =&gt; new XxxService(), [])</text>
+
+    <rect x="300" y="222" width="300" height="52" rx="9" fill="var(--bg)" stroke="var(--acc)"/>
+    <text x="450" y="246" text-anchor="middle" fill="var(--tx)" font-weight="bold">{children}</text>
+    <text x="450" y="264" text-anchor="middle" fill="var(--tx2)" font-size="12">配下の hooks が useContext で実装を受領</text>
+  </g>
+</svg>
+<figcaption>図2: Provider の入れ子。外側にテーマ / 認証 / クライアント状態、内側に 9 サービスの DI。children は最内で全 Context を参照できる。</figcaption>
+</figure>
+
+<p>
+  hooks 側は次のようにインタフェース越しに使う(<code>useStreamService</code>)。null チェックを経てから
+  <code>getVideoUrl</code> を呼ぶため、Provider 未設定時も型安全に扱える。
+</p>
+<pre><code>// src/hooks/useStream.ts(抜粋)
+const streamService = useContext(StreamServiceContext);  // IStreamService | null
+useEffect(() =&gt; {
+  if (!episodeId || !streamService) return;
+  streamService.getVideoUrl(episodeId).then(setStreamUrl).catch(console.error);
+}, [episodeId, streamService]);</code></pre>
+
+<h2>5. ストリーム解決モジュール設計(純TS)</h2>
+<p>
+  移行の中心は、Azure Functions + yt-dlp に委譲していたマニフェスト解決を、<strong>フレームワーク非依存の純 TypeScript</strong>
+  として BFF 内に内製化することである。TVER の公開 API を実測フロー通りに順に叩き、DRM 無しの HLS(m3u8)ソースを得る。
+  <code>fetch</code> と Web 標準 API のみを使い、Node 固有 API に依存しない(Workers 互換)。
+</p>
+
+<h3>5.1 解決フロー(6 ステップ)</h3>
+<figure>
+<svg viewBox="0 0 900 560" role="img" aria-label="TVER ストリーム解決フロー">
+  <title>TVER ストリーム解決フロー</title>
+  <defs>
+    <marker id="ar2" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L9,5 L0,10 z" fill="var(--acc)"/>
+    </marker>
+  </defs>
+  <g font-family="inherit" font-size="13" text-rendering="geometricPrecision">
+    <!-- step template: left request box, right endpoint -->
+    <!-- 1 -->
+    <rect x="30" y="20" width="360" height="60" rx="9" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="46" y="42" fill="var(--tx)" font-weight="bold">1. セッション作成</text>
+    <text x="46" y="62" fill="var(--tx2)" font-size="12">POST browser/create(device_type=pc)</text>
+    <rect x="560" y="20" width="310" height="60" rx="9" fill="var(--bg)" stroke="var(--tx2)"/>
+    <text x="576" y="42" fill="var(--tx)">platform-api.tver.jp</text>
+    <text x="576" y="62" fill="var(--tx2)" font-size="12">→ platform_uid / platform_token</text>
+    <line x1="390" y1="50" x2="558" y2="50" stroke="var(--acc)" marker-end="url(#ar2)"/>
+
+    <!-- 2 -->
+    <rect x="30" y="100" width="360" height="60" rx="9" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="46" y="122" fill="var(--tx)" font-weight="bold">2. エピソード情報</text>
+    <text x="46" y="142" fill="var(--tx2)" font-size="12">GET callEpisode/{id} (+uid/token)</text>
+    <rect x="560" y="100" width="310" height="60" rx="9" fill="var(--bg)" stroke="var(--tx2)"/>
+    <text x="576" y="122" fill="var(--tx)">platform-api.tver.jp</text>
+    <text x="576" y="142" fill="var(--tx2)" font-size="12">→ episode.content.version</text>
+    <line x1="390" y1="130" x2="558" y2="130" stroke="var(--acc)" marker-end="url(#ar2)"/>
+
+    <!-- 3 -->
+    <rect x="30" y="180" width="360" height="60" rx="9" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="46" y="202" fill="var(--tx)" font-weight="bold">3. 静的コンテンツ JSON</text>
+    <text x="46" y="222" fill="var(--tx2)" font-size="12">GET content/episode/{id}.json?v={version}</text>
+    <rect x="560" y="180" width="310" height="60" rx="9" fill="var(--bg)" stroke="var(--tx2)"/>
+    <text x="576" y="202" fill="var(--tx)">statics.tver.jp</text>
+    <text x="576" y="222" fill="var(--tx2)" font-size="12">→ streaks{projectID, mediaID, videoRefID}</text>
+    <line x1="390" y1="210" x2="558" y2="210" stroke="var(--acc)" marker-end="url(#ar2)"/>
+
+    <!-- 4 -->
+    <rect x="30" y="260" width="360" height="60" rx="9" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="46" y="282" fill="var(--tx)" font-weight="bold">4. Streaks キー取得(月替わり)</text>
+    <text x="46" y="302" fill="var(--tx2)" font-size="12">GET streaks_info_v2.json(キャッシュ)</text>
+    <rect x="560" y="260" width="310" height="60" rx="9" fill="var(--bg)" stroke="var(--tx2)"/>
+    <text x="576" y="282" fill="var(--tx)">player.tver.jp</text>
+    <text x="576" y="302" fill="var(--tx2)" font-size="12">→ api_key.key01..key06</text>
+    <line x1="390" y1="290" x2="558" y2="290" stroke="var(--acc)" marker-end="url(#ar2)"/>
+
+    <!-- 5 key select -->
+    <rect x="30" y="340" width="840" height="50" rx="9" fill="none" stroke="var(--acc)" stroke-dasharray="5 3"/>
+    <text x="46" y="362" fill="var(--tx)" font-weight="bold">5. キー選択</text>
+    <text x="150" y="362" fill="var(--tx2)" font-size="12">idx = (JST の月 % 6) || 6 → key0{idx}(例: 6月 → 6%6=0 → ||6 → key06 / 7月 → key01)</text>
+    <text x="46" y="380" fill="var(--tx2)" font-size="12">選択したキーを X-Streaks-Api-Key に付与</text>
+
+    <!-- 6 playback -->
+    <rect x="30" y="410" width="360" height="72" rx="9" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="46" y="432" fill="var(--tx)" font-weight="bold">6. Playback 解決</text>
+    <text x="46" y="452" fill="var(--tx2)" font-size="12">GET projects/{projectID}/medias/ref:{videoRefID}</text>
+    <text x="46" y="470" fill="var(--err)" font-size="12">Origin: https://tver.jp(必須)</text>
+    <rect x="560" y="410" width="310" height="72" rx="9" fill="var(--bg)" stroke="var(--tx2)"/>
+    <text x="576" y="432" fill="var(--tx)">playback.api.streaks.jp</text>
+    <text x="576" y="452" fill="var(--tx2)" font-size="12">→ sources[](x-mpegURL=m3u8)</text>
+    <text x="576" y="470" fill="var(--tx2)" font-size="12">→ tracks[](captions/subtitles)</text>
+    <line x1="390" y1="446" x2="558" y2="446" stroke="var(--acc)" marker-end="url(#ar2)"/>
+
+    <rect x="30" y="502" width="840" height="42" rx="9" fill="none" stroke="var(--ok)"/>
+    <text x="450" y="528" text-anchor="middle" fill="var(--tx)">結果: key_systems 無し(非DRM)の HLS を採用 → { m3u8, captions[] } を返す</text>
+  </g>
+</svg>
+<figcaption>図3: 実測フロー。session → callEpisode(version)→ statics → streaks_info(キー)→ 月替わりキー選択 → playback。</figcaption>
+</figure>
+
+<p>各ステップの完全な URL と主なヘッダを示す。<code>Origin</code> ヘッダが必須(欠落・不一致で 403 <code>id139</code>)なのは Step 6(Playback)のみで、セッション作成(Step 1)の <code>Origin</code>/<code>Referer</code> は <code>https://s.tver.jp</code>、それ以外の TVER API は <code>https://tver.jp</code> を用いる。</p>
+<table>
+  <thead><tr><th>ステップ</th><th>メソッド / 完全 URL</th><th>主なヘッダ</th></tr></thead>
+  <tbody>
+    <tr><td>1. セッション作成</td><td><code>POST https://platform-api.tver.jp/v2/api/platform_users/browser/create</code>(body <code>device_type=pc</code>)</td><td><code>Origin</code>/<code>Referer</code>: <code>https://s.tver.jp</code></td></tr>
+    <tr><td>2. エピソード情報</td><td><code>GET https://platform-api.tver.jp/service/api/v1/callEpisode/{id}?platform_uid=&amp;platform_token=</code></td><td><code>Origin</code>/<code>Referer</code>: <code>https://tver.jp</code></td></tr>
+    <tr><td>3. 静的コンテンツ</td><td><code>GET https://statics.tver.jp/content/episode/{id}.json?v={version}</code></td><td>—</td></tr>
+    <tr><td>4. Streaks キー</td><td><code>GET https://player.tver.jp/player/streaks_info_v2.json</code></td><td>—</td></tr>
+    <tr><td>6. Playback</td><td><code>GET https://playback.api.streaks.jp/v1/projects/{projectID}/medias/ref:{videoRefID}</code></td><td><code>Accept: application/json</code> / <code>Origin: https://tver.jp</code>(必須)/ <code>Referer: https://tver.jp/</code> / <code>X-Streaks-Api-Key</code></td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 関数分割とモジュール配置</h3>
+<p>各ステップを純関数へ分け、オーケストレータ <code>resolveStream</code> が合成する。提案するファイル配置:</p>
+<table>
+  <thead><tr><th>ファイル(提案)</th><th>公開関数</th><th>責務</th></tr></thead>
+  <tbody>
+    <tr><td><code>stream/session.ts</code></td><td><code>createSession()</code></td><td>platform_uid / platform_token 発行</td></tr>
+    <tr><td><code>stream/callEpisode.ts</code></td><td><code>callEpisode(id, uid, token)</code></td><td><code>episode.content.version</code> 取得</td></tr>
+    <tr><td><code>stream/statics.ts</code></td><td><code>fetchStatics(id, version)</code></td><td><code>streaks{projectID, mediaID, videoRefID}</code> / video 取得</td></tr>
+    <tr><td><code>stream/streaksInfo.ts</code></td><td><code>fetchStreaksInfo()</code></td><td>月替わりキー一式(キャッシュ対象)</td></tr>
+    <tr><td><code>stream/keySelector.ts</code></td><td><code>selectStreaksKey(keys, now)</code></td><td>JST 月からキーを選択</td></tr>
+    <tr><td><code>stream/playback.ts</code></td><td><code>resolvePlayback(streaks, key)</code></td><td>sources / tracks 取得(Origin 必須)</td></tr>
+    <tr><td><code>stream/errors.ts</code></td><td><code>StreamError</code> / マッピング</td><td>エラーコード → 分類</td></tr>
+    <tr><td><code>stream/resolve.ts</code></td><td><code>resolveStream(id)</code></td><td>上記を合成する入口</td></tr>
+  </tbody>
+</table>
+<p>API ルート <code>service/call/streaminglink/route.ts</code> は、Azure への <code>fetch</code> を <code>resolveStream(episodeId)</code> 呼び出しへ置き換える薄いアダプタになる。</p>
+
+<h3>5.3 キー選択</h3>
+<p>キー選択は「JST の月」を <code>Intl.DateTimeFormat</code> で決定論的に求め、<code>idx = (月 % 6) || 6</code> で <code>key01..key06</code> を選ぶ。</p>
+<pre><code>// stream/keySelector.ts
+export function selectStreaksKey(keys: StreaksKeys, now = new Date()): string {
+  const jstMonth = Number(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Tokyo', month: 'numeric',
+  }).format(now));                       // 1..12(JST)
+  const idx = (jstMonth % 6) || 6;       // 1..6
+  return keys[`key0${idx}` as keyof StreaksKeys];
+}</code></pre>
+<div class="note">
+  実装(<code>streamResolver.ts</code>)では <code>Intl.DateTimeFormat</code> ではなく、UTC の月に JST オフセット(UTC+9)を加味した <code>Date.getUTCMonth()</code> ベースで同じ月を求めている。両アプローチは JST の月を得る点で等価であり、選択されるキーは一致する。上のコードはより明示的なタイムゾーン指定として並記する。
+</div>
+
+<h3>5.4 Playback 呼び出しとソース選別</h3>
+<p>
+  Playback は <code>Origin: https://tver.jp</code> が<strong>必須</strong>(欠落・不一致で 403 <code>id139</code>)。返却 <code>sources[]</code> のうち
+  <code>type</code> が m3u8 系 MIME(<code>application/x-mpegurl</code> / <code>application/vnd.apple.mpegurl</code>。大文字小文字は無視)かつ <code>key_systems</code> を持たない(非DRM)ものを採用する。字幕は
+  <code>tracks[]</code>(<code>kind</code> が captions / subtitles)から抽出する。
+</p>
+<pre><code>// stream/playback.ts(抜粋)
+const res = await fetch(
+  `https://playback.api.streaks.jp/v1/projects/${projectID}/medias/ref:${videoRefID}`,
+  { headers: {
+      'Accept': 'application/json',
+      'Origin': 'https://tver.jp',   // 必須(欠落で 403 id139)
+      'Referer': 'https://tver.jp/',
+      'X-Streaks-Api-Key': apiKey,
+  }},
+);
+
+// stream/resolve.ts(抜粋 / オーケストレータ)
+export async function resolveStream(episodeId: string): Promise&lt;ResolvedStream&gt; {
+  const { platformUid, platformToken } = await createSession();
+  const version = await callEpisode(episodeId, platformUid, platformToken);
+  const statics = await fetchStatics(episodeId, version);       // streaks{projectID, mediaID, videoRefID}
+  const keys    = await fetchStreaksInfo();                     // キャッシュ済みなら即時
+  const apiKey  = selectStreaksKey(keys[statics.streaks.projectID]);
+  const pb      = await resolvePlayback(statics.streaks, apiKey);
+  const M3U8_TYPES = new Set([                                  // m3u8 系 MIME(実装の M3U8_TYPES 相当)
+    'application/x-mpegurl', 'application/vnd.apple.mpegurl',
+  ]);
+  const source  = pb.sources.find(
+    (s) =&gt; M3U8_TYPES.has(s.type?.toLowerCase()) &amp;&amp; !s.key_systems, // m3u8 かつ非DRM
+  );
+  if (!source) throw new StreamError('MEDIA_NOT_FOUND');
+  return { m3u8: source.src, captions: pickCaptions(pb.tracks) };
+}</code></pre>
+
+<h3>5.5 エラーマッピング</h3>
+<p>解決過程のエラーは、外部コードを内部分類へマッピングして UI に返す。</p>
+<table>
+  <thead><tr><th>コード</th><th>意味(事実)</th><th>主な発生条件</th><th>ハンドリング方針</th></tr></thead>
+  <tbody>
+    <tr><td><code>id124</code></td><td>ジオ(地域)制限</td><td>非 JP IP からのアクセス</td><td><code>GEO_RESTRICTED</code> として表面化</td></tr>
+    <tr><td><code>id126</code></td><td>API キー不正</td><td>月替わりキー選択ずれ / 失効</td><td><code>KEY_INVALID</code>:キャッシュ破棄→再取得・再選択</td></tr>
+    <tr><td><code>id139</code></td><td>Origin 不一致(403)</td><td>Origin ヘッダが tver.jp でない</td><td>固定ヘッダ付与で回避(構成起因)</td></tr>
+    <tr><td><code>MEDIA_NOT_FOUND</code></td><td>メディア未存在 / 非DRM ソース無し</td><td>videoRefID 不正 / 配信終了</td><td>404 相当で表面化</td></tr>
+  </tbody>
+</table>
+
+<h3>5.6 キャッシュ方針</h3>
+<ul>
+  <li><strong>streaks_info(月替わりキー)</strong>: 変動が緩やかなため Workers KV もしくはメモリ + 短期 TTL でキャッシュ。
+    キー選択はキャッシュ済みキー集合に対しリクエスト時の JST 月で毎回算出する。</li>
+  <li><strong>statics JSON</strong>: <code>episodeId + version</code> で内容が確定するため、その組で長めにキャッシュ可能。</li>
+  <li><strong>セッショントークン</strong>: リクエスト単位で取得、または短期キャッシュ。</li>
+  <li><code>id126</code>(キー不正)検出時は streaks_info キャッシュを破棄して再取得する。</li>
+</ul>
+
+<h3>5.7 フォールバック経路(Brightcove)</h3>
+<p>
+  静的コンテンツ JSON(Step 3)は <code>streaks</code> に加え <code>video</code>(<code>accountID</code> / <code>videoRefID</code> / <code>playerID</code> = Brightcove)も返す。
+  <code>streaks</code> を持たない旧作は Brightcove(<code>account</code> / <code>videoRefID</code> + <code>policyKey</code>)を経路とする。現行コンテンツの主経路は Streaks であり、本設計は Streaks 経路を対象に純TS解決を設計する。
+</p>
+
+<h2>6. 認証設計:Firebase Auth + jose 検証</h2>
+<p>
+  クライアント認証は Firebase Auth(client SDK)を維持する。<code>src/lib/firebase.ts</code> は
+  ブラウザかつ <code>apiKey</code> 存在時のみ初期化し、<code>AuthContext</code> が
+  <code>signInWithEmailAndPassword</code> / <code>createUserWithEmailAndPassword</code> / <code>signInAnonymously</code>(ゲスト)/
+  <code>onAuthStateChanged</code> を提供する。ログイン成功時に ID トークンを <code>localStorage</code>
+  (<code>NEXT_PUBLIC_IDTOKEN_NAME</code>)へ保存する暫定実装がある。
+</p>
+
+<div class="note">
+  <strong>用語の整理(重要)</strong>: 現行 <code>utils/verify-token</code> は <code>jose.jwtVerify</code> を
+  <code>JWT_SECRET_KEY</code>(HMAC 対称鍵)で使う<strong>自前 JWT</strong> の検証であり、Firebase ID トークンとは別物。
+  移行で置換対象になるのは、firebase-admin の <code>verifyIdToken()</code>(RS256 / Google 公開鍵)である。
+</div>
+
+<h3>6.1 サーバ側 ID トークン検証の移行</h3>
+<p>
+  firebase-admin は Node 前提(gRPC など)で Workers 非互換のため、サーバでの Firebase ID トークン検証は
+  <strong><code>jose</code> + Google 公開鍵(JWKS)</strong>へ移す。<code>jose</code> は既存依存で、<code>fetch</code> + Web Crypto のみを使い Workers 互換。
+</p>
+<pre><code>import { jwtVerify, createRemoteJWKSet } from 'jose';
+
+// Firebase ID トークンの署名鍵(JWK / RS256)
+const JWKS = createRemoteJWKSet(new URL(
+  'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
+));
+
+export async function verifyFirebaseIdToken(idToken: string, projectId: string) {
+  const { payload } = await jwtVerify(idToken, JWKS, {
+    issuer: `https://securetoken.google.com/${projectId}`,
+    audience: projectId,
+  });
+  return payload;   // sub(uid), email, firebase.sign_in_provider など
+}</code></pre>
+<p>
+  これにより、認可が必要な API ルート(<code>User/*</code> や管理系)は firebase-admin を介さずトークンを検証できる。
+  ゲスト(匿名)のロール付与はトークンのクレームで判別する。
+</p>
+
+<h2>7. Cloudflare / OpenNext 構成</h2>
+<p>
+  ホスティングは <strong>Cloudflare Workers + <code>@opennextjs/cloudflare</code></strong>。OpenNext が Next.js の App Router 出力を
+  Workers ランタイム向けにアダプトする。<code>nodejs_compat</code> フラグを有効化し、Web 標準 API(<code>fetch</code> / Web Crypto)を用いる。
+  無料枠は 10 万リクエスト/日。
+</p>
+<table>
+  <thead><tr><th>項目</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td>ランタイム</td><td>Cloudflare Workers(V8 isolate。Node ではない)</td></tr>
+    <tr><td>アダプタ</td><td><code>@opennextjs/cloudflare</code>(OpenNext)</td></tr>
+    <tr><td>互換フラグ</td><td><code>nodejs_compat</code></td></tr>
+    <tr><td>デプロイ</td><td>wrangler(build → deploy)</td></tr>
+    <tr><td>キャッシュ</td><td>Workers KV(streaks_info / statics 等の短期キャッシュに利用可)</td></tr>
+  </tbody>
+</table>
+<div class="note">
+  移行の設計上の含意: BFF の各ルートは <strong>Node 固有 API を使わない</strong>こと。ストリーム解決(§5)と ID トークン検証(§6)は
+  いずれも <code>fetch</code> + Web Crypto のみで完結するよう設計しており、この制約を満たす。
+</div>
+
+<h2>8. firebase-admin / Cosmos 除去方針</h2>
+<p>
+  <code>src/lib/firebase-admin.ts</code> は <code>adminAuth</code> / <code>adminDb</code>(Firestore)/ <code>adminStorage</code> を初期化するが、
+  gRPC ベースの Firestore admin は Workers 非互換。段階的に次の方針で除去する。
+</p>
+<table>
+  <thead><tr><th>対象</th><th>現行</th><th>移行後</th><th>段階</th></tr></thead>
+  <tbody>
+    <tr><td>ID トークン検証</td><td>firebase-admin <code>verifyIdToken</code></td><td><code>jose</code> + Google JWKS(§6.1)</td><td>MVP</td></tr>
+    <tr><td>ユーザーデータ(お気に入り/履歴/プロフィール)</td><td>firebase-admin Firestore(gRPC)</td><td>Firestore <strong>client SDK</strong> + セキュリティルール(本人所有データ直読み書き)</td><td>段階2</td></tr>
+    <tr><td>画像</td><td>firebase-admin Storage</td><td>Firebase Storage client / ルール</td><td>段階2</td></tr>
+    <tr><td>課金メタ</td><td>Cosmos DB(<code>/api/cosmosdb/videos</code>)</td><td>MVP 除外 → 段階的に Firestore へ</td><td>後続</td></tr>
+  </tbody>
+</table>
+<p>
+  MVP では Firestore を必要とせず、TVER 閲覧・純TS再生・Firebase Auth(login/register/guest)のみで成立する。
+  ユーザーデータ層は段階 2 でクライアント SDK + セキュリティルールへ移し、サーバ(Workers)からは
+  gRPC 依存を持たない形にする。
+</p>
+
+<h2>9. 移行チェックリスト</h2>
+<ul>
+  <li><code>service/call/streaminglink</code> を Azure <code>fetch</code> から <code>resolveStream()</code> 呼び出しへ差替。</li>
+  <li>純TS モジュール(session / callEpisode / statics / streaksInfo / keySelector / playback / resolve / errors)を追加し、Node 固有 API を排除。</li>
+  <li><code>content/episode/[episodeId]</code> に <code>?v={version}</code> を付与。</li>
+  <li>Playback で <code>Origin: https://tver.jp</code> を固定付与、<code>key_systems</code> 付きソースを除外。</li>
+  <li>月替わりキー選択 <code>idx = (JST月 % 6) || 6</code> を実装、<code>id126</code> 時にキャッシュ破棄。</li>
+  <li>サーバ ID トークン検証を firebase-admin から <code>jose</code> + Google JWKS へ置換。</li>
+  <li>firebase-admin / Cosmos 依存ルートを MVP から切り離し(段階 2 で Firestore client + ルール)。</li>
+  <li><code>@opennextjs/cloudflare</code> + <code>nodejs_compat</code> でビルド・デプロイ、KV キャッシュ配線。</li>
+</ul>
+
+<footer>
+  tvapp-web 詳細設計 / project/tvapp-cf-zero-cost。記述は実コード(src/services・src/app/providers.tsx・src/app/api/service/*)と
+  調査ブリーフに基づく客観的事実に限る。更新履歴は Git に委ねる。
+</footer>
+</div>
+<script>
+  (function(){
+    var t=localStorage.getItem('doc-theme');
+    if(t)document.documentElement.setAttribute('data-theme',t);
+    __sync();
+  })();
+  function __toggle(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var n=d?'light':'dark';
+    document.documentElement.setAttribute('data-theme',n);
+    localStorage.setItem('doc-theme',n);__sync();
+  }
+  function __sync(){
+    var d=document.documentElement.getAttribute('data-theme')==='dark';
+    var b=document.getElementById('themeToggle');
+    if(b)b.textContent=d?'☀ ライト':'☾ ダーク';
+  }
+</script>
+</body>
+</html>
