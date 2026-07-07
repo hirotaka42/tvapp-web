@@ -87,6 +87,8 @@ function AbemaSeriesPage(props: { params: Promise<{ seriesId: string }> }) {
                       </span>
                       {ep.isFree ? (
                         <span className="flex-none rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-emerald-950">無料</span>
+                      ) : ep.isPremium ? (
+                        <span className="flex-none rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-amber-950">有料</span>
                       ) : null}
                     </Link>
                   </li>

@@ -1,18 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AbemaVodHeroPick, heroShelfLabel } from '@/utils/abema/pickVodHero';
 import { resolveAbemaWatchPath } from '@/lib/abema/clientPlayback';
 
 interface AbemaVodHeroProps {
-  pick: AbemaVodHeroPick;
+  picks: AbemaVodHeroPick[];
 }
 
-export function AbemaVodHero({ pick }: AbemaVodHeroProps) {
-  const { item, rank, shelfTitle } = pick;
+const ROTATE_MS = 7000;
+
+export function AbemaVodHero({ picks }: AbemaVodHeroProps) {
   const router = useRouter();
+  const [index, setIndex] = useState(0);
   const [state, setState] = useState<'idle' | 'resolving' | 'error'>('idle');
+  const pausedRef = useRef(false);
+
+  useEffect(() => {
+    if (picks.length <= 1) return;
+    const timer = setInterval(() => {
+      if (!pausedRef.current) setIndex((current) => (current + 1) % picks.length);
+    }, ROTATE_MS);
+    return () => clearInterval(timer);
+  }, [picks.length]);
+
+  if (picks.length === 0) return null;
+  const pick = picks[index % picks.length] ?? picks[0];
+  const { item, rank, shelfTitle } = pick;
 
   const play = async () => {
     if (state === 'resolving') return;
@@ -27,8 +42,22 @@ export function AbemaVodHero({ pick }: AbemaVodHeroProps) {
   };
 
   return (
-    <article className="ab-live ab-vhero">
-      <button type="button" className="ab-live-scr ab-vhero-scr" onClick={play} aria-label={`${item.title} をアプリ内で再生`}>
+    <article
+      className="ab-live ab-vhero"
+      onMouseEnter={() => {
+        pausedRef.current = true;
+      }}
+      onMouseLeave={() => {
+        pausedRef.current = false;
+      }}
+    >
+      <button
+        key={item.contentId}
+        type="button"
+        className="ab-live-scr ab-vhero-scr"
+        onClick={play}
+        aria-label={`${item.title} をアプリ内で再生`}
+      >
         {item.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img className="ab-vhero-bg" src={item.thumbnailUrl} alt="" decoding="async" />
@@ -42,6 +71,23 @@ export function AbemaVodHero({ pick }: AbemaVodHeroProps) {
         </div>
         {state === 'resolving' ? <span className="ab-vload">再生を準備中…</span> : null}
       </button>
+
+      {picks.length > 1 ? (
+        <div className="ab-vhero-dots" role="tablist" aria-label="ランキングスライド">
+          {picks.map((p, i) => (
+            <button
+              key={p.item.contentId}
+              type="button"
+              role="tab"
+              aria-selected={i === index}
+              aria-label={`${i + 1}番目のランキング作品`}
+              className={i === index ? 'on' : ''}
+              onClick={() => setIndex(i)}
+            />
+          ))}
+        </div>
+      ) : null}
+
       <div className="ab-live-bar">
         <span className="ab-play-note">{heroShelfLabel(shelfTitle)}</span>
         <span className="ab-vhero-spacer" />

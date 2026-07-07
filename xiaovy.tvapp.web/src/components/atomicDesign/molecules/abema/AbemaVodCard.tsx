@@ -37,7 +37,7 @@ export function AbemaVodCard({ item, rank }: AbemaVodCardProps) {
             <span className="ab-vth-ph" aria-hidden="true" />
           )}
           {rank ? <span className={`ab-rk ab-cnd ${rank === 1 ? 'r1' : ''}`}>{rank}</span> : null}
-          {item.isFree ? <span className="ab-vfree">無料</span> : null}
+          {item.isFree ? <span className="ab-vfree">無料</span> : item.isPremium ? <span className="ab-vpaid">有料</span> : null}
           <span className="ab-tht">{item.title}</span>
           {state === 'resolving' ? <span className="ab-vload">読み込み中…</span> : null}
         </div>

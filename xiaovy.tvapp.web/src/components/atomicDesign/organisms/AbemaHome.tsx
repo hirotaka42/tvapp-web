@@ -7,7 +7,7 @@ import { AbemaLiveHero } from '@/components/atomicDesign/molecules/abema/AbemaLi
 import { AbemaVodHero } from '@/components/atomicDesign/molecules/abema/AbemaVodHero';
 import { AbemaLiveTicker } from '@/components/atomicDesign/molecules/abema/AbemaLiveTicker';
 import { AbemaShelf } from '@/components/atomicDesign/molecules/abema/AbemaShelf';
-import { AbemaUpNext } from '@/components/atomicDesign/molecules/abema/AbemaUpNext';
+import { AbemaLiveNowPanel } from '@/components/atomicDesign/molecules/abema/AbemaLiveNowPanel';
 import { AbemaVodRanking } from '@/components/atomicDesign/organisms/AbemaVodRanking';
 import { useAbemaHome } from '@/hooks/useAbemaHome';
 import { AbemaVodState, useAbemaVod } from '@/hooks/useAbemaVod';
@@ -17,7 +17,7 @@ import { deriveLiveNow } from '@/utils/abema/homeView/deriveLiveNow';
 import { deriveShelves } from '@/utils/abema/homeView/deriveShelves';
 import { deriveTicker } from '@/utils/abema/homeView/deriveTicker';
 import { deriveUpNext } from '@/utils/abema/homeView/deriveUpNext';
-import { AbemaVodHeroPick, pickVodHero } from '@/utils/abema/pickVodHero';
+import { AbemaVodHeroPick, orderVodHeroCarousel } from '@/utils/abema/pickVodHero';
 
 interface AbemaHomeProps {
   channels: AbemaChannel[];
@@ -43,25 +43,25 @@ export function AbemaHome({ channels, slots, vod, now = Date.now() }: AbemaHomeP
   const heroSlot = liveSlots[0];
   const heroChannel = heroSlot ? channels.find((channel) => channel.id === heroSlot.channelId) : undefined;
 
-  // Hero: feature a random top-3 item from the VOD ranking (once shelves arrive),
+  // Hero: an auto-rotating carousel of the top ranking items (once shelves arrive),
   // instead of the fixed live channel. Falls back to the live hero when VOD is empty.
-  const [heroPick, setHeroPick] = useState<AbemaVodHeroPick | null>(null);
+  const [heroPicks, setHeroPicks] = useState<AbemaVodHeroPick[]>([]);
   useEffect(() => {
-    if (!heroPick && vod.shelves.length > 0) {
-      setHeroPick(pickVodHero(vod.shelves));
+    if (heroPicks.length === 0 && vod.shelves.length > 0) {
+      setHeroPicks(orderVodHeroCarousel(vod.shelves));
     }
-  }, [vod.shelves, heroPick]);
+  }, [vod.shelves, heroPicks.length]);
 
   return (
     <section className="world ab-world" id="ab" role="tabpanel" aria-labelledby="dk-abema" aria-label="ABEMA ホーム">
       <AbemaLiveTicker items={deriveTicker(liveSlots, upNext, 8)} />
       <div className="wrap ab-top">
-        {heroPick ? (
-          <AbemaVodHero pick={heroPick} />
+        {heroPicks.length > 0 ? (
+          <AbemaVodHero picks={heroPicks} />
         ) : (
           <AbemaLiveHero slot={heroSlot} channel={heroChannel} now={now} />
         )}
-        <AbemaUpNext slots={upNext} channels={channels} />
+        <AbemaLiveNowPanel liveSlots={liveSlots} channels={channels} />
       </div>
       <div className="wrap">
         <AbemaVodRanking vod={vod} />

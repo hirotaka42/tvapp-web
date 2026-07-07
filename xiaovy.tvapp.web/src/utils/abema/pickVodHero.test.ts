@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pickVodHero, pickVodHeroCandidates, heroShelfLabel } from './pickVodHero';
+import { pickVodHero, pickVodHeroCandidates, heroShelfLabel, orderVodHeroCarousel } from './pickVodHero';
 import { AbemaVodShelf } from '@/types/abema/view';
 
 function shelf(title: string, ids: string[]): AbemaVodShelf {
@@ -43,6 +43,23 @@ describe('pickVodHero', () => {
 
   it('returns null when there are no eligible shelves', () => {
     expect(pickVodHero([shelf('バラエティランキング', ['x'])])).toBeNull();
+  });
+});
+
+describe('orderVodHeroCarousel', () => {
+  it('returns the eligible candidates (deduped) capped at max', () => {
+    const out = orderVodHeroCarousel(shelves, () => 0, 5, 10);
+    // general has a,b,c,d (top5 -> a,b,c,d) + anime e,f,g = 7 unique
+    expect(out).toHaveLength(7);
+    expect(new Set(out.map((p) => p.item.contentId)).size).toBe(7);
+  });
+
+  it('caps at max', () => {
+    expect(orderVodHeroCarousel(shelves, () => 0, 5, 3)).toHaveLength(3);
+  });
+
+  it('is empty when no eligible shelves', () => {
+    expect(orderVodHeroCarousel([shelf('バラエティランキング', ['x'])])).toEqual([]);
   });
 });
 

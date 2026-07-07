@@ -5,9 +5,19 @@ export type AbemaStreamRequest =
   | { type: 'live'; channelId: string }
   | { type: 'slot'; slotId: string };
 
+/** Failure category surfaced by the streaminglink route, for varied UI messages. */
+export type AbemaStreamReason =
+  | 'premium'
+  | 'geo'
+  | 'upstream'
+  | 'not_found'
+  | 'resolver_unavailable'
+  | 'unknown';
+
 export interface UseAbemaStreamResult {
   data: StreamResponseType | null;
   error: Error | null;
+  errorReason: AbemaStreamReason | null;
   isLoading: boolean;
   retry: () => void;
 }
@@ -15,6 +25,7 @@ export interface UseAbemaStreamResult {
 export function useAbemaStream(request: AbemaStreamRequest): UseAbemaStreamResult {
   const [data, setData] = useState<StreamResponseType | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const [errorReason, setErrorReason] = useState<AbemaStreamReason | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [nonce, setNonce] = useState(0);
   const retry = useCallback(() => setNonce((n) => n + 1), []);
@@ -29,12 +40,14 @@ export function useAbemaStream(request: AbemaStreamRequest): UseAbemaStreamResul
 
     setIsLoading(true);
     setError(null);
+    setErrorReason(null);
     setData(null);
 
     fetch(`/api/service/abema/streaminglink?${params.toString()}`, { cache: 'no-store' })
       .then(async (response) => {
         const body = await response.json();
         if (!response.ok) {
+          if (typeof body?.reason === 'string') setErrorReason(body.reason as AbemaStreamReason);
           throw new Error(typeof body?.error === 'string' ? body.error : 'ABEMAの再生URLを取得できませんでした');
         }
         return body as StreamResponseType;
@@ -59,5 +72,5 @@ export function useAbemaStream(request: AbemaStreamRequest): UseAbemaStreamResul
     };
   }, [requestId, requestType, nonce]);
 
-  return { data, error, isLoading, retry };
+  return { data, error, errorReason, isLoading, retry };
 }
