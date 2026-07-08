@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp 映画ワールド仕様書</title>
+<style>
+  :root{--bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;--acc:#0969da;--ok:#1a7f37;--warn:#9a6700;--err:#d1242f;--code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa}
+  html[data-theme="dark"]{--bg:#0b0e14;--panel:#11151f;--line:#252b3b;--tx:#dde3f0;--tx2:#8b93a7;--acc:#7aa2f7;--ok:#9ece6a;--warn:#e0af68;--err:#f7768e;--code-bg:#1a2030;--code-tx:#9fd3ff;--th-bg:#1a2030}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;font-size:16px;line-height:1.8;letter-spacing:.02em;font-feature-settings:"palt" 1}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 100px}
+  a{color:var(--acc)}
+  h1{font-size:26px;margin:0 0 6px;line-height:1.4}
+  .meta{margin:14px 0 26px;color:var(--tx2);font-size:13px}
+  .tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--tx2);margin:0 6px 6px 0}
+  .tag b{color:var(--tx)}
+  .status-ok{color:var(--ok)}.status-wip{color:var(--warn)}
+  h2{font-size:19px;margin:34px 0 12px;border-left:4px solid var(--acc);padding-left:11px}
+  h3{font-size:16px;margin:22px 0 7px}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--th-bg)}
+  code{background:var(--code-bg);color:var(--code-tx);padding:1px 6px;border-radius:5px;font-family:"SF Mono","Consolas",monospace;font-size:13px}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto}
+  pre code{background:none;padding:0}
+  .note{border-left:4px solid var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);padding:10px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+  ul,ol{padding-left:22px}
+  figure{margin:20px 0;text-align:center}
+  figcaption{color:var(--tx2);font-size:13px;margin-top:8px}
+  svg{max-width:100%;height:auto}
+  footer{margin-top:52px;color:var(--tx2);font-size:12px;border-top:1px solid var(--line);padding-top:20px}
+  #themeToggle{position:fixed;top:14px;right:14px;z-index:10;border:1px solid var(--line);background:var(--panel);color:var(--tx);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer}
+  @media print{html[data-theme="dark"]{--bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;--acc:#0969da;--code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa}#themeToggle{display:none}a{color:#0550ae}}
+</style>
+</head>
+<body>
+<button id="themeToggle" onclick="__toggle()">ダーク</button>
+<div class="wrap">
+<h1>TVapp 映画ワールド仕様書</h1>
+<div class="meta">
+  <span class="tag">対象 <b>tvapp-web / cinema</b></span>
+  <span class="tag">区分 <b>reference / 01_spec</b></span>
+  <span class="tag">データ <b>Cloudflare D1 MOVIE_DB</b></span>
+  <span class="tag">ステータス <b class="status-ok">実装済み</b></span>
+</div>
+
+<p>映画ワールドは、TVapp のサービスドックに追加された第4ワールドである。目的は映画情報の閲覧であり、アプリ内での映画再生、座席予約、チケット購入、配信購入の導線は持たない。</p>
+
+<div class="note">
+本書は現行実装に合わせて記述する。<code>db/cinema/CONTRACT.md</code> は一次資料だが、公開スケジュール API など現行コードに存在しない要素が含まれるため、本書では <code>src/app/api/service/cinema</code>、<code>src/types/cinema.ts</code>、<code>db/cinema/schema.sql</code>、<code>movie-crawler</code> の実装を優先する。
+</div>
+
+<h2>1. 目的と非対象</h2>
+<table>
+  <thead><tr><th>区分</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td>目的</td><td>上映中、近日公開、公開日未定、映画ニュース、ランキング、予告編検索を同一ワールドで閲覧できるようにする</td></tr>
+    <tr><td>対象ユーザー操作</td><td>ジャンル絞り込み、ランキング切替、ニュース外部リンク、予告編 YouTube 検索、localStorage の「観たい」印</td></tr>
+    <tr><td>非対象</td><td>映画本編の再生、映画館予約、チケット購入、配信購入、外部サービスのアカウント連携</td></tr>
+    <tr><td>サービス状態</td><td><code>serviceCatalog.ts</code> で <code>cinema</code> は <code>ready: true</code></td></tr>
+  </tbody>
+</table>
+
+<h2>2. 機能一覧</h2>
+<table>
+  <thead><tr><th>機能</th><th>現行 UI / API</th><th>備考</th></tr></thead>
+  <tbody>
+    <tr><td>ホーム一括取得</td><td><code>GET /api/service/cinema/home</code></td><td><code>now</code>、<code>upcoming</code>、<code>undated</code>、<code>ranking</code>、<code>news</code>、<code>heroFilms</code>、<code>lastCrawledAt</code></td></tr>
+    <tr><td>上映中</td><td><code>CinemaShelf title="今上映中"</code></td><td><code>now_showing=1</code> かつ <code>release_date &lt;= today</code></td></tr>
+    <tr><td>近日公開</td><td><code>CinemaShelf title="近日公開ラインアップ"</code></td><td><code>release_date &gt; today</code>、<code>date_precision</code> は <code>day/month</code></td></tr>
+    <tr><td>公開日未定</td><td><code>CinemaShelf title="公開日未定"</code></td><td><code>release_date</code> 欠落、<code>year/unknown</code>、延期の作品を含む</td></tr>
+    <tr><td>ランキング</td><td><code>CinemaRankingShelf</code>、<code>GET /api/service/cinema/ranking</code></td><td>上映中は <code>rating_avg</code>、期待作は <code>want_to_watch</code></td></tr>
+    <tr><td>ニュース</td><td><code>CinemaNewsList</code>、<code>GET /api/service/cinema/news</code></td><td>前向きな映画ニュースを新着順で表示</td></tr>
+    <tr><td>ヒーロー</td><td><code>CinemaHero</code></td><td>ランキング上位と人気作品から最大6件を選び、自動スライド表示</td></tr>
+    <tr><td>ジャンルレンズ</td><td><code>CinemaChips</code>、<code>CinemaGenreSection</code></td><td>2本以上あるジャンルを最大10件表示。選択ジャンルで棚とランキングを絞る</td></tr>
+    <tr><td>観たい印</td><td><code>localStorage</code> key <code>cinema-wants-v1</code></td><td>ユーザー単位のサーバ保存はしない</td></tr>
+    <tr><td>予告編検索</td><td><code>trailerQuery</code></td><td><code>タイトル + " 予告編"</code> を YouTube 検索に使う</td></tr>
+  </tbody>
+</table>
+
+<h2>3. データフロー</h2>
+<figure>
+<svg viewBox="0 0 900 330" role="img" aria-label="映画ワールドのデータフロー">
+  <defs><marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--acc)"/></marker></defs>
+  <rect x="25" y="40" width="170" height="70" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+  <text x="110" y="70" text-anchor="middle" fill="var(--tx)" font-size="13" font-weight="bold">外部ソース</text>
+  <text x="110" y="92" text-anchor="middle" fill="var(--tx2)" font-size="12">映画.com / Filmarks / RSS</text>
+  <rect x="270" y="40" width="170" height="70" rx="10" fill="var(--panel)" stroke="var(--acc)" stroke-width="2"/>
+  <text x="355" y="70" text-anchor="middle" fill="var(--tx)" font-size="13" font-weight="bold">movie-crawler</text>
+  <text x="355" y="92" text-anchor="middle" fill="var(--tx2)" font-size="12">正規化 / 除外 / 結合</text>
+  <rect x="515" y="40" width="170" height="70" rx="10" fill="var(--panel)" stroke="var(--acc)" stroke-width="2"/>
+  <text x="600" y="70" text-anchor="middle" fill="var(--tx)" font-size="13" font-weight="bold">ingest API</text>
+  <text x="600" y="92" text-anchor="middle" fill="var(--tx2)" font-size="12">x-ingest-secret</text>
+  <rect x="735" y="40" width="140" height="70" rx="10" fill="var(--panel)" stroke="var(--acc)" stroke-width="2"/>
+  <text x="805" y="70" text-anchor="middle" fill="var(--tx)" font-size="13" font-weight="bold">D1 MOVIE_DB</text>
+  <text x="805" y="92" text-anchor="middle" fill="var(--tx2)" font-size="12">7 tables</text>
+  <rect x="290" y="205" width="210" height="70" rx="10" fill="var(--panel)" stroke="var(--acc)" stroke-width="2"/>
+  <text x="395" y="235" text-anchor="middle" fill="var(--tx)" font-size="13" font-weight="bold">read API</text>
+  <text x="395" y="257" text-anchor="middle" fill="var(--tx2)" font-size="12">status 導出 / home 集約</text>
+  <rect x="610" y="205" width="220" height="70" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+  <text x="720" y="235" text-anchor="middle" fill="var(--tx)" font-size="13" font-weight="bold">CinemaWorld</text>
+  <text x="720" y="257" text-anchor="middle" fill="var(--tx2)" font-size="12">棚 / ヒーロー / ニュース</text>
+  <line x1="196" y1="75" x2="268" y2="75" stroke="var(--acc)" stroke-width="2" marker-end="url(#ah)"/>
+  <line x1="441" y1="75" x2="513" y2="75" stroke="var(--acc)" stroke-width="2" marker-end="url(#ah)"/>
+  <line x1="686" y1="75" x2="733" y2="75" stroke="var(--acc)" stroke-width="2" marker-end="url(#ah)"/>
+  <path d="M805 112 C805 170 425 150 395 203" fill="none" stroke="var(--acc)" stroke-width="2" marker-end="url(#ah)"/>
+  <line x1="501" y1="240" x2="608" y2="240" stroke="var(--acc)" stroke-width="2" marker-end="url(#ah)"/>
+</svg>
+<figcaption>日次クロールから D1 ingest、read API、CinemaWorld 表示までの流れ。</figcaption>
+</figure>
+
+<h2>4. D1 スキーマ</h2>
+<p>D1 binding は <code>MOVIE_DB</code>、database name は <code>tvapp-movie</code>。スキーマは <code>db/cinema/schema.sql</code> にある。</p>
+<table>
+  <thead><tr><th>テーブル</th><th>用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>movies</code></td><td>作品本体。公開日、精度、上映中フラグ、ジャンル、ポスター、キービジュアル等</td></tr>
+    <tr><td><code>movie_credits</code></td><td>監督、キャスト</td></tr>
+    <tr><td><code>movie_source_ids</code></td><td>外部ソースの ID と URL</td></tr>
+    <tr><td><code>movie_news</code></td><td>映画ニュース</td></tr>
+    <tr><td><code>news_movie_map</code></td><td>ニュースと作品の対応</td></tr>
+    <tr><td><code>popularity_snapshots</code></td><td>Clip、評価平均、評価件数などの時系列 snapshot</td></tr>
+    <tr><td><code>ingest_runs</code></td><td>日次 ingest の実行記録</td></tr>
+  </tbody>
+</table>
+
+<p>公開ステータスは D1 の列として固定保存せず、read 時に <code>src/utils/cinema/status.ts</code> で導出する。</p>
+<table>
+  <thead><tr><th>status</th><th>導出条件</th></tr></thead>
+  <tbody>
+    <tr><td><code>undated</code></td><td><code>releaseDate</code> がない、または <code>datePrecision === 'unknown'</code></td></tr>
+    <tr><td><code>postponed</code></td><td><code>isPostponed</code> が truthy</td></tr>
+    <tr><td><code>upcoming</code></td><td>JST 今日より <code>releaseDate</code> が未来</td></tr>
+    <tr><td><code>now_showing</code></td><td><code>nowShowing</code> が truthy</td></tr>
+    <tr><td><code>ended</code></td><td>上記に該当せず、公開日が過去または当日</td></tr>
+  </tbody>
+</table>
+
+<h2>5. クローラと正規化</h2>
+<table>
+  <thead><tr><th>項目</th><th>現状</th></tr></thead>
+  <tbody>
+    <tr><td>パッケージ</td><td><code>movie-crawler</code>。Node ESM、依存は <code>cheerio</code> と <code>fast-xml-parser</code></td></tr>
+    <tr><td>取得源</td><td>映画.com iCal/上映中/近日公開、MovieWalker list/detail、Filmarks now/coming、ナタリー/映画.com/Real Sound RSS</td></tr>
+    <tr><td>取得制御</td><td>allow-list された host/path のみ。fetcher 側で同一 host 1から2秒間隔</td></tr>
+    <tr><td>除外</td><td>興収、観客動員、ランキング、売上などを含むニュースは <code>NEWS_BLOCK_PATTERN</code> で除外</td></tr>
+    <tr><td>分類</td><td>公開日、キャスト、予告、ポスター、映画祭、続編、リバイバル、舞台挨拶などのカテゴリを pattern で推定</td></tr>
+    <tr><td>映画文脈</td><td>映画、劇場、公開、監督、主演などの語を文脈判定に利用</td></tr>
+    <tr><td>サムネイル</td><td>ニュース本文の <code>og:image</code> 等から補完。作品画像はポスター/キービジュアル URL を利用</td></tr>
+    <tr><td>出力</td><td><code>--mode=post</code> で ingest、<code>--mode=sql</code> で SQL 出力</td></tr>
+  </tbody>
+</table>
+
+<pre><code>cd movie-crawler
+node crawl.mjs --mode=post --endpoint=https://&lt;host&gt;/api/service/cinema/ingest --secret-env=INGEST_SECRET
+node crawl.mjs --mode=sql --out=seed.sql</code></pre>
+
+<h2>6. API 仕様</h2>
+<table>
+  <thead><tr><th>API</th><th>内容</th><th>認証/制御</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/service/cinema/home</code></td><td>映画ホーム一括取得</td><td>middleware の Bearer 存在チェック</td></tr>
+    <tr><td><code>GET /api/service/cinema/ranking</code></td><td>ランキング取得。type に応じて上映中/期待作</td><td>middleware の Bearer 存在チェック</td></tr>
+    <tr><td><code>GET /api/service/cinema/news</code></td><td>ニュース取得。category filter に対応</td><td>middleware の Bearer 存在チェック</td></tr>
+    <tr><td><code>POST /api/service/cinema/ingest</code></td><td>クローラからの投入</td><td>middleware では公開、route で <code>x-ingest-secret</code> を照合</td></tr>
+  </tbody>
+</table>
+
+<h2>7. UI/UX</h2>
+<table>
+  <thead><tr><th>要素</th><th>現行仕様</th></tr></thead>
+  <tbody>
+    <tr><td>テーマ</td><td><code>html[data-svc="cinema"]</code> と <code>.cinema-world</code> の CSS 変数で映画用の明るいデイライト/マチネ配色を使う。ダークテーマにも対応</td></tr>
+    <tr><td>ヒーロー</td><td>最大6作品を自動スライド。ランキング上位、期待作、人気作品から重複排除して選ぶ</td></tr>
+    <tr><td>ジャンルレンズ</td><td>2本以上の作品があるジャンルを選択肢にし、棚とランキングを絞り込む</td></tr>
+    <tr><td>カード</td><td>2:3 ポスター、タイトル、公開日、ジャンル、監督/キャスト、人気指標を表示。画像失敗時はタイトル入り fallback</td></tr>
+    <tr><td>観たい印</td><td>localStorage に slug 配列を保存。サーバ同期はしない</td></tr>
+    <tr><td>ニュース</td><td>外部 URL が http/https の場合だけリンク化。関連作品がある場合は slug を持つ</td></tr>
+    <tr><td>予約/購入</td><td>表示しない</td></tr>
+  </tbody>
+</table>
+
+<h2>8. テスト観点</h2>
+<table>
+  <thead><tr><th>領域</th><th>確認内容</th></tr></thead>
+  <tbody>
+    <tr><td>status</td><td><code>src/utils/cinema/status.test.ts</code> で日付精度、延期、上映中、終了を検証</td></tr>
+    <tr><td>D1 read</td><td>read 時 status 導出、D1 bind parameter の chunk、URL 正規化、ranking metric の選択</td></tr>
+    <tr><td>ingest</td><td>secret、body size、件数、型、文字列長、URL、D1 batch/upsert</td></tr>
+    <tr><td>crawler parser</td><td>HTML/RSS/ICS parser、正規化、同一作品 merge、ニュース除外、サムネイル抽出</td></tr>
+    <tr><td>UI state</td><td>loading、error、空 genre、観たい印、画像 fallback、ランキング tab</td></tr>
+  </tbody>
+</table>
+
+<footer>
+<div>TVapp 映画ワールド仕様書</div>
+<div>対象: <code>src/components/atomicDesign/organisms/CinemaWorld.tsx</code>、<code>src/app/api/service/cinema</code>、<code>db/cinema/schema.sql</code>、<code>movie-crawler</code></div>
+<div>現行実装に存在しない公開スケジュール API や予約導線は本書の仕様に含めない。</div>
+</footer>
+</div>
+<script>
+  (function(){var t=localStorage.getItem('doc-theme');if(t)document.documentElement.setAttribute('data-theme',t);__sync();})();
+  function __toggle(){var d=document.documentElement.getAttribute('data-theme')==='dark';var n=d?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('doc-theme',n);__sync();}
+  function __sync(){var d=document.documentElement.getAttribute('data-theme')==='dark';var b=document.getElementById('themeToggle');if(b)b.textContent=d?'ライト':'ダーク';}
+</script>
+</body>
+</html>
