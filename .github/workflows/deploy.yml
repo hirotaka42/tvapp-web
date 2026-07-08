@@ -4,6 +4,8 @@ name: Deploy (version-gated)
 #   main への push(=PRマージ)時に、アプリ(xiaovy.tvapp.web)の package.json の
 #   version が直前コミットから上がっている場合「だけ」Cloudflare Workers へデプロイする。
 #   version を上げない変更はデプロイされない(AGENTS-SHARED §4「版ゲート」)。
+#   デプロイ成功後、版タグ v x.y.z に紐づく GitHub Release へ提案スライド(発表・説明用の
+#   自己完結HTML)をアーティファクトとして添付する(デプロイ物には含めない)。
 
 on:
   push:
@@ -99,4 +101,30 @@ jobs:
           else
             git tag "$TAG"
             git push origin "$TAG"
+          fi
+
+      # 提案スライド(発表資料)を Release アーティファクトとして出力する。
+      #   - Cloudflare デプロイ物(.open-next)には含めない。あくまで版タグに紐づく「説明用マニュアル」。
+      #   - スライドは自己完結の 1 ファイル HTML(docs/slides/tvapp-overview.html)。
+      - name: 提案スライドを Release アーティファクトとして添付
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v${{ needs.gate.outputs.version }}"
+          SLIDE="docs/slides/tvapp-overview.html"   # working-directory=xiaovy.tvapp.web からの相対
+          if [ ! -f "$SLIDE" ]; then
+            echo "::warning::$SLIDE が見つからないため Release 添付をスキップします"
+            exit 0
+          fi
+          # 版が分かる資料名で添付(ダウンロードしてそのままブラウザで開ける)
+          ASSET="tvapp-overview-$TAG.html"
+          cp "$SLIDE" "$ASSET"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG は既存。スライドを更新添付します"
+            gh release upload "$TAG" "$ASSET" --clobber
+          else
+            echo "Release $TAG を作成し、スライドを添付します"
+            gh release create "$TAG" "$ASSET" \
+              --title "TVapp $TAG" \
+              --notes "TVapp 提案スライド(発表・説明用資料)。自己完結の 1 ファイル HTML。ダウンロードしてブラウザで開くと閲覧できます。本資料は Cloudflare デプロイ物には含まれません。"
           fi
