@@ -15,6 +15,32 @@ import { CinemaHomeResponse, MovieCard, RankRow } from '@/types/cinema';
 import { jstToday } from '@/utils/cinema/status';
 
 const WANT_KEY = 'cinema-wants-v1';
+const BRIGHT_GENRES = new Set([
+  'コメディ',
+  '恋愛',
+  'ラブロマンス',
+  'ラブコメ',
+  '青春',
+  'アニメ',
+  'アニメーション',
+  '家族',
+  'ファミリー',
+  '子供向け',
+  'キッズ',
+  'ミュージカル',
+  '音楽',
+  'ファンタジー',
+  'スポーツ',
+  '冒険',
+  'アドベンチャー',
+]);
+const DARK_GENRES = new Set(['サスペンス', 'スリラー', 'オカルト', 'スプラッター', 'ゴア', 'クライム', '犯罪', '戦争', 'ノワール']);
+const moodTier = (genre: string) => {
+  if (genre === 'ホラー') return 3;
+  if (DARK_GENRES.has(genre)) return 2;
+  if (BRIGHT_GENRES.has(genre)) return 0;
+  return 1;
+};
 
 // 認証: 既存サービス(useAbemaHome 等)と同じく localStorage の ID トークンを Bearer で送る。
 // /api/ は middleware で Bearer 必須。未ログイン時は 'anonymous'(存在チェックのみ通過)。
@@ -75,7 +101,7 @@ export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResp
     }
     return [...counts.entries()]
       .filter(([, count]) => count >= 2)
-      .sort((a, b) => b[1] - a[1])
+      .sort((a, b) => moodTier(a[0]) - moodTier(b[0]) || b[1] - a[1])
       .map(([g]) => g)
       .slice(0, 10);
   }, [data.now, data.undated, data.upcoming]);
@@ -126,6 +152,7 @@ export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResp
         tab={rankTab}
         onTab={setRankTab}
       />
+      <CinemaNewsList news={data.news} />
       <CinemaGenreSection
         genres={genres}
         selectedGenre={genre}
@@ -134,7 +161,6 @@ export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResp
         onToggleWant={toggleWant}
         onGenre={setGenre}
       />
-      <CinemaNewsList news={data.news} />
       {data.undated.length > 0 && (
         <CinemaShelf
           title="公開日未定"
