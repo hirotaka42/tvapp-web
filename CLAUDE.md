@@ -8,9 +8,12 @@
 > あと一歩＝本番Azureが鍵を返さない)・開発ワークフローがまとまっている。作業再開の起点。
 
 ## 1. これは何か
-TVER をより手軽に見るための Web アプリ。Next.js 14→**16(App Router)**。
-TVER の公開 API をサーバールートで代理し、**ストリーム解決を純 TypeScript 化**(Azure Functions / yt-dlp / Cosmos を廃止)、
-**Cloudflare Workers(OpenNext)+ Firebase でほぼ $0** 運用を目指す。
+複数の視聴サービスを1つの体験に束ねる**マルチサービス視聴・映画情報ポータル**。Next.js **16(App Router)**+ React 19。
+共通ヘッダのサービスドックで **TVER / ABEMA / 映画 / YouTube(準備中)** を切替え、`data-svc` テーマでワールドごと描画する。
+- **TVER**: 公開 API をサーバールートで代理し、**ストリーム解決を純 TypeScript 化**(月替キー・Origin 必須・DRM 除外)。Azure Function 委譲も併設。
+- **ABEMA**: channels/slots/VOD + **アプリ内再生**(streaminglink/hls/key・HLS proxy で license ticket を自前 key ルートへ)。
+- **映画ワールド(2026-07 追加)**: 再生・予約・購入を持たない**情報ワールド**。上映中/近日公開/ランキング/ニュース/ジャンル別/ヒーロー自動スライド/観たい印/予告編は YouTube 検索。**鍵ゼロ・完全$0**の日次クロール(映画.com/Filmarks/RSS)→ Cloudflare **D1**(7テーブル・公開ステータスは read 時導出)→ 読取 API。詳細は `docs/reference/01_spec/01-cinema-world.html`。
+- **Cloudflare Workers(OpenNext)+ Firebase Auth + D1 でほぼ $0** 運用。デプロイは `deploy:safe`(版ゲート・build_sha 照合)。
 
 ## 2. 構成(どこに何があるか)
 - `xiaovy.tvapp.web/` — Next.js アプリ本体(ここで開発・`npm run dev` 等を実行)。
