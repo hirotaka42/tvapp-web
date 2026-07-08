@@ -23,7 +23,7 @@ describe('normalizer', () => {
       source: 'eiga_com',
       sourceKey: 'eiga.com_123456',
       nowShowing: true,
-      genres: ['ドラマ'],
+      genres: ['ヒューマンドラマ'],
       directors: ['山田太郎'],
       cast: ['佐藤花子'],
     });
