@@ -162,33 +162,21 @@ export function CinemaTicker({ movies, news }: { movies: MovieCard[]; news: News
 }
 
 export function CinemaChips({
-  status,
   genre,
   genres,
-  onStatus,
   onGenre,
 }: {
-  status: string;
   genre: string;
   genres: string[];
-  onStatus: (status: string) => void;
   onGenre: (genre: string) => void;
 }) {
+  if (genres.length === 0) return null;
+
   return (
-    <div className="wrap cinema-gnav" aria-label="映画の絞り込み">
-      {[
-        ['all', 'すべて'],
-        ['now_showing', '上映中'],
-        ['upcoming', 'まもなく公開'],
-        ['undated', '日付未定'],
-      ].map(([value, label]) => (
-        <button key={value} type="button" aria-pressed={status === value} onClick={() => onStatus(value)}>
-          {label}
-        </button>
-      ))}
-      <button type="button" aria-pressed={genre === 'all'} onClick={() => onGenre('all')}>全ジャンル</button>
+    <div className="wrap cinema-gnav" role="group" aria-label="ジャンルで絞り込む">
+      <button className="cinema-chip" type="button" aria-pressed={genre === 'all'} onClick={() => onGenre('all')}>全ジャンル</button>
       {genres.map((item) => (
-        <button key={item} type="button" aria-pressed={genre === item} onClick={() => onGenre(item)}>
+        <button className="cinema-chip" key={item} type="button" aria-pressed={genre === item} onClick={() => onGenre(item)}>
           {item}
         </button>
       ))}
@@ -401,6 +389,7 @@ export function CinemaShelf({
   label,
   movies,
   poster = false,
+  emptyMessage,
   wantedSlugs,
   onToggleWant,
 }: {
@@ -408,6 +397,7 @@ export function CinemaShelf({
   label: string;
   movies: MovieCard[];
   poster?: boolean;
+  emptyMessage?: string;
   wantedSlugs: Set<string>;
   onToggleWant: (slug: string) => void;
 }) {
@@ -430,7 +420,7 @@ export function CinemaShelf({
           ))}
         </div>
       ) : (
-        <div className="cinema-empty">条件に合う作品はまだありません。</div>
+        <div className="cinema-empty">{emptyMessage ?? '条件に合う作品はまだありません。'}</div>
       )}
     </section>
   );
