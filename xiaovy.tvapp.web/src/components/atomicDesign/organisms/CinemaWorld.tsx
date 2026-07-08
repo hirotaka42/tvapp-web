@@ -70,12 +70,8 @@ function persistWants(slugs: Set<string>) {
   }
 }
 
-function filterMovies(movies: MovieCard[], status: string, genre: string): MovieCard[] {
-  return movies.filter((movie) => {
-    if (status !== 'all' && movie.status !== status) return false;
-    if (genre !== 'all' && !movie.genres.includes(genre)) return false;
-    return true;
-  });
+function filterMovies(movies: MovieCard[], genre: string): MovieCard[] {
+  return movies.filter((movie) => genre === 'all' || movie.genres.includes(genre));
 }
 
 function filterRanking(rows: RankRow[], genre: string): RankRow[] {
@@ -84,7 +80,6 @@ function filterRanking(rows: RankRow[], genre: string): RankRow[] {
 }
 
 export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResponse; today?: string }) {
-  const [status, setStatus] = useState('all');
   const [genre, setGenre] = useState('all');
   const [rankTab, setRankTab] = useState<'now' | 'expected'>('now');
   const [wantedSlugs, setWantedSlugs] = useState<Set<string>>(new Set());
@@ -106,9 +101,10 @@ export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResp
       .slice(0, 10);
   }, [data.now, data.undated, data.upcoming]);
 
-  const visibleNow = filterMovies(data.now, status, genre);
-  const visibleUpcoming = filterMovies(data.upcoming, status, genre);
-  const visibleUndated = filterMovies(data.undated, status, genre);
+  const emptyGenreMessage = genre !== 'all' ? `「${genre}」の該当作品は現在ありません。` : undefined;
+  const visibleNow = filterMovies(data.now, genre);
+  const visibleUpcoming = filterMovies(data.upcoming, genre);
+  const visibleUndated = filterMovies(data.undated, genre);
   const rankingNow = filterRanking(data.ranking.nowShowing, genre);
   const rankingExpected = filterRanking(data.ranking.expected, genre);
 
@@ -125,7 +121,7 @@ export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResp
   return (
     <section className="world cinema-world" id="cn" role="tabpanel" aria-labelledby="dk-cinema" aria-label="映画 ホーム">
       <CinemaTicker movies={[...data.now, ...data.upcoming]} news={data.news} />
-      <CinemaChips status={status} genre={genre} genres={genres} onStatus={setStatus} onGenre={setGenre} />
+      <CinemaChips genre={genre} genres={genres} onGenre={setGenre} />
       <CinemaHero
         movies={data.heroFilms.length > 0 ? data.heroFilms : [...data.now, ...data.upcoming].slice(0, 6)}
         wantedSlugs={wantedSlugs}
@@ -135,6 +131,7 @@ export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResp
         title="今上映中"
         label="NOW SHOWING"
         movies={visibleNow}
+        emptyMessage={emptyGenreMessage}
         wantedSlugs={wantedSlugs}
         onToggleWant={toggleWant}
       />
@@ -143,6 +140,7 @@ export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResp
         label="UPCOMING"
         movies={visibleUpcoming.slice(0, 16)}
         poster
+        emptyMessage={emptyGenreMessage}
         wantedSlugs={wantedSlugs}
         onToggleWant={toggleWant}
       />
@@ -166,6 +164,7 @@ export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResp
           title="公開日未定"
           label="UNDATED"
           movies={visibleUndated}
+          emptyMessage={emptyGenreMessage}
           wantedSlugs={wantedSlugs}
           onToggleWant={toggleWant}
         />
