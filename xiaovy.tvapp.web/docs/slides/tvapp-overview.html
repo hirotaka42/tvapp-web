@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVapp 提案スライド — マルチサービス視聴・映画情報ポータル</title>
+<style>
+  :root{
+    --bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+    --acc:#0969da;--ok:#1a7f37;--warn:#9a6700;--err:#d1242f;
+    --code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;--note-bg:#ddf4ff;
+  }
+  html[data-theme="dark"]{
+    --bg:#0b0e14;--panel:#11151f;--line:#252b3b;--tx:#dde3f0;--tx2:#8b93a7;
+    --acc:#7aa2f7;--ok:#9ece6a;--warn:#e0af68;--err:#f7768e;
+    --code-bg:#1a2030;--code-tx:#9fd3ff;--th-bg:#1a2030;--note-bg:#162033;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--tx);
+    font-feature-settings:"palt" 1;font-family:"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+    overflow:hidden}
+  a{color:var(--acc)}
+  code{background:var(--code-bg);color:var(--code-tx);padding:1px 7px;border-radius:5px;
+    font-family:"SF Mono","Consolas",monospace;font-size:.86em;letter-spacing:0}
+
+  /* ---- ナビ(上部・番号) ---- */
+  .deck-nav{position:fixed;top:0;left:0;right:0;height:54px;display:flex;align-items:center;gap:6px;
+    padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line);z-index:60;overflow-x:auto;white-space:nowrap}
+  .deck-nav .brand{font-weight:800;font-size:14px;color:var(--tx2);margin-right:10px;flex:none}
+  .deck-nav button{font-family:inherit;cursor:pointer}
+  .deck-nav .num{flex:none;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;
+    border:1px solid var(--line);background:var(--bg);color:var(--tx2);border-radius:8px;font-size:13.5px}
+  .deck-nav .num b{font-weight:800;font-size:12.5px;opacity:.95}
+  .deck-nav .num:hover{border-color:var(--acc);color:var(--acc)}
+  .deck-nav .num.active{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .deck-nav .spacer{flex:1 1 auto;min-width:8px}
+  .deck-nav .ctrl{flex:none;height:28px;min-width:32px;border:1px solid var(--line);background:var(--bg);
+    color:var(--tx);border-radius:7px;font-size:14px}
+  .deck-nav .ctrl:hover{border-color:var(--acc);color:var(--acc)}
+
+  /* ---- 16:9 固定ステージ(スライドの本体) ----
+     設計サイズ 1280x720 固定。ウィンドウには transform:scale で「収めて」表示する。
+     内容がステージからはみ出す場合は書き手の責任で スライドを分割する(縦に伸ばさない)。 */
+  .viewport{position:fixed;top:54px;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .slide{display:none}
+  .slide.active{display:block;animation:fade .28s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .stage{width:1280px;height:720px;flex:none;background:var(--bg);
+    padding:40px 64px 48px;display:flex;flex-direction:column;justify-content:flex-start;
+    font-size:18px;line-height:1.62;letter-spacing:0.02em;position:relative}
+  .slide.hero .stage{align-items:center;text-align:center;justify-content:center}
+  .eyebrow{font-size:14px;letter-spacing:.16em;color:var(--acc);font-weight:800;margin:0 0 8px}
+  .stage h1{font-size:44px;line-height:1.28;margin:0 0 14px;font-weight:800}
+  .stage h2{font-size:30px;line-height:1.3;margin:0 0 10px;font-weight:800}
+  .stage h3{font-size:18px;margin:12px 0 4px;font-weight:700}
+  .stage p{margin:8px 0;font-size:18px}
+  .stage ul,.stage ol{margin:8px 0;padding-left:24px}
+  .stage li{margin:6px 0;font-size:17.5px}
+  .lead{font-size:20px}
+  .big{font-size:23px}
+  .dim{color:var(--tx2)}
+  .ok-t{color:var(--ok);font-weight:700}.warn-t{color:var(--warn);font-weight:700}.acc-t{color:var(--acc);font-weight:700}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14.5px}
+  th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{background:var(--th-bg)}
+  .note{border-left:4px solid var(--acc);background:var(--note-bg);padding:10px 16px;border-radius:0 10px 10px 0;margin:10px 0;font-size:16.5px}
+  .note.warn{border-color:var(--warn)}.note.ok{border-color:var(--ok)}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:10px 0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+  .card h3{margin-top:0}
+  .pill{display:inline-block;font-size:13.5px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--tx);margin:3px 4px 3px 0}
+  .art{margin:6px auto 2px;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;width:100%}
+  .art svg{max-width:100%;max-height:100%;height:auto;width:100%;display:block}
+  figcaption{color:var(--tx2);font-size:13.5px;margin-top:4px;text-align:center}
+
+  /* はみ出しの自己検査バッジ(内容が 720px ステージを超えたら自動表示 → 目視レビューで即発見) */
+  .overflow-badge{position:absolute;top:8px;right:10px;background:var(--err);color:#fff;
+    font-size:12px;font-weight:800;padding:3px 10px;border-radius:6px;z-index:5}
+
+  .slide-foot{position:fixed;bottom:10px;right:16px;font-size:12px;color:var(--tx2);z-index:55}
+  .hint{position:fixed;bottom:10px;left:16px;font-size:11px;color:var(--tx2);z-index:55}
+
+  @media print{
+    html[data-theme="dark"]{--bg:#ffffff;--panel:#f6f8fa;--line:#d8dee4;--tx:#1f2328;--tx2:#59636e;
+      --acc:#0969da;--ok:#1a7f37;--warn:#9a6700;--err:#d1242f;--code-bg:#f6f8fa;--code-tx:#0550ae;--th-bg:#f6f8fa;--note-bg:#ddf4ff}
+    @page{size:1280px 720px;margin:0}
+    body{overflow:visible}
+    .deck-nav,.slide-foot,.hint,.overflow-badge{display:none !important}
+    .viewport{position:static;display:block}
+    .slide{display:block !important;page-break-after:always;break-after:page;animation:none !important}
+    .stage{transform:none !important;width:1280px;height:720px}
+    a{color:var(--tx)}
+  }
+</style>
+</head>
+<body>
+<header class="deck-nav" id="nav">
+  <span class="brand">TVapp Overview</span>
+  <span class="spacer"></span>
+  <button class="ctrl" id="prev" aria-label="前へ">‹</button>
+  <button class="ctrl" id="next" aria-label="次へ">›</button>
+  <button class="ctrl" id="theme" aria-label="テーマ切替">☾</button>
+</header>
+<div class="viewport" id="viewport">
+
+  <!-- 表紙。各スライド = .slide > .stage(1280x720 固定)。data-title はナビ用 -->
+  <section class="slide hero" data-title="表紙">
+    <div class="stage">
+      <p class="eyebrow">TVapp Proposal Deck</p>
+      <h1>TVapp<br>複数の視聴サービスを、ひとつの体験に。</h1>
+      <p class="big dim">マルチサービス視聴・映画情報ポータル / Next.js 16 + Cloudflare + Firebase</p>
+    </div>
+  </section>
+
+  <section class="slide" data-title="アジェンダ">
+    <div class="stage">
+      <p class="eyebrow">STORY</p>
+      <h2>背景から実装・運用までを、ひとつの物語で見る</h2>
+      <div class="cols">
+        <div class="card">
+          <h3>1. 背景と中核</h3>
+          <p>視聴サービスごとの分断と、サービスドックで切替える4ワールド。</p>
+        </div>
+        <div class="card">
+          <h3>2. 各ワールド</h3>
+          <p>TVER、ABEMA、映画。YouTubeは準備中として同じ導線に置く。</p>
+        </div>
+        <div class="card">
+          <h3>3. 基盤と品質</h3>
+          <p>映画D1基盤、アーキテクチャ、サービス群、テスト、運用。</p>
+        </div>
+      </div>
+      <div class="note">このデッキはコード調査レポート inv1〜inv4 の事実に基づく自己完結HTMLです。</div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="背景・課題">
+    <div class="stage">
+      <p class="eyebrow">BACKGROUND</p>
+      <h2>見たいもの、知りたいものがサービスごとに分断されている</h2>
+      <p class="lead">TVER、ABEMA、映画情報はそれぞれ別の導線、別の画面、別の検索体験に分かれています。</p>
+      <div class="cols">
+        <div class="card">
+          <h3>視聴</h3>
+          <p>無料見逃し、ライブ、VODで入口が分かれ、番組探しの文脈が切れる。</p>
+        </div>
+        <div class="card">
+          <h3>映画情報</h3>
+          <p>上映中、近日公開、ニュース、ランキングを確認する導線が視聴体験と離れている。</p>
+        </div>
+        <div class="card">
+          <h3>横断</h3>
+          <p>サービスをまたいで移動するたびに、ユーザーは今いる場所と目的を持ち直す。</p>
+        </div>
+      </div>
+      <p class="big acc-t">TVappの狙いは、複数サービスを「ひとつのアプリ内の世界」として切替えられるようにすることです。</p>
+    </div>
+  </section>
+
+  <section class="slide" data-title="4ワールド">
+    <div class="stage">
+      <p class="eyebrow">CORE MESSAGE</p>
+      <h2>サービスドックで切替える、4つのワールド</h2>
+      <p class="lead">TVER / ABEMA / 映画は稼働、YouTubeは準備中。<code>data-svc</code> とサービス状態で世界観ごと切替えます。</p>
+      <figure class="art">
+        <svg viewBox="0 0 1080 420" role="img" aria-label="サービスドックと4ワールドの図">
+          <defs>
+            <marker id="arrow-world" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="var(--acc)"></path>
+            </marker>
+          </defs>
+          <rect x="30" y="36" width="1020" height="336" rx="28" fill="var(--panel)" stroke="var(--line)" stroke-width="2"></rect>
+          <rect x="210" y="42" width="660" height="58" rx="18" fill="var(--bg)" stroke="var(--line)" stroke-width="2"></rect>
+          <text x="540" y="78" text-anchor="middle" fill="var(--tx)" font-size="24" font-weight="800">Service Dock</text>
+          <g font-size="20" font-weight="800">
+            <rect x="80" y="170" width="205" height="132" rx="18" fill="var(--bg)" stroke="var(--acc)" stroke-width="3"></rect>
+            <text x="182" y="222" text-anchor="middle" fill="var(--tx)">TVER</text>
+            <text x="182" y="254" text-anchor="middle" fill="var(--ok)" font-size="16">ready</text>
+            <rect x="325" y="170" width="205" height="132" rx="18" fill="var(--bg)" stroke="var(--acc)" stroke-width="3"></rect>
+            <text x="428" y="222" text-anchor="middle" fill="var(--tx)">ABEMA</text>
+            <text x="428" y="254" text-anchor="middle" fill="var(--ok)" font-size="16">ready</text>
+            <rect x="570" y="170" width="205" height="132" rx="18" fill="var(--bg)" stroke="var(--acc)" stroke-width="3"></rect>
+            <text x="672" y="222" text-anchor="middle" fill="var(--tx)">映画</text>
+            <text x="672" y="254" text-anchor="middle" fill="var(--ok)" font-size="16">ready</text>
+            <rect x="815" y="170" width="185" height="132" rx="18" fill="var(--bg)" stroke="var(--line)" stroke-width="3"></rect>
+            <text x="908" y="222" text-anchor="middle" fill="var(--tx)">YouTube</text>
+            <text x="908" y="254" text-anchor="middle" fill="var(--warn)" font-size="16">準備中</text>
+          </g>
+          <g stroke="var(--acc)" stroke-width="3" fill="none" marker-end="url(#arrow-world)">
+            <path d="M350 100 C270 120 210 140 180 166"></path>
+            <path d="M470 100 C450 125 435 145 428 166"></path>
+            <path d="M610 100 C635 124 655 145 672 166"></path>
+            <path d="M740 100 C820 120 875 142 905 166"></path>
+          </g>
+          <text x="540" y="346" text-anchor="middle" fill="var(--tx2)" font-size="18">1-4キー / 左右キー / ヘッダードックで切替</text>
+        </svg>
+        <figcaption>ドックは <code>role="tablist"</code>、各サービスは <code>role="tab"</code> と <code>aria-selected/aria-disabled</code> を持つ。</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="slide" data-title="TVERワールド">
+    <div class="stage">
+      <p class="eyebrow">WORLD 1</p>
+      <h2>TVERは、見逃し視聴の入口をホームに集約する</h2>
+      <p class="lead">ランキング由来ヒーローから番組棚、終了間近までをたどり、エピソード再生へ進みます。</p>
+      <div class="cols">
+        <div class="card">
+          <h3>発見</h3>
+          <p>ティッカー、カテゴリ、ランキング棚、終了間近帯で番組に出会う。</p>
+        </div>
+        <div class="card">
+          <h3>継続</h3>
+          <p>レジュームと番組詳細導線で、途中からの視聴に戻る。</p>
+        </div>
+        <div class="card">
+          <h3>再生解決</h3>
+          <p>純TypeScript resolverまたはAzure委譲の二段構え。非DRMのm3u8と字幕を返す。</p>
+        </div>
+      </div>
+      <div class="note">Streaks playbackは <code>Origin: https://tver.jp</code> と月替わり <code>key01..key06</code> を使う実装です。</div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="ABEMAワールド">
+    <div class="stage">
+      <p class="eyebrow">WORLD 2</p>
+      <h2>ABEMAは、ライブとVODを同じワールドで扱う</h2>
+      <p class="lead">ライブ/VODヒーロー、いま放送中、VODランキング、EPG、番組棚から再生へ進みます。</p>
+      <div class="cols">
+        <div class="card">
+          <h3>ホーム</h3>
+          <p><code>channels</code> と <code>slots</code> を並列取得し、VODランキングも同じ画面に載せる。</p>
+        </div>
+        <div class="card">
+          <h3>BFF/API</h3>
+          <p>channels、slots、VOD genres/ranking/program/series/episodeをBFF経由で取得。</p>
+        </div>
+        <div class="card">
+          <h3>再生</h3>
+          <p><code>streaminglink</code>、<code>hls</code>、<code>key</code> を持ち、license ticketを自前key routeへ書き換える。</p>
+        </div>
+      </div>
+      <div class="note warn">slot再生は resolver 必須として扱う経路があり、外部API変更に備えた保全対象です。</div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="映画ワールド">
+    <div class="stage">
+      <p class="eyebrow">WORLD 3</p>
+      <h2>映画ワールドは「観る」前の情報体験に徹する</h2>
+      <p class="lead">再生・予約・購入は扱わず、上映中/近日公開/ニュース/ランキングから映画を知る場所にします。</p>
+      <div class="cols">
+        <div class="card">
+          <h3>探す</h3>
+          <p>上映中、近日公開、公開日未定、ジャンル別探索、現在の映画ランキング。</p>
+        </div>
+        <div class="card">
+          <h3>知る</h3>
+          <p>映画ニュース、ヒーロー自動スライド、2:3ポスター、画像fallback。</p>
+        </div>
+        <div class="card">
+          <h3>残す</h3>
+          <p>localStorageの「観たい」印と、予告編のYouTube検索導線。</p>
+        </div>
+      </div>
+      <p class="big acc-t">映画は、視聴サービス横断アプリの中にある「情報ワールド」です。</p>
+    </div>
+  </section>
+
+  <section class="slide" data-title="映画データ基盤">
+    <div class="stage">
+      <p class="eyebrow">CINEMA DATA</p>
+      <h2>映画データ基盤は、鍵ゼロ・完全$0で日次更新する</h2>
+      <p class="lead">映画.com、Filmarks、RSSをクロールし、認証付きingestでCloudflare D1へ投入します。</p>
+      <figure class="art">
+        <svg viewBox="0 0 1120 420" role="img" aria-label="映画データ基盤パイプライン図">
+          <defs>
+            <marker id="arrow-pipe" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="var(--acc)"></path>
+            </marker>
+          </defs>
+          <g fill="var(--bg)" stroke="var(--line)" stroke-width="2">
+            <rect x="32" y="58" width="170" height="90" rx="16"></rect>
+            <rect x="32" y="166" width="170" height="90" rx="16"></rect>
+            <rect x="32" y="274" width="170" height="90" rx="16"></rect>
+            <rect x="270" y="142" width="170" height="110" rx="18"></rect>
+            <rect x="505" y="142" width="170" height="110" rx="18"></rect>
+            <rect x="740" y="142" width="170" height="110" rx="18"></rect>
+            <rect x="960" y="142" width="130" height="110" rx="18"></rect>
+          </g>
+          <g fill="var(--tx)" font-size="19" font-weight="800" text-anchor="middle">
+            <text x="117" y="98">映画.com</text>
+            <text x="117" y="124" font-size="15" fill="var(--tx2)">iCal / 上映中</text>
+            <text x="117" y="206">Filmarks</text>
+            <text x="117" y="232" font-size="15" fill="var(--tx2)">期待度</text>
+            <text x="117" y="314">映画ニュース</text>
+            <text x="117" y="340" font-size="15" fill="var(--tx2)">RSS</text>
+            <text x="355" y="184">crawler</text>
+            <text x="355" y="212" font-size="15" fill="var(--tx2)">正規化/除外</text>
+            <text x="590" y="184">ingest API</text>
+            <text x="590" y="212" font-size="15" fill="var(--tx2)">secret + upsert</text>
+            <text x="825" y="184">D1</text>
+            <text x="825" y="212" font-size="15" fill="var(--tx2)">7 tables</text>
+            <text x="1025" y="184">画面</text>
+            <text x="1025" y="212" font-size="15" fill="var(--tx2)">home API</text>
+          </g>
+          <g stroke="var(--acc)" stroke-width="3" fill="none" marker-end="url(#arrow-pipe)">
+            <path d="M202 103 C232 120 245 158 268 178"></path>
+            <path d="M202 211 L268 200"></path>
+            <path d="M202 319 C232 294 245 246 268 220"></path>
+            <path d="M440 197 L503 197"></path>
+            <path d="M675 197 L738 197"></path>
+            <path d="M910 197 L958 197"></path>
+          </g>
+          <g>
+            <rect x="288" y="288" width="605" height="54" rx="14" fill="var(--panel)" stroke="var(--line)"></rect>
+            <text x="590" y="322" fill="var(--tx2)" text-anchor="middle" font-size="17">興収/ドラマ除外・ジャンルホワイトリスト・og:imageサムネ・公開ステータスはread時導出</text>
+          </g>
+        </svg>
+        <figcaption>D1 schemaは <code>movies</code> など7テーブル。<code>MOVIE_DB</code> bindingの読み取り結果をCinema home APIが返す。</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="slide" data-title="UI/UX">
+    <div class="stage">
+      <p class="eyebrow">UI / UX</p>
+      <h2>サービスごとに世界観を変えながら、操作の骨格は共通にする</h2>
+      <p class="lead">切替の手触りは共通化し、背景・カード・ヒーロー表現でサービスごとの文脈を作ります。</p>
+      <div class="cols">
+        <div class="card">
+          <h3>TVER</h3>
+          <p>ネオブルータリズム寄りの明快な棚構成。ランキングと終了間近を前面に置く。</p>
+        </div>
+        <div class="card">
+          <h3>ABEMA</h3>
+          <p>暗いTV体験を基調に、ライブ、EPG、VODを同じ視線移動で扱う。</p>
+        </div>
+        <div class="card">
+          <h3>映画</h3>
+          <p>デイライト・マチネ系。ヒーローカルーセル、ジャンルチップ、ポスター棚を中心にする。</p>
+        </div>
+      </div>
+      <div class="note">レスポンシブは1280px基準の <code>.wrap</code> / <code>.hd-in</code> と、1000/980/640/430/400px付近の折返しで調整されています。</div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="アーキテクチャ">
+    <div class="stage">
+      <p class="eyebrow">ARCHITECTURE</p>
+      <h2>Next.jsのフロント+BFFを中心に、外部APIとD1へ接続する</h2>
+      <p class="lead">認証はFirebase、配信・映画情報はBFF/APIで境界を切り、Cloudflare Workers/OpenNext上で動かします。</p>
+      <figure class="art">
+        <svg viewBox="0 0 1120 420" role="img" aria-label="アーキテクチャレイヤ図">
+          <defs>
+            <marker id="arrow-arch" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6 Z" fill="var(--acc)"></path>
+            </marker>
+          </defs>
+          <rect x="40" y="38" width="1040" height="344" rx="24" fill="var(--panel)" stroke="var(--line)" stroke-width="2"></rect>
+          <g fill="var(--bg)" stroke="var(--line)" stroke-width="2">
+            <rect x="90" y="158" width="190" height="110" rx="18"></rect>
+            <rect x="365" y="72" width="260" height="105" rx="18"></rect>
+            <rect x="365" y="238" width="260" height="105" rx="18"></rect>
+            <rect x="720" y="42" width="300" height="72" rx="16"></rect>
+            <rect x="720" y="132" width="300" height="72" rx="16"></rect>
+            <rect x="720" y="222" width="300" height="72" rx="16"></rect>
+            <rect x="720" y="312" width="300" height="48" rx="16"></rect>
+          </g>
+          <g fill="var(--tx)" text-anchor="middle" font-weight="800">
+            <text x="185" y="204" font-size="22">Client</text>
+            <text x="185" y="232" font-size="15" fill="var(--tx2)">React UI / Service Dock</text>
+            <text x="495" y="116" font-size="22">Next.js 16</text>
+            <text x="495" y="144" font-size="15" fill="var(--tx2)">App Router / BFF API</text>
+            <text x="495" y="282" font-size="22">Cloudflare Workers</text>
+            <text x="495" y="310" font-size="15" fill="var(--tx2)">OpenNext deploy</text>
+            <text x="870" y="84" font-size="18">TVER / ABEMA APIs</text>
+            <text x="870" y="174" font-size="18">Cloudflare D1 MOVIE_DB</text>
+            <text x="870" y="264" font-size="18">Azure Function resolver</text>
+            <text x="870" y="344" font-size="16">Firebase Auth</text>
+          </g>
+          <g stroke="var(--acc)" stroke-width="3" fill="none" marker-end="url(#arrow-arch)">
+            <path d="M280 190 C315 165 335 132 363 122"></path>
+            <path d="M280 230 C315 250 335 286 363 292"></path>
+            <path d="M625 124 L718 78"></path>
+            <path d="M625 124 C675 142 690 164 718 168"></path>
+            <path d="M625 124 C680 178 688 242 718 258"></path>
+            <path d="M280 202 C500 386 660 360 718 340"></path>
+          </g>
+        </svg>
+        <figcaption>映画はD1読取、TVER/ABEMAのストリーム解決は純TSまたはPlatform-Stream-Loader委譲。</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="slide" data-title="サービス群">
+    <div class="stage">
+      <p class="eyebrow">SERVICE MAP</p>
+      <h2>サービス群は、現行Webを中心に役割が整理されている</h2>
+      <p class="lead">tvapp-webがフロント+BFFの主戦場。Platform-Stream-Loaderは再生解決、tvapp-bffはレガシー資産として残っています。</p>
+      <figure class="art">
+        <svg viewBox="0 0 1120 420" role="img" aria-label="サービス群の全体像">
+          <rect x="40" y="42" width="1040" height="328" rx="24" fill="var(--panel)" stroke="var(--line)" stroke-width="2"></rect>
+          <g fill="var(--bg)" stroke="var(--line)" stroke-width="2">
+            <rect x="80" y="96" width="300" height="220" rx="20"></rect>
+            <rect x="410" y="96" width="300" height="220" rx="20"></rect>
+            <rect x="740" y="96" width="300" height="220" rx="20"></rect>
+          </g>
+          <g fill="var(--tx)" font-weight="800">
+            <text x="230" y="142" text-anchor="middle" font-size="24">tvapp-web</text>
+            <text x="560" y="142" text-anchor="middle" font-size="24">Platform-Stream-Loader</text>
+            <text x="890" y="142" text-anchor="middle" font-size="24">tvapp-bff</text>
+          </g>
+          <g fill="var(--tx2)" font-size="17">
+            <text x="110" y="182">Next.js 16 / React 19</text>
+            <text x="110" y="214">フロント + BFF/API</text>
+            <text x="110" y="246">TVER / ABEMA / Cinema</text>
+            <text x="110" y="278">Cloudflare Workers + D1</text>
+            <text x="440" y="182">Python Azure Functions</text>
+            <text x="440" y="214">/api/stream と legacy endpoint</text>
+            <text x="440" y="246">yt-dlp + ABEMA専用resolver</text>
+            <text x="440" y="278">health / pytest / deploy gate</text>
+            <text x="770" y="182">ASP.NET Core .NET 7</text>
+            <text x="770" y="214">TVer API proxy + yt-dlp</text>
+            <text x="770" y="246">MariaDB StreamingUrls 1 table</text>
+            <text x="770" y="278">2024-06以降の更新は未確認</text>
+          </g>
+          <g>
+            <rect x="100" y="330" width="260" height="28" rx="14" fill="var(--acc)" opacity=".18"></rect>
+            <text x="230" y="350" text-anchor="middle" fill="var(--acc)" font-size="15" font-weight="800">現行の中心</text>
+            <rect x="430" y="330" width="260" height="28" rx="14" fill="var(--ok)" opacity=".18"></rect>
+            <text x="560" y="350" text-anchor="middle" fill="var(--ok)" font-size="15" font-weight="800">委譲先</text>
+            <rect x="760" y="330" width="260" height="28" rx="14" fill="var(--warn)" opacity=".18"></rect>
+            <text x="890" y="350" text-anchor="middle" fill="var(--warn)" font-size="15" font-weight="800">保全対象</text>
+          </g>
+        </svg>
+        <figcaption>判断ではなく、調査時点の構成・更新状況・役割の整理。</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="slide" data-title="テスト観点">
+    <div class="stage">
+      <p class="eyebrow">QUALITY</p>
+      <h2>テストは、外部サービスに触れる前の純関数に寄せている</h2>
+      <p class="lead">Vitest + jsdom、JST固定、coverage 80%ゲートで、変化しやすい変換・正規化を固めます。</p>
+      <div class="cols">
+        <div class="card">
+          <h3>対象</h3>
+          <p>TVER resolver/HLS proxy、ABEMA auth/VOD/streaminglink/hlsRewrite/正規化。</p>
+        </div>
+        <div class="card">
+          <h3>Cinema</h3>
+          <p>status、crawler parser/filter/normalizer、映画クローラ独立Vitest config。</p>
+        </div>
+        <div class="card">
+          <h3>規模</h3>
+          <p>検索上 <code>describe/it/test</code> は272件。live testは <code>TVER_LIVE=1</code> がない限り除外。</p>
+        </div>
+      </div>
+      <div class="note ok">coverage対象は <code>src/lib/**</code> と <code>src/utils/**</code>。閾値は80%です。</div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="運用・コスト">
+    <div class="stage">
+      <p class="eyebrow">OPERATIONS</p>
+      <h2>運用は、無料枠と安全なデプロイ導線に寄せる</h2>
+      <p class="lead">Cloudflare無料枠、GitHub Actions想定、D1を使い、映画データは日次更新の自動運用に置きます。</p>
+      <div class="cols">
+        <div class="card">
+          <h3>完全$0</h3>
+          <p>映画データ基盤は鍵ゼロ、Cloudflare D1とクローラで無料枠運用を狙う。</p>
+        </div>
+        <div class="card">
+          <h3>deploy:safe</h3>
+          <p>版ゲート、再ビルド強制、<code>build_sha</code> 照合で古い成果物デプロイを防ぐ設計。</p>
+        </div>
+        <div class="card">
+          <h3>日次cron</h3>
+          <p>Cinema契約書は <code>.github/workflows/movie-ingest.yml</code> による日次更新を想定。</p>
+        </div>
+      </div>
+      <div class="note warn">このワークスペース直下では <code>.github/workflows</code> の実体は未検出。運用資料では「想定」と「現物」を分けて扱う必要があります。</div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="次の一手">
+    <div class="stage">
+      <p class="eyebrow">NEXT</p>
+      <h2>次は、横断体験を広げながら映画基盤の精度を上げる</h2>
+      <p class="lead">現状は3ワールド稼働。映画は情報基盤ごと$0で自動運用できる形に近づいています。</p>
+      <div class="cols">
+        <div class="card">
+          <h3>YouTubeワールド</h3>
+          <p><code>ready:false</code> の準備中ワールドを、検索・視聴導線へ進める。</p>
+        </div>
+        <div class="card">
+          <h3>映画検索</h3>
+          <p>home/ranking/newsの次に、映画単位の検索と詳細導線を配線する。</p>
+        </div>
+        <div class="card">
+          <h3>画像とジャンル</h3>
+          <p>ポスター/ジャンル網羅の向上、R2画像キャッシュを検討する。</p>
+        </div>
+      </div>
+      <p class="big acc-t">TVappは「サービスを増やす」だけでなく、「横断して迷わない体験」を育てる余地があります。</p>
+    </div>
+  </section>
+
+  <section class="slide" data-title="まとめ">
+    <div class="stage">
+      <p class="eyebrow">SUMMARY</p>
+      <h2>TVappは、視聴と映画情報を同じ切替体験に載せる</h2>
+      <div class="cols">
+        <div class="card">
+          <h3>体験</h3>
+          <p>サービスドックでTVER、ABEMA、映画、YouTube準備中を切替える。</p>
+        </div>
+        <div class="card">
+          <h3>実装</h3>
+          <p>Next.js 16 + Cloudflare Workers/OpenNext + Firebase + D1を中心に構成。</p>
+        </div>
+        <div class="card">
+          <h3>品質</h3>
+          <p>Vitest約270+ケース、80%ゲート、純関数中心で変換ロジックを保護。</p>
+        </div>
+      </div>
+      <div class="note ok">提案の核は「複数サービスをひとつの体験として切替えること」。映画ワールドはその拡張を情報提供側から担います。</div>
+    </div>
+  </section>
+
+  <section class="slide" data-title="クレジット">
+    <div class="stage">
+      <p class="eyebrow">CREDITS</p>
+      <h2>参照リポジトリと調査ソース</h2>
+      <div class="cols">
+        <div class="card">
+          <h3>tvapp-web</h3>
+          <p>Next.js App Routerのフロント+BFF/API。TVER、ABEMA、映画ワールドの現行中心。</p>
+        </div>
+        <div class="card">
+          <h3>Platform-Stream-Loader</h3>
+          <p>Python Azure Functions。動画ページURLからストリーム情報を解決する委譲先。</p>
+        </div>
+        <div class="card">
+          <h3>tvapp-bff</h3>
+          <p>ASP.NET Core .NET 7の旧BFF/API。TVer proxyとStreamingUrls DBキャッシュを保持。</p>
+        </div>
+      </div>
+      <div class="note">根拠: <code>_slidesrc/inv1-report.md</code> 〜 <code>_slidesrc/inv4-report.md</code>、および <code>_slidesrc/slide-outline.md</code>。</div>
+      <p class="dim">本デッキは、発表・画面共有で見せる自己完結HTMLとして <code>docs/slides/tvapp-overview.html</code> に配置。</p>
+    </div>
+  </section>
+
+</div><!-- /.viewport -->
+<div class="slide-foot" id="counter"></div>
+<div class="hint">← → / Space で移動 · 数字クリックでジャンプ · ⌘P で 16:9 のまま全スライド印刷</div>
+<script>
+(function(){
+  var slides = [].slice.call(document.querySelectorAll('.slide'));
+  var nav = document.getElementById('nav');
+  var spacer = nav.querySelector('.spacer');
+  var counter = document.getElementById('counter');
+  var cur = 0;
+
+  // 16:9 ステージをウィンドウに「収める」スケーリング
+  function fit(){
+    var vw = window.innerWidth - 24, vh = window.innerHeight - 54 - 24;
+    var s = Math.min(vw / 1280, vh / 720);
+    slides.forEach(function(sl){
+      var st = sl.querySelector('.stage');
+      if (st) st.style.transform = 'scale(' + s + ')';
+    });
+  }
+  window.addEventListener('resize', fit);
+
+  // はみ出しの自己検査(720px を超えた内容のスライドに OVERFLOW バッジ)
+  function auditOverflow(){
+    slides.forEach(function(sl, i){
+      var st = sl.querySelector('.stage');
+      if (!st) return;
+      var old = st.querySelector('.overflow-badge');
+      if (old) old.remove();
+      if (st.scrollHeight > st.clientHeight + 2){
+        var b = document.createElement('div');
+        b.className = 'overflow-badge';
+        b.textContent = 'OVERFLOW ' + (st.scrollHeight - st.clientHeight) + 'px';
+        st.appendChild(b);
+      }
+    });
+  }
+
+  slides.forEach(function(s, i){
+    var b = document.createElement('button');
+    b.className = 'num'; b.type = 'button';
+    var t = s.getAttribute('data-title') || ('スライド ' + (i + 1));
+    var bn = document.createElement('b'); bn.textContent = String(i + 1);
+    b.appendChild(bn); b.appendChild(document.createTextNode(t));
+    b.title = (i + 1) + ' · ' + t;
+    b.addEventListener('click', function(){ go(i); });
+    nav.insertBefore(b, spacer);
+  });
+  var nums = [].slice.call(nav.querySelectorAll('.num'));
+
+  function go(n){
+    cur = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function(s, i){ s.classList.toggle('active', i === cur); });
+    nums.forEach(function(b, i){ b.classList.toggle('active', i === cur); });
+    counter.textContent = (cur + 1) + ' / ' + slides.length;
+    if (history.replaceState) history.replaceState(null, '', '#' + (cur + 1));
+    var active = nums[cur];
+    if (active && active.scrollIntoView) active.scrollIntoView({block:'nearest', inline:'nearest'});
+  }
+  document.getElementById('prev').addEventListener('click', function(){ go(cur - 1); });
+  document.getElementById('next').addEventListener('click', function(){ go(cur + 1); });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { go(cur + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(cur - 1); e.preventDefault(); }
+    else if (e.key === 'Home') { go(0); } else if (e.key === 'End') { go(slides.length - 1); }
+  });
+  var tbtn = document.getElementById('theme');
+  try { if (localStorage.getItem('deck-theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}
+  function syncTheme(){ tbtn.textContent = (document.documentElement.dataset.theme === 'dark') ? '☀' : '☾'; }
+  tbtn.addEventListener('click', function(){
+    var r = document.documentElement;
+    if (r.dataset.theme === 'dark') delete r.dataset.theme; else r.dataset.theme = 'dark';
+    try { localStorage.setItem('deck-theme', r.dataset.theme === 'dark' ? 'dark' : 'light'); } catch (e) {}
+    syncTheme();
+  });
+  syncTheme();
+
+  var h = parseInt((location.hash || '').replace('#', ''), 10);
+  go(isNaN(h) ? 0 : h - 1);
+  fit();
+  auditOverflow();
+})();
+</script>
+</body>
+</html>
