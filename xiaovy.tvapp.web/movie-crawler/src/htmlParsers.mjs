@@ -31,7 +31,9 @@ function yearFromJapaneseText(text) {
 }
 
 function sourceKeyFromHref(href, prefix) {
-  const match = String(href ?? '').match(/\/movie\/(\d+)/) ?? String(href ?? '').match(/\/movies\/(\d+)/);
+  const match = String(href ?? '').match(/\/movie\/(\d+)/)
+    ?? String(href ?? '').match(/\/movies\/(\d+)/)
+    ?? String(href ?? '').match(/\/mv(\d+)\/?/);
   return match ? `${prefix}_${match[1]}` : null;
 }
 
@@ -118,12 +120,32 @@ export function parseMovieWalkerList(html, pageUrl = 'https://press.moviewalker.
   const links = [];
   const seen = new Set();
 
-  $('a[href*="/movies/"]').each((_, link) => {
+  $('a[href*="/movies/"], a[href*="/mv"]').each((_, link) => {
     const href = absoluteUrl($(link).attr('href'), pageUrl);
     const sourceKey = sourceKeyFromHref(href, 'moviewalker');
     if (!href || !sourceKey || seen.has(sourceKey)) return;
     seen.add(sourceKey);
-    links.push({ url: href, sourceKey });
+    const container = $(link).closest('li, article, .m_unit, .item, .card, .p-movie, .movie');
+    const scope = container.length ? container : $(link).parent();
+    const fullText = textOf($, scope.length ? scope : link);
+    const title = $(link).attr('title')
+      || $(scope).find('h2, h3, .title, .name').first().text().trim()
+      || textOf($, link);
+    const image = $(scope).find('img').first();
+    const { runtimeMin, genres } = extractMovieWalkerRuntimeAndGenres(fullText);
+    links.push({
+      url: href,
+      sourceKey,
+      source: 'moviewalker',
+      sourceUrl: href,
+      titleJa: title,
+      runtimeMin,
+      genres,
+      releaseDate: dateFromJapaneseText(fullText),
+      datePrecision: dateFromJapaneseText(fullText) ? 'day' : 'unknown',
+      posterUrl: absoluteUrl(image.attr('src') || image.attr('data-src'), pageUrl),
+      nowShowing: pageUrl.includes('/list/') && !pageUrl.includes('/coming/'),
+    });
   });
 
   return links;
@@ -138,8 +160,7 @@ export function parseMovieWalkerDetail(html, pageUrl) {
 
   for (const node of jsonNodes) {
     try {
-      const parsed = JSON.parse(node);
-      const movie = Array.isArray(parsed) ? parsed.find((item) => item['@type'] === 'Movie') : parsed;
+      const movie = findSchemaMovie(JSON.parse(node));
       if (!movie || movie['@type'] !== 'Movie') continue;
       return {
         source: 'moviewalker',
@@ -147,6 +168,7 @@ export function parseMovieWalkerDetail(html, pageUrl) {
         sourceUrl: pageUrl,
         titleJa: movie.name,
         runtimeMin: durationToMinutes(movie.duration),
+        genres: normalizeSchemaGenres(movie.genre),
         directors: normalizeSchemaPeople(movie.director),
         cast: normalizeSchemaPeople(movie.actor),
         posterUrl: Array.isArray(movie.image) ? movie.image[0] : movie.image,
@@ -159,6 +181,14 @@ export function parseMovieWalkerDetail(html, pageUrl) {
   }
 
   return null;
+}
+
+export function parseOpenGraphImage(html, pageUrl) {
+  const $ = cheerio.load(html);
+  const value = $('meta[property="og:image"]').first().attr('content')
+    || $('meta[name="twitter:image"]').first().attr('content')
+    || $('meta[property="twitter:image"]').first().attr('content');
+  return safeExternalUrl(absoluteUrl(value, pageUrl));
 }
 
 export function parseFilmarksList(html, sourceUrl) {
@@ -209,6 +239,24 @@ function normalizeSchemaPeople(value) {
     .filter(Boolean);
 }
 
+function normalizeSchemaGenres(value) {
+  const values = Array.isArray(value) ? value : value ? String(value).split(/[、,\s]+/) : [];
+  return values
+    .map((item) => String(item).trim())
+    .filter(Boolean);
+}
+
+function findSchemaMovie(value) {
+  const values = Array.isArray(value) ? value : [value];
+  for (const item of values) {
+    if (item?.['@type'] === 'Movie') return item;
+    const graph = Array.isArray(item?.['@graph']) ? item['@graph'] : [];
+    const movie = graph.find((graphItem) => graphItem?.['@type'] === 'Movie');
+    if (movie) return movie;
+  }
+  return null;
+}
+
 function durationToMinutes(value) {
   if (typeof value !== 'string') return null;
   const match = value.match(/^PT(?:(\d+)H)?(?:(\d+)M)?/);
@@ -223,4 +271,25 @@ function extractNames(text, pattern) {
     .split(/[、,\s]+/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function extractMovieWalkerRuntimeAndGenres(text) {
+  const match = String(text ?? '').match(/(\d{2,3})分[、,\s]+([^。／/|｜\n]+)/);
+  if (!match) return { runtimeMin: null, genres: [] };
+  const genres = match[2]
+    .split(/[、,\s]+/)
+    .map((item) => item.trim())
+    .filter((item) => item && !/^\d{4}年|\d{1,2}月|\d{1,2}日|公開$/.test(item));
+  return { runtimeMin: Number(match[1]), genres };
+}
+
+function safeExternalUrl(value) {
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
 }

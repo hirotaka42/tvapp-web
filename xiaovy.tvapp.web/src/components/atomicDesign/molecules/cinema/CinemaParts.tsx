@@ -1,15 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import type { CSSProperties } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  CinemaScheduleMonth,
   MovieCard,
   NewsItem,
   RankRow,
 } from '@/types/cinema';
 
-type ScheduleView = 'timeline' | 'calendar';
+const HERO_ROTATE_MS = 6000;
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
@@ -18,11 +16,6 @@ function formatDate(date?: string | null): string {
   const [year, month, day] = date.split('-').map(Number);
   const weekday = WEEKDAYS[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
   return `${month}/${day}(${weekday})`;
-}
-
-function formatMonth(ym: string): string {
-  const [year, month] = ym.split('-').map(Number);
-  return `${year}年${month}月`;
 }
 
 function statusLabel(movie: MovieCard): string {
@@ -100,6 +93,7 @@ export function CinemaArtwork({
   return (
     <div className={`cinema-art cinema-art-${variant} ${className}`}>
       {src && !failed ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} />
       ) : null}
       <div className="cinema-art-fallback" aria-hidden={src && !failed ? 'true' : 'false'}>
@@ -203,57 +197,164 @@ export function CinemaChips({
 }
 
 export function CinemaHero({
-  movie,
-  wanted,
+  movies,
+  wantedSlugs,
   onToggleWant,
 }: {
-  movie?: MovieCard;
-  wanted: boolean;
+  movies: MovieCard[];
+  wantedSlugs: Set<string>;
   onToggleWant: (slug: string) => void;
 }) {
-  if (!movie) {
+  const [index, setIndex] = useState(0);
+  const pausedRef = useRef(false);
+  const slides = movies.slice(0, 6);
+
+  useEffect(() => {
+    setIndex(0);
+  }, [slides.length]);
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const timer = setInterval(() => {
+      if (!pausedRef.current) setIndex((current) => (current + 1) % slides.length);
+    }, HERO_ROTATE_MS);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  if (slides.length === 0) {
     return (
-      <section className="cinema-hero wrap" aria-label="注目の一本">
+      <section className="cinema-hero wrap" aria-label="注目作品">
         <div className="cinema-empty">注目作品を読み込み中です。</div>
       </section>
     );
   }
 
+  const currentIndex = index % slides.length;
+
   return (
-    <section className="cinema-hero wrap" aria-label="注目の一本">
-      <div className="cinema-hero-in">
-        <div className="cinema-hero-copy">
-          <span className="cinema-hero-k">
-            <i aria-hidden="true" />
-            {movie.status === 'upcoming' ? '公開予定' : '上映中'} {statusLabel(movie)}
-          </span>
-          <h1>{movie.titleJa}</h1>
-          <p className="cinema-hero-cp">
-            {movie.overview || '劇場公開情報をもとに、いま観られる作品とこれから始まる作品をまとめています。'}
-          </p>
-          <ul className="cinema-hero-meta">
-            {movie.director && <li>{movie.director} 監督</li>}
-            {movie.cast.length > 0 && <li>{movie.cast.slice(0, 3).join('、')}</li>}
-            {movie.runtimeMin && <li>{movie.runtimeMin}分</li>}
-            {movie.screeningFormats.slice(0, 3).map((format) => <li key={format}>{format}</li>)}
-          </ul>
-          <div className="cinema-hero-cta">
-            <button type="button" className="cinema-btn cinema-btn-primary" onClick={() => openTrailer(movie.titleJa)}>
-              <PlayIcon />
-              予告編を見る
-            </button>
-            <CinemaWantButton movie={movie} wanted={wanted} onToggle={onToggleWant} />
+    <section
+      className="cinema-hero wrap"
+      aria-label="注目作品"
+      onMouseEnter={() => {
+        pausedRef.current = true;
+      }}
+      onMouseLeave={() => {
+        pausedRef.current = false;
+      }}
+    >
+      <div className="cinema-hero-viewport">
+        <div className="cinema-hero-track" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
+          {slides.map((movie) => (
+            <div className="cinema-hero-slide" key={movie.slug}>
+              <div className="cinema-hero-in">
+                <div className="cinema-hero-copy">
+                  <span className="cinema-hero-k">
+                    <i aria-hidden="true" />
+                    {movie.status === 'upcoming' ? '公開予定' : '上映中'} {statusLabel(movie)}
+                  </span>
+                  <h1>{movie.titleJa}</h1>
+                  <p className="cinema-hero-cp">
+                    {movie.overview || '劇場公開情報をもとに、いま観られる作品とこれから始まる作品をまとめています。'}
+                  </p>
+                  <ul className="cinema-hero-meta">
+                    {movie.director && <li>{movie.director} 監督</li>}
+                    {movie.cast.length > 0 && <li>{movie.cast.slice(0, 3).join('、')}</li>}
+                    {movie.runtimeMin && <li>{movie.runtimeMin}分</li>}
+                    {movie.screeningFormats.slice(0, 3).map((format) => <li key={format}>{format}</li>)}
+                  </ul>
+                  <div className="cinema-hero-cta">
+                    <button type="button" className="cinema-btn cinema-btn-primary" onClick={() => openTrailer(movie.titleJa)}>
+                      <PlayIcon />
+                      予告編を見る
+                    </button>
+                    <CinemaWantButton movie={movie} wanted={wantedSlugs.has(movie.slug)} onToggle={onToggleWant} />
+                  </div>
+                </div>
+                <div className="cinema-hero-art" aria-label={`${movie.titleJa} キーアート`}>
+                  <CinemaArtwork movie={movie} variant="hero" />
+                  <div className="cinema-reel" aria-hidden="true"><i /><i /><i /><i /></div>
+                  <p className="cinema-poster-title">
+                    <b>{movie.titleJa}</b>
+                    <span>{movie.titleOriginal || movie.trailerQuery}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {slides.length > 1 ? (
+          <div className="cinema-hero-dots" role="tablist" aria-label="注目作品スライド">
+            {slides.map((movie, slideIndex) => (
+              <button
+                key={movie.slug}
+                type="button"
+                role="tab"
+                aria-selected={slideIndex === currentIndex}
+                aria-label={`${slideIndex + 1}番目の注目作品`}
+                className={slideIndex === currentIndex ? 'on' : ''}
+                onClick={() => setIndex(slideIndex)}
+              />
+            ))}
           </div>
-        </div>
-        <div className="cinema-hero-art" aria-label={`${movie.titleJa} キーアート`}>
-          <CinemaArtwork movie={movie} variant="hero" />
-          <div className="cinema-reel" aria-hidden="true"><i /><i /><i /><i /></div>
-          <p className="cinema-poster-title">
-            <b>{movie.titleJa}</b>
-            <span>{movie.titleOriginal || movie.trailerQuery}</span>
-          </p>
-        </div>
+        ) : null}
       </div>
+    </section>
+  );
+}
+
+export function CinemaGenreSection({
+  genres,
+  selectedGenre,
+  movies,
+  wantedSlugs,
+  onToggleWant,
+  onGenre,
+}: {
+  genres: string[];
+  selectedGenre: string;
+  movies: MovieCard[];
+  wantedSlugs: Set<string>;
+  onToggleWant: (slug: string) => void;
+  onGenre: (genre: string) => void;
+}) {
+  const groups = (selectedGenre === 'all' ? genres : genres.filter((genre) => genre === selectedGenre))
+    .map((genre) => ({
+      genre,
+      movies: movies.filter((movie) => movie.genres.includes(genre)).slice(0, 6),
+    }))
+    .filter((group) => group.movies.length > 0)
+    .slice(0, selectedGenre === 'all' ? 6 : 1);
+
+  return (
+    <section className="cinema-sec wrap">
+      <div className="cinema-sech">
+        <h2>ジャンルで探す</h2>
+        <span className="cinema-cnt">{selectedGenre === 'all' ? 'GENRES' : selectedGenre}</span>
+      </div>
+      {groups.length > 0 ? (
+        <div className="cinema-genre-stack">
+          {groups.map((group) => (
+            <div className="cinema-genre-block" key={group.genre}>
+              <button type="button" className="cinema-genre-head" onClick={() => onGenre(group.genre)}>
+                {group.genre}
+              </button>
+              <div className="cinema-row">
+                {group.movies.map((movie) => (
+                  <CinemaMovieCard
+                    key={`${group.genre}-${movie.slug}`}
+                    movie={movie}
+                    poster
+                    wanted={wantedSlugs.has(movie.slug)}
+                    onToggleWant={onToggleWant}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="cinema-empty">選択中のジャンルに合う作品はまだありません。</div>
+      )}
     </section>
   );
 }
@@ -335,99 +436,6 @@ export function CinemaShelf({
   );
 }
 
-export function CinemaScheduleGrid({
-  month,
-  today,
-  view,
-  onView,
-  onPrev,
-  onNext,
-}: {
-  month?: CinemaScheduleMonth;
-  today: string;
-  view: ScheduleView;
-  onView: (view: ScheduleView) => void;
-  onPrev: () => void;
-  onNext: () => void;
-}) {
-  const films = useMemo(() => month?.days.flatMap((day) => day.films.map((film) => ({ film, date: day.date }))) ?? [], [month]);
-  const lanes = [
-    { key: 'wide', label: '全国公開', test: (movie: MovieCard) => movie.releaseScale === 'wide' },
-    { key: 'limited', label: '限定公開', test: (movie: MovieCard) => movie.releaseScale === 'limited' },
-    { key: 'other', label: '公開予定', test: (movie: MovieCard) => movie.releaseScale !== 'wide' && movie.releaseScale !== 'limited' },
-  ];
-  const todayIndex = month && today.startsWith(month.ym) ? Number(today.slice(8, 10)) - 1 : -20;
-
-  return (
-    <section className="cinema-sec wrap">
-      <div className="cinema-sech">
-        <h2>公開スケジュール</h2>
-        <div className="cinema-tools">
-          <button type="button" className="cinema-navbtn" aria-label="前の月" onClick={onPrev}>‹</button>
-          <b className="cinema-month">{month ? formatMonth(month.ym) : '読み込み中'}</b>
-          <button type="button" className="cinema-navbtn" aria-label="次の月" onClick={onNext}>›</button>
-          <div className="cinema-view">
-            <button type="button" aria-pressed={view === 'timeline'} onClick={() => onView('timeline')}>タイムライン</button>
-            <button type="button" aria-pressed={view === 'calendar'} onClick={() => onView('calendar')}>カレンダー</button>
-          </div>
-        </div>
-      </div>
-      <div className={`cinema-schedule ${view}`} style={{ '--cinema-today': todayIndex } as CSSProperties}>
-        {month ? (
-          <>
-            <div className="cinema-epg-wrap" aria-hidden={view !== 'timeline'}>
-              <div className="cinema-epg-grid" style={{ gridTemplateColumns: `128px repeat(${month.days.length}, 44px)` }}>
-                <div className="cinema-epg-head">公開規模</div>
-                {month.days.map((day) => (
-                  <div className="cinema-epg-day" key={day.date}>{Number(day.date.slice(8))}<small>{day.weekday}</small></div>
-                ))}
-                {lanes.map((lane) => (
-                  <div className="contents" key={lane.key}>
-                    <div className="cinema-rowlabel">{lane.label}</div>
-                    {month.days.map((day) => {
-                      const dayFilms = day.films.filter(lane.test);
-                      return (
-                        <div className="cinema-epg-cell" key={`${lane.key}-${day.date}`}>
-                          {dayFilms.slice(0, 2).map((movie) => (
-                            <button key={movie.slug} type="button" className={`cinema-epg-program ${movie.status === 'now_showing' ? 'on' : ''}`} onClick={() => openTrailer(movie.titleJa)}>
-                              {movie.titleJa}
-                            </button>
-                          ))}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="cinema-cal" aria-hidden={view !== 'calendar'}>
-              {month.days.map((day) => (
-                <div className="cinema-calday" key={day.date}>
-                  <b>{Number(day.date.slice(8))}<small>{day.weekday}</small></b>
-                  {day.films.length > 0 && <span className="cinema-badge">{day.films.length}本</span>}
-                  {day.films.slice(0, 3).map((movie) => <p key={movie.slug}>{movie.titleJa}</p>)}
-                </div>
-              ))}
-            </div>
-            <div className="cinema-daily">
-              {(films.length > 0 ? films : []).slice(0, 24).map(({ film, date }) => (
-                <article className="cinema-daycard" key={`${date}-${film.slug}`}>
-                  <b>{formatDate(date)} {statusLabel(film)}</b>
-                  <p>{film.titleJa}</p>
-                  <span>{[film.genres[0], scaleLabel(film.releaseScale)].filter(Boolean).join(' / ')}</span>
-                </article>
-              ))}
-              {films.length === 0 && <article className="cinema-daycard"><b>公開予定</b><p>この月の公開作はまだありません。</p></article>}
-            </div>
-          </>
-        ) : (
-          <div className="cinema-empty">公開スケジュールを読み込み中です。</div>
-        )}
-      </div>
-    </section>
-  );
-}
-
 export function CinemaRankingShelf({
   nowShowing,
   expected,
@@ -443,10 +451,10 @@ export function CinemaRankingShelf({
   return (
     <section className="cinema-sec wrap">
       <div className="cinema-sech">
-        <h2>人気ランキング</h2>
+        <h2>現在の映画ランキング</h2>
         <div className="cinema-tools">
           <div className="cinema-seg">
-            <button type="button" aria-pressed={tab === 'now'} onClick={() => onTab('now')}>上映中</button>
+            <button type="button" aria-pressed={tab === 'now'} onClick={() => onTab('now')}>上映中の注目</button>
             <button type="button" aria-pressed={tab === 'expected'} onClick={() => onTab('expected')}>期待度</button>
           </div>
         </div>
@@ -471,6 +479,20 @@ export function CinemaRankingShelf({
   );
 }
 
+function CinemaNewsThumb({ item }: { item: NewsItem }) {
+  const [failed, setFailed] = useState(false);
+  const thumbnailUrl = safeExternalHref(item.thumbnailUrl);
+  return (
+    <div className="cinema-news-thumb">
+      {thumbnailUrl && !failed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={thumbnailUrl} alt="" loading="lazy" onError={() => setFailed(true)} />
+      ) : null}
+      <span>{thumbnailUrl && !failed ? (item.category || '映画ニュース') : item.source}</span>
+    </div>
+  );
+}
+
 export function CinemaNewsList({ news }: { news: NewsItem[] }) {
   return (
     <section className="cinema-sec wrap">
@@ -482,13 +504,9 @@ export function CinemaNewsList({ news }: { news: NewsItem[] }) {
         <div className="cinema-newsgrid">
           {news.slice(0, 8).map((item) => {
             const href = safeExternalHref(item.url);
-            const thumbnailUrl = safeExternalHref(item.thumbnailUrl);
             const body = (
               <>
-                <div className="cinema-news-thumb">
-                  {thumbnailUrl ? <img src={thumbnailUrl} alt="" loading="lazy" /> : null}
-                  <span>{item.category || '映画ニュース'}</span>
-                </div>
+                <CinemaNewsThumb item={item} />
                 <div className="cinema-cm">
                   <span className="cinema-mini">{item.source}</span>
                   <h3>{item.title}</h3>

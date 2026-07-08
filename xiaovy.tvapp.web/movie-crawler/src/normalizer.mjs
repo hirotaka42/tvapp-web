@@ -56,7 +56,9 @@ export function mergeMovies(rawMovies) {
 
   for (const movie of normalized) {
     const titleKey = normalizeTitleForMatch(movie.titleJa);
-    const existing = [...bySlug.values()].find((item) => {
+    const existing = [...bySlug.values()].find((item) => (
+      movie.sourceKey && item.sourceKey === movie.sourceKey
+    )) ?? bySlug.get(movie.slug) ?? [...bySlug.values()].find((item) => {
       if (normalizeTitleForMatch(item.titleJa) !== titleKey) return false;
       if (!item.releaseDate || !movie.releaseDate) return true;
       return Math.abs(Date.parse(item.releaseDate) - Date.parse(movie.releaseDate)) <= 1000 * 60 * 60 * 24 * 45;
@@ -67,30 +69,43 @@ export function mergeMovies(rawMovies) {
       continue;
     }
 
-    bySlug.set(existing.slug, {
-      ...existing,
-      titleOriginal: existing.titleOriginal ?? movie.titleOriginal,
-      overview: existing.overview ?? movie.overview,
-      runtimeMin: existing.runtimeMin ?? movie.runtimeMin,
-      rating: existing.rating ?? movie.rating,
-      genres: uniqueStrings([...existing.genres, ...movie.genres]),
-      screeningFormats: uniqueStrings([...existing.screeningFormats, ...movie.screeningFormats]),
-      releaseDate: existing.releaseDate ?? movie.releaseDate,
-      datePrecision: existing.datePrecision === 'unknown' ? movie.datePrecision : existing.datePrecision,
-      nowShowing: existing.nowShowing || movie.nowShowing,
-      isStreamingOnly: existing.isStreamingOnly || movie.isStreamingOnly,
-      posterUrl: existing.posterUrl ?? movie.posterUrl,
-      keyvisualUrl: existing.keyvisualUrl ?? movie.keyvisualUrl,
-      sourceUrl: existing.sourceUrl ?? movie.sourceUrl,
-      directors: uniqueStrings([...existing.directors, ...movie.directors], 5),
-      cast: uniqueStrings([...existing.cast, ...movie.cast], 12),
-    });
+    bySlug.set(existing.slug, mergeMovieRows(existing, movie));
   }
 
   return [...bySlug.values()].map((movie) => ({
     ...movie,
     contentHash: hashContent(movie),
   }));
+}
+
+function mergeMovieRows(existing, movie) {
+  return {
+    ...existing,
+    titleOriginal: existing.titleOriginal ?? movie.titleOriginal,
+    overview: existing.overview ?? movie.overview,
+    runtimeMin: existing.runtimeMin ?? movie.runtimeMin,
+    rating: existing.rating ?? movie.rating,
+    genres: uniqueStrings([...existing.genres, ...movie.genres]),
+    screeningFormats: uniqueStrings([...existing.screeningFormats, ...movie.screeningFormats]),
+    releaseDate: existing.releaseDate ?? movie.releaseDate,
+    datePrecision: betterDatePrecision(existing.datePrecision, movie.datePrecision),
+    isPostponed: existing.isPostponed || movie.isPostponed,
+    releaseScale: existing.releaseScale ?? movie.releaseScale,
+    theaterCount: existing.theaterCount ?? movie.theaterCount,
+    nowShowing: existing.nowShowing || movie.nowShowing,
+    screeningEndDate: existing.screeningEndDate ?? movie.screeningEndDate,
+    isStreamingOnly: existing.isStreamingOnly || movie.isStreamingOnly,
+    posterUrl: existing.posterUrl ?? movie.posterUrl,
+    keyvisualUrl: existing.keyvisualUrl ?? movie.keyvisualUrl,
+    sourceUrl: existing.sourceUrl ?? movie.sourceUrl,
+    directors: uniqueStrings([...existing.directors, ...movie.directors], 5),
+    cast: uniqueStrings([...existing.cast, ...movie.cast], 12),
+  };
+}
+
+function betterDatePrecision(existing, incoming) {
+  const rank = { unknown: 0, year: 1, month: 2, day: 3 };
+  return (rank[incoming] ?? 0) > (rank[existing] ?? 0) ? incoming : existing;
 }
 
 export function normalizeNews(rawItems, movies = []) {

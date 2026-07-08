@@ -4,19 +4,17 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   CinemaChips,
   CinemaFooter,
+  CinemaGenreSection,
   CinemaHero,
   CinemaNewsList,
   CinemaRankingShelf,
-  CinemaScheduleGrid,
   CinemaShelf,
   CinemaTicker,
 } from '@/components/atomicDesign/molecules/cinema/CinemaParts';
-import { CinemaHomeResponse, CinemaScheduleMonth, MovieCard } from '@/types/cinema';
+import { CinemaHomeResponse, MovieCard, RankRow } from '@/types/cinema';
 import { jstToday } from '@/utils/cinema/status';
 
 const WANT_KEY = 'cinema-wants-v1';
-
-type ScheduleView = 'timeline' | 'calendar';
 
 // 認証: 既存サービス(useAbemaHome 等)と同じく localStorage の ID トークンを Bearer で送る。
 // /api/ は middleware で Bearer 必須。未ログイン時は 'anonymous'(存在チェックのみ通過)。
@@ -26,12 +24,6 @@ async function cinemaFetch(url: string): Promise<Response> {
     token = window.localStorage.getItem(process.env.NEXT_PUBLIC_IDTOKEN_NAME || 'IdToken') || 'anonymous';
   }
   return fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-}
-
-function addMonths(ym: string, delta: number): string {
-  const [year, month] = ym.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1 + delta, 1));
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
 }
 
 function readWants(): Set<string> {
@@ -60,54 +52,30 @@ function filterMovies(movies: MovieCard[], status: string, genre: string): Movie
   });
 }
 
+function filterRanking(rows: RankRow[], genre: string): RankRow[] {
+  if (genre === 'all') return rows;
+  return rows.filter((row) => row.movie.genres.includes(genre));
+}
+
 export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResponse; today?: string }) {
   const [status, setStatus] = useState('all');
   const [genre, setGenre] = useState('all');
   const [rankTab, setRankTab] = useState<'now' | 'expected'>('now');
-  const [view, setView] = useState<ScheduleView>('timeline');
-  const [selectedMonth, setSelectedMonth] = useState(data.scheduleMonths[0]?.ym || today.slice(0, 7));
-  const [scheduleMonths, setScheduleMonths] = useState<Record<string, CinemaScheduleMonth>>(() => (
-    Object.fromEntries(data.scheduleMonths.map((month) => [month.ym, month]))
-  ));
   const [wantedSlugs, setWantedSlugs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setWantedSlugs(readWants());
   }, []);
 
-  useEffect(() => {
-    if (scheduleMonths[selectedMonth]) return;
-    let cancelled = false;
-    cinemaFetch(`/api/service/cinema/schedule?month=${encodeURIComponent(selectedMonth)}`)
-      .then((response) => {
-        if (!response.ok) throw new Error('schedule fetch failed');
-        return response.json() as Promise<CinemaScheduleMonth>;
-      })
-      .then((month) => {
-        if (!cancelled) setScheduleMonths((current) => ({ ...current, [month.ym]: month }));
-      })
-      .catch(() => {
-        if (!cancelled) setScheduleMonths((current) => ({
-          ...current,
-          [selectedMonth]: { ym: selectedMonth, days: [] },
-        }));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [scheduleMonths, selectedMonth]);
-
   const genres = useMemo(() => (
     Array.from(new Set([...data.now, ...data.upcoming, ...data.undated].flatMap((movie) => movie.genres))).slice(0, 10)
   ), [data.now, data.undated, data.upcoming]);
 
-  const hero = data.heroFilms[0] || data.now[0] || data.upcoming[0];
   const visibleNow = filterMovies(data.now, status, genre);
   const visibleUpcoming = filterMovies(data.upcoming, status, genre);
-  const nextMonth = scheduleMonths[addMonths(today.slice(0, 7), 1)];
-  const nextMonthMovies = nextMonth?.days.flatMap((day) => day.films) ?? data.upcoming.filter((movie) => (
-    movie.releaseDate?.startsWith(addMonths(today.slice(0, 7), 1))
-  ));
+  const visibleUndated = filterMovies(data.undated, status, genre);
+  const rankingNow = filterRanking(data.ranking.nowShowing, genre);
+  const rankingExpected = filterRanking(data.ranking.expected, genre);
 
   const toggleWant = (slug: string) => {
     setWantedSlugs((current) => {
@@ -123,7 +91,11 @@ export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResp
     <section className="world cinema-world" id="cn" role="tabpanel" aria-labelledby="dk-cinema" aria-label="映画 ホーム">
       <CinemaTicker movies={[...data.now, ...data.upcoming]} news={data.news} />
       <CinemaChips status={status} genre={genre} genres={genres} onStatus={setStatus} onGenre={setGenre} />
-      <CinemaHero movie={hero} wanted={hero ? wantedSlugs.has(hero.slug) : false} onToggleWant={toggleWant} />
+      <CinemaHero
+        movies={data.heroFilms.length > 0 ? data.heroFilms : [...data.now, ...data.upcoming].slice(0, 6)}
+        wantedSlugs={wantedSlugs}
+        onToggleWant={toggleWant}
+      />
       <CinemaShelf
         title="今上映中"
         label="NOW SHOWING"
@@ -131,34 +103,34 @@ export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResp
         wantedSlugs={wantedSlugs}
         onToggleWant={toggleWant}
       />
-      <CinemaScheduleGrid
-        month={scheduleMonths[selectedMonth]}
-        today={today}
-        view={view}
-        onView={setView}
-        onPrev={() => setSelectedMonth((current) => addMonths(current, -1))}
-        onNext={() => setSelectedMonth((current) => addMonths(current, 1))}
-      />
       <CinemaShelf
-        title="来月公開ラインアップ"
-        label="NEXT MONTH"
-        movies={filterMovies(nextMonthMovies.length > 0 ? nextMonthMovies : visibleUpcoming, 'all', genre).slice(0, 16)}
+        title="近日公開ラインアップ"
+        label="UPCOMING"
+        movies={visibleUpcoming.slice(0, 16)}
         poster
         wantedSlugs={wantedSlugs}
         onToggleWant={toggleWant}
       />
       <CinemaRankingShelf
-        nowShowing={data.ranking.nowShowing}
-        expected={data.ranking.expected}
+        nowShowing={rankingNow}
+        expected={rankingExpected}
         tab={rankTab}
         onTab={setRankTab}
+      />
+      <CinemaGenreSection
+        genres={genres}
+        selectedGenre={genre}
+        movies={[...data.now, ...data.upcoming]}
+        wantedSlugs={wantedSlugs}
+        onToggleWant={toggleWant}
+        onGenre={setGenre}
       />
       <CinemaNewsList news={data.news} />
       {data.undated.length > 0 && (
         <CinemaShelf
           title="公開日未定"
           label="UNDATED"
-          movies={filterMovies(data.undated, status, genre)}
+          movies={visibleUndated}
           wantedSlugs={wantedSlugs}
           onToggleWant={toggleWant}
         />
