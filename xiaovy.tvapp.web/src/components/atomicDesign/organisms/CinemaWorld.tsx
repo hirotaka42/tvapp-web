@@ -67,9 +67,18 @@ export function CinemaWorld({ data, today = jstToday() }: { data: CinemaHomeResp
     setWantedSlugs(readWants());
   }, []);
 
-  const genres = useMemo(() => (
-    Array.from(new Set([...data.now, ...data.upcoming, ...data.undated].flatMap((movie) => movie.genres))).slice(0, 10)
-  ), [data.now, data.undated, data.upcoming]);
+  // カテゴリは「作品が2本以上あるジャンル」だけを出す(1件だけの固有ジャンルはノイズになるため除外)。
+  const genres = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const movie of [...data.now, ...data.upcoming, ...data.undated]) {
+      for (const g of movie.genres) counts.set(g, (counts.get(g) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .filter(([, count]) => count >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .map(([g]) => g)
+      .slice(0, 10);
+  }, [data.now, data.undated, data.upcoming]);
 
   const visibleNow = filterMovies(data.now, status, genre);
   const visibleUpcoming = filterMovies(data.upcoming, status, genre);
