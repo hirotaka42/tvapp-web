@@ -14,6 +14,37 @@ function hashContent(value) {
   return createHash('sha1').update(JSON.stringify(value)).digest('hex');
 }
 
+// 純粋な映画ジャンルのみ許可する。ソースのカード文抽出はノイズ(地名・製作国・レーティング・レビュー点・
+// 俳優名・あらすじ断片・「上映スケジュール」「配信中」等)が混ざるため、ホワイトリストで厳格に絞る。
+const GENRE_ALIAS = {
+  'アニメーション': 'アニメ', '劇場アニメ': 'アニメ', 'アニメ映画': 'アニメ',
+  '人間ドラマ': 'ヒューマンドラマ', 'ドラマ': 'ヒューマンドラマ',
+  'ラブストーリー': '恋愛', 'ラブロマンス': '恋愛', 'ロマンス': '恋愛', '恋愛ドラマ': '恋愛',
+  'ファミリー': '家族', 'ホームドラマ': '家族', '家族劇': '家族',
+  'キッズ': '子供向け', '児童向け': '子供向け',
+  'ラブコメ': 'ラブコメディ', 'コメディー': 'コメディ',
+  'ドキュメンタリー映画': 'ドキュメンタリー',
+};
+const GENRE_WHITELIST = new Set([
+  'アクション', 'アドベンチャー', '冒険', 'SF', 'ファンタジー', 'ホラー', 'サイコホラー', 'サスペンス',
+  'スリラー', 'ミステリー', 'アニメ', 'ヒューマンドラマ', '群像劇', '社会派', '恋愛', 'ラブコメディ',
+  'コメディ', 'ブラックコメディ', '青春', '学園', '音楽', 'ミュージカル', 'ドキュメンタリー', '戦争',
+  '西部劇', 'スポーツ', '時代劇', '歴史', '伝記', 'クライム', '犯罪', 'パニック', 'ディザスター',
+  '家族', '子供向け', '医療', '法廷', '政治', 'オカルト', 'スプラッター', 'カルト', '特撮', 'ヒーロー',
+  'ダンス', 'グルメ', '動物', '短編', '実験映画', 'ノワール', '不条理',
+]);
+
+export function normalizeGenres(raw) {
+  const out = [];
+  for (const item of Array.isArray(raw) ? raw : []) {
+    const s = String(item ?? '').replace(/[・\s]/g, '').trim();
+    if (!s) continue;
+    const canon = GENRE_ALIAS[s] ?? s;
+    if (GENRE_WHITELIST.has(canon) && !out.includes(canon)) out.push(canon);
+  }
+  return out.slice(0, 4);
+}
+
 export function normalizeMovie(raw) {
   const titleJa = compactText(raw.titleJa ?? raw.title);
   if (!titleJa) return null;
@@ -28,7 +59,7 @@ export function normalizeMovie(raw) {
     overview: compactText(raw.overview) || null,
     runtimeMin: Number.isFinite(raw.runtimeMin) ? raw.runtimeMin : null,
     rating: raw.rating ?? null,
-    genres: uniqueStrings(raw.genres),
+    genres: normalizeGenres(raw.genres),
     screeningFormats: uniqueStrings(raw.screeningFormats),
     releaseDate,
     datePrecision: raw.datePrecision ?? (releaseDate ? 'day' : 'unknown'),
@@ -85,7 +116,7 @@ function mergeMovieRows(existing, movie) {
     overview: existing.overview ?? movie.overview,
     runtimeMin: existing.runtimeMin ?? movie.runtimeMin,
     rating: existing.rating ?? movie.rating,
-    genres: uniqueStrings([...existing.genres, ...movie.genres]),
+    genres: normalizeGenres([...existing.genres, ...movie.genres]),
     screeningFormats: uniqueStrings([...existing.screeningFormats, ...movie.screeningFormats]),
     releaseDate: existing.releaseDate ?? movie.releaseDate,
     datePrecision: betterDatePrecision(existing.datePrecision, movie.datePrecision),
