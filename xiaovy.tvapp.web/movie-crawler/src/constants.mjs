@@ -1,16 +1,17 @@
 export const USER_AGENT =
-  'Mozilla/5.0 (compatible; TVappMovieBot/1.0; +https://github.com/hirotaka42/ai-steering; contact: repository-owner) AppleWebKit/537.36 Chrome/126.0 Safari/537.36';
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15';
 
 export const MIN_REQUEST_INTERVAL_MS = 1000;
 export const MAX_REQUEST_INTERVAL_MS = 2000;
 
+// robots で許可された対象パスだけを allow-list し、fetcher 側で同一ホスト 1〜2 秒間隔を維持する。
 export const ALLOWED_URL_RULES = [
-  { host: 'eiga.com', paths: ['/movie/coming.ics', '/now/', '/coming/'] },
-  { host: 'press.moviewalker.jp', paths: ['/list/coming/', '/movies/'] },
+  { host: 'eiga.com', paths: ['/movie/coming.ics', '/now/', '/coming/', '/news/'] },
+  { host: 'press.moviewalker.jp', paths: ['/list/', '/movies/', '/mv'] },
   { host: 'filmarks.com', paths: ['/list/now', '/list/coming'] },
-  { host: 'natalie.mu', paths: ['/eiga/feed/news'] },
+  { host: 'natalie.mu', paths: ['/eiga/feed/news', '/eiga/news/'] },
   { host: 'feeds.eiga.com', paths: ['/eiga_news.xml'] },
-  { host: 'realsound.jp', paths: ['/movie/feed'] },
+  { host: 'realsound.jp', paths: ['/movie/feed', '/movie/'] },
 ];
 
 export const NEWS_BLOCK_PATTERN =

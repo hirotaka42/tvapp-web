@@ -4,7 +4,6 @@ import {
   CinemaHomeResponse,
   CinemaRating,
   CinemaReleaseScale,
-  CinemaScheduleMonth,
   MovieCard,
   NewsItem,
   RankRow,
@@ -71,6 +70,7 @@ interface NewsRow {
 interface RelatedNewsRow {
   newsId: number;
   slug: string;
+  posterUrl: string | null;
 }
 
 const MOVIE_COLUMNS = `
@@ -311,92 +311,6 @@ export async function readUndated(db: D1Database, today = jstToday(), limit = 24
   return mapMovies(db, rows, today);
 }
 
-function addMonths(ym: string, delta: number): string {
-  const [year, month] = ym.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1 + delta, 1));
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
-}
-
-export function monthFromDate(date: string): string {
-  return date.slice(0, 7);
-}
-
-function monthStart(ym: string): string {
-  return `${ym}-01`;
-}
-
-function weekdayJa(date: string): string {
-  const [year, month, day] = date.split('-').map(Number);
-  return '日月火水木金土'[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
-}
-
-function daysInMonth(ym: string): number {
-  const [year, month] = ym.split('-').map(Number);
-  return new Date(Date.UTC(year, month, 0)).getUTCDate();
-}
-
-function buildScheduleMonth(ym: string, films: MovieCard[]): CinemaScheduleMonth {
-  const byDate = new Map<string, MovieCard[]>();
-  for (const film of films) {
-    if (!film.releaseDate) continue;
-    const list = byDate.get(film.releaseDate) ?? [];
-    list.push(film);
-    byDate.set(film.releaseDate, list);
-  }
-
-  const days = Array.from({ length: daysInMonth(ym) }, (_, index) => {
-    const date = `${ym}-${String(index + 1).padStart(2, '0')}`;
-    return {
-      date,
-      weekday: weekdayJa(date),
-      films: byDate.get(date) ?? [],
-    };
-  });
-
-  return { ym, days };
-}
-
-export async function readScheduleMonth(db: D1Database, ym: string, today = jstToday()): Promise<CinemaScheduleMonth> {
-  const start = monthStart(ym);
-  const end = monthStart(addMonths(ym, 1));
-  const rows = await all<MovieRow>(
-    db,
-    `SELECT ${MOVIE_COLUMNS}
-     FROM movies
-     WHERE is_streaming_only = 0
-       AND release_date >= ?
-       AND release_date < ?
-       AND date_precision = 'day'
-       AND is_postponed = 0
-     ORDER BY release_date ASC, title_ja ASC
-     LIMIT 240`,
-    [start, end],
-  );
-  return buildScheduleMonth(ym, await mapMovies(db, rows, today));
-}
-
-export async function readScheduleMonths(db: D1Database, today = jstToday(), count = 3): Promise<CinemaScheduleMonth[]> {
-  const firstYm = monthFromDate(today);
-  const months = Array.from({ length: count }, (_, index) => addMonths(firstYm, index));
-  const start = monthStart(months[0]);
-  const end = monthStart(addMonths(months[months.length - 1], 1));
-  const rows = await all<MovieRow>(
-    db,
-    `SELECT ${MOVIE_COLUMNS}
-     FROM movies
-     WHERE is_streaming_only = 0
-       AND release_date >= ?
-       AND release_date < ?
-       AND date_precision = 'day'
-       AND is_postponed = 0
-     ORDER BY release_date ASC, title_ja ASC
-     LIMIT 720`,
-    [start, end],
-  );
-  const films = await mapMovies(db, rows, today);
-  return months.map((ym) => buildScheduleMonth(ym, films.filter((film) => film.releaseDate?.startsWith(ym))));
-}
-
 export async function readRanking(db: D1Database, type: 'now' | 'expected', today = jstToday(), limit = 10): Promise<RankRow[]> {
   const metric = type === 'now' ? 'rating_avg' : 'want_to_watch';
   const statusPredicate = type === 'now'
@@ -451,7 +365,7 @@ export async function readNews(db: D1Database, category?: string | null, limit =
   const ids = rows.map((row) => row.id);
   const relatedRows = await all<RelatedNewsRow>(
     db,
-    `SELECT nmm.news_id AS newsId, m.slug
+    `SELECT nmm.news_id AS newsId, m.slug, m.poster_url AS posterUrl
      FROM news_movie_map nmm
      JOIN movies m ON m.id = nmm.movie_id
      WHERE nmm.news_id IN (${placeholders(ids.length)})
@@ -459,10 +373,13 @@ export async function readNews(db: D1Database, category?: string | null, limit =
     ids,
   );
   const related = new Map<number, string[]>();
+  const fallbackThumbnails = new Map<number, string>();
   for (const row of relatedRows) {
     const list = related.get(row.newsId) ?? [];
     list.push(row.slug);
     related.set(row.newsId, list);
+    const posterUrl = safeExternalUrl(row.posterUrl);
+    if (posterUrl && !fallbackThumbnails.has(row.newsId)) fallbackThumbnails.set(row.newsId, posterUrl);
   }
 
   return rows.map((row) => ({
@@ -472,7 +389,7 @@ export async function readNews(db: D1Database, category?: string | null, limit =
     summary: row.summary,
     publishedAt: row.publishedAt,
     category: row.category,
-    thumbnailUrl: safeExternalUrl(row.thumbnailUrl),
+    thumbnailUrl: safeExternalUrl(row.thumbnailUrl) ?? fallbackThumbnails.get(row.id) ?? null,
     relatedSlugs: related.get(row.id) ?? [],
   }));
 }
@@ -489,10 +406,9 @@ export async function readLastCrawledAt(db: D1Database): Promise<string | null> 
 }
 
 export async function readHome(db: D1Database, today = jstToday()): Promise<CinemaHomeResponse> {
-  const [now, upcoming, scheduleMonths, undated, nowShowingRanking, expectedRanking, news, lastCrawledAt] = await Promise.all([
+  const [now, upcoming, undated, nowShowingRanking, expectedRanking, news, lastCrawledAt] = await Promise.all([
     readNowShowing(db, today),
     readUpcoming(db, today),
-    readScheduleMonths(db, today),
     readUndated(db, today),
     readRanking(db, 'now', today),
     readRanking(db, 'expected', today),
@@ -500,14 +416,25 @@ export async function readHome(db: D1Database, today = jstToday()): Promise<Cine
     readLastCrawledAt(db),
   ]);
 
-  const heroFilms = [...now, ...upcoming].filter((film, index, all) => (
-    all.findIndex((candidate) => candidate.slug === film.slug) === index
-  )).slice(0, 3);
+  const rankedNow = nowShowingRanking.map((row) => row.movie);
+  const rankedUpcoming = expectedRanking.map((row) => row.movie);
+  const popularNow = [...now].sort((a, b) => (
+    (b.wantToWatch ?? 0) - (a.wantToWatch ?? 0)
+    || (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0)
+    || (b.ratingCount ?? 0) - (a.ratingCount ?? 0)
+  ));
+  const popularUpcoming = [...upcoming].sort((a, b) => (
+    (b.wantToWatch ?? 0) - (a.wantToWatch ?? 0)
+    || (a.daysUntil ?? 9999) - (b.daysUntil ?? 9999)
+  ));
+  const heroFilms = [rankedNow[0], rankedUpcoming[0], ...rankedNow.slice(1, 3), ...rankedUpcoming.slice(1, 3), ...popularNow, ...popularUpcoming]
+    .filter((film): film is MovieCard => Boolean(film))
+    .filter((film, index, all) => all.findIndex((candidate) => candidate.slug === film.slug) === index)
+    .slice(0, 6);
 
   return {
     now,
     upcoming,
-    scheduleMonths,
     undated,
     ranking: {
       nowShowing: nowShowingRanking,
@@ -517,8 +444,4 @@ export async function readHome(db: D1Database, today = jstToday()): Promise<Cine
     heroFilms,
     lastCrawledAt,
   };
-}
-
-export function isValidMonth(value: string | null): value is string {
-  return !!value && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 }

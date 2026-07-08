@@ -8,6 +8,7 @@ import {
   parseMovieWalkerList,
 } from './htmlParsers.mjs';
 import { parseComingIcs } from './icsParser.mjs';
+import { enrichNewsThumbnails } from './newsThumbnails.mjs';
 import { mergeMovies, normalizeNews, normalizePopularity } from './normalizer.mjs';
 
 function jstDate(date = new Date()) {
@@ -83,13 +84,17 @@ export async function crawlAll({ limit = null, now = new Date() } = {}) {
   rawMovies.push(...sourceResults.at(-1).rows);
 
   sourceResults.push(await collectSource('moviewalker', async () => {
-    const listUrl = 'https://press.moviewalker.jp/list/coming/';
-    const links = parseMovieWalkerList(await fetchText(listUrl), listUrl).slice(0, limit ?? 25);
+    const listRows = [];
+    for (const listUrl of ['https://press.moviewalker.jp/list/', 'https://press.moviewalker.jp/list/coming/']) {
+      listRows.push(...parseMovieWalkerList(await fetchText(listUrl), listUrl));
+    }
+    const links = listRows.slice(0, limit ?? 30);
     const rows = [];
     for (const link of links) {
       const detail = parseMovieWalkerDetail(await fetchText(link.url), link.url);
-      if (detail) rows.push(detail);
+      rows.push(mergeMovieWalkerRows(link, detail));
     }
+    if (!limit) rows.push(...listRows.slice(links.length));
     return rows;
   }));
   rawMovies.push(...sourceResults.at(-1).rows);
@@ -115,7 +120,10 @@ export async function crawlAll({ limit = null, now = new Date() } = {}) {
     rawNews.push(...sourceResults.at(-1).rows);
   }
 
-  const news = normalizeNews(limit ? rawNews.slice(0, limit) : rawNews, movies);
+  const news = await enrichNewsThumbnails(
+    normalizeNews(limit ? rawNews.slice(0, limit) : rawNews, movies),
+    { limit: 30 },
+  );
   const popularity = normalizePopularity(limit ? rawPopularity.slice(0, limit) : rawPopularity, movies, runDate);
 
   return {
@@ -125,5 +133,17 @@ export async function crawlAll({ limit = null, now = new Date() } = {}) {
     news,
     popularity,
     sourceResults,
+  };
+}
+
+function mergeMovieWalkerRows(listRow, detail) {
+  if (!detail) return listRow;
+  return {
+    ...listRow,
+    ...detail,
+    runtimeMin: detail.runtimeMin ?? listRow.runtimeMin,
+    genres: [...(listRow.genres ?? []), ...(detail.genres ?? [])],
+    posterUrl: detail.posterUrl ?? listRow.posterUrl,
+    nowShowing: Boolean(listRow.nowShowing || detail.nowShowing),
   };
 }

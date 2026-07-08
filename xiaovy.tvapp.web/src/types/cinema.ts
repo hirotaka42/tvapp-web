@@ -51,21 +51,9 @@ export interface NewsItem {
   relatedSlugs: string[];
 }
 
-export interface CinemaScheduleDay {
-  date: string;
-  weekday: string;
-  films: MovieCard[];
-}
-
-export interface CinemaScheduleMonth {
-  ym: string;
-  days: CinemaScheduleDay[];
-}
-
 export interface CinemaHomeResponse {
   now: MovieCard[];
   upcoming: MovieCard[];
-  scheduleMonths: CinemaScheduleMonth[];
   undated: MovieCard[];
   ranking: {
     nowShowing: RankRow[];

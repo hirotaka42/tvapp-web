@@ -80,4 +80,30 @@ describe('normalizer', () => {
       },
     ]);
   });
+
+  it('merges movies by sourceKey before title matching', () => {
+    const movies = mergeMovies([
+      {
+        source: 'eiga_com',
+        sourceKey: 'eiga.com_987654',
+        titleJa: '仮題',
+        releaseDate: '2026-09-01',
+      },
+      {
+        source: 'eiga_com',
+        sourceKey: 'eiga.com_987654',
+        titleJa: '正式タイトル',
+        posterUrl: 'https://media.eiga.com/poster.jpg',
+        directors: ['監督太郎'],
+      },
+    ]);
+
+    expect(movies).toHaveLength(1);
+    expect(movies[0]).toMatchObject({
+      slug: 'eiga-com-987654',
+      titleJa: '仮題',
+      posterUrl: 'https://media.eiga.com/poster.jpg',
+      directors: ['監督太郎'],
+    });
+  });
 });
