@@ -15,7 +15,8 @@ function jstToday(): string {
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const date = searchParams.get('date') || jstToday();
+  const today = jstToday();
+  const date = searchParams.get('date') || today;
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return NextResponse.json({ error: 'date must be YYYY-MM-DD' }, { status: 400 });
@@ -36,7 +37,12 @@ export async function GET(request: NextRequest) {
     }
 
     const raw = await response.json() as RawAbemaSlotsResponse;
-    const slots = normalizeSlots(raw.slots);
+    const normalizedSlots = normalizeSlots(raw.slots);
+    const cutoffMs = Date.now() - 2 * 60 * 60 * 1000;
+    // 当日分だけ、番組表の表示窓に 60 分の安全マージンを加えて古い過去枠を除外する。
+    const slots = date === today
+      ? normalizedSlots.filter((slot) => slot.endMs > cutoffMs)
+      : normalizedSlots;
 
     return NextResponse.json(
       { date, slots },

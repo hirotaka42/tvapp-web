@@ -15,7 +15,6 @@ export function useSessionService() {
     const fetchSessionToken = async () => {
       const sessionData = await sessionService.getSessionToken();
       setSessionToken(sessionData);
-      console.log('Tokenが取得されました');
     };
 
     fetchSessionToken();

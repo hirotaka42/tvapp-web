@@ -1,3 +1,6 @@
+'use client';
+
+import { useOffscreenPaused } from '@/hooks/useOffscreenPaused';
 import { AbemaTickerItem } from '@/types/abema/view';
 
 interface AbemaLiveTickerProps {
@@ -5,6 +8,8 @@ interface AbemaLiveTickerProps {
 }
 
 export function AbemaLiveTicker({ items }: AbemaLiveTickerProps) {
+  const ref = useOffscreenPaused<HTMLDivElement>();
+
   if (!items.length) return null;
   const sequence = (
     <div className="ab-tick-seq">
@@ -18,7 +23,7 @@ export function AbemaLiveTicker({ items }: AbemaLiveTickerProps) {
   );
 
   return (
-    <div className="ab-tick" aria-hidden="true">
+    <div ref={ref} className="ab-tick" aria-hidden="true">
       <div className="ab-tick-in">
         {sequence}
         {sequence}

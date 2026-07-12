@@ -1,6 +1,11 @@
+'use client';
+
+import { useOffscreenPaused } from '@/hooks/useOffscreenPaused';
 import { TickerItem } from '@/utils/tver/homeView/types';
 
 export function TrendingTicker({ items }: { items: TickerItem[] }) {
+  const rootRef = useOffscreenPaused<HTMLDivElement>();
+
   if (!items.length) return null;
 
   const sequence = (
@@ -15,7 +20,7 @@ export function TrendingTicker({ items }: { items: TickerItem[] }) {
   );
 
   return (
-    <div className="tv-tick" aria-hidden="true">
+    <div ref={rootRef} className="tv-tick" aria-hidden="true">
       <div className="tv-tick-in">
         {sequence}
         {sequence}

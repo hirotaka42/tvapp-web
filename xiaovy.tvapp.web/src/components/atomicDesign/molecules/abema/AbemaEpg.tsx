@@ -1,6 +1,9 @@
+'use client';
+
 import { AbemaEpgGrid } from '@/types/abema/view';
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
+import { useOffscreenPaused } from '@/hooks/useOffscreenPaused';
 import { abemaSlotPlaybackPath } from '@/utils/abema/playbackUrl';
 
 function shortCode(name: string): string {
@@ -14,8 +17,10 @@ interface AbemaEpgProps {
 }
 
 export function AbemaEpg({ grid, liveCount, nowLabel }: AbemaEpgProps) {
+  const pauseRef = useOffscreenPaused<HTMLElement>();
+
   return (
-    <section className="ab-epg" id="ab-epg" aria-label="番組表">
+    <section ref={pauseRef} className="ab-epg" id="ab-epg" aria-label="番組表">
       <div className="ab-epg-h">
         <h2>いま放送中 - 番組表</h2>
         <span className="now"><i aria-hidden="true" />{nowLabel} 現在・{liveCount}ch 生放送中</span>

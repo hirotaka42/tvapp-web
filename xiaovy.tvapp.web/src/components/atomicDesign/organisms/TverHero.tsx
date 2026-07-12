@@ -47,7 +47,7 @@ export function TverHero({ featured }: { featured: FeaturedContent | null }) {
         </dl>
       </div>
       <div className="tv-hero-art">
-        <Image src={featured.thumbnail.xlarge || featured.thumbnail.small} alt="" fill sizes="(max-width: 920px) 100vw, 50vw" className="object-cover" unoptimized />
+        <Image src={featured.thumbnail.xlarge || featured.thumbnail.small} alt="" fill sizes="(max-width: 920px) 100vw, 50vw" className="object-cover" unoptimized priority />
         <span className="hnum">EPISODE RANK #{featured.rank}</span>
         <span className="hep">配信中!</span>
         <span className="hat">{featured.displayTitle}</span>

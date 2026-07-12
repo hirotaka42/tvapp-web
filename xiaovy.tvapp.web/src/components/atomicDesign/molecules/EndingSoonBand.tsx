@@ -1,13 +1,18 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useOffscreenPaused } from '@/hooks/useOffscreenPaused';
 import { ConvertedContent } from '@/types/CardItem/RankingContent';
 import { deriveExpiryLabel } from '@/utils/tver/homeView/deriveExpiryLabel';
 
 export function EndingSoonBand({ items }: { items: ConvertedContent[] }) {
+  const rootRef = useOffscreenPaused<HTMLElement>();
+
   if (!items.length) return null;
 
   return (
-    <section className="tv-last wrap" aria-label="本日終了">
+    <section ref={rootRef} className="tv-last wrap" aria-label="本日終了">
       <div className="tv-last-in">
         <div className="tv-last-h">
           <h2>本日終了</h2>

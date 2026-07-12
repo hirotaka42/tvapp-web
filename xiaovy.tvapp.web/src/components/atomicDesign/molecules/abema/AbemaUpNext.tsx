@@ -1,15 +1,7 @@
 import { AbemaChannel, AbemaSlot } from '@/types/abema/view';
 import Link from 'next/link';
+import { formatJstTime } from '@/utils/abema/homeView/formatJstTime';
 import { abemaSlotPlaybackPath } from '@/utils/abema/playbackUrl';
-
-function formatTime(ms: number): string {
-  return new Intl.DateTimeFormat('ja-JP', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Tokyo',
-  }).format(new Date(ms));
-}
 
 interface AbemaUpNextProps {
   slots: AbemaSlot[];
@@ -26,7 +18,7 @@ export function AbemaUpNext({ slots, channels }: AbemaUpNextProps) {
         {slots.length ? slots.map((slot) => (
           <li key={slot.id}>
             <Link className="rw" href={abemaSlotPlaybackPath(slot)}>
-              <span className="tm">{formatTime(slot.startMs)}<em>{channelName(slot.channelId)}</em></span>
+              <span className="tm">{formatJstTime(slot.startMs)}<em>{channelName(slot.channelId)}</em></span>
               <span className="nm"><b>{slot.title}</b><span>{slot.highlight || slot.detailHighlight || 'ABEMAで開く'}</span></span>
               <span className="rsv">開く</span>
             </Link>

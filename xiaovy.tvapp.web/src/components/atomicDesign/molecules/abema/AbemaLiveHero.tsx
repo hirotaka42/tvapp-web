@@ -1,15 +1,10 @@
+'use client';
+
+import { useOffscreenPaused } from '@/hooks/useOffscreenPaused';
 import { AbemaChannel, AbemaLiveSlot } from '@/types/abema/view';
 import Link from 'next/link';
+import { formatJstTime } from '@/utils/abema/homeView/formatJstTime';
 import { abemaPlaybackPath } from '@/utils/abema/playbackUrl';
-
-function formatTime(ms: number): string {
-  return new Intl.DateTimeFormat('ja-JP', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Tokyo',
-  }).format(new Date(ms));
-}
 
 interface AbemaLiveHeroProps {
   slot?: AbemaLiveSlot;
@@ -18,9 +13,11 @@ interface AbemaLiveHeroProps {
 }
 
 export function AbemaLiveHero({ slot, channel, now }: AbemaLiveHeroProps) {
+  const ref = useOffscreenPaused<HTMLElement>();
+
   if (!slot) {
     return (
-      <article className="ab-live">
+      <article ref={ref} className="ab-live">
         <div className="ab-live-empty">
           <span className="ab-onair"><i aria-hidden="true" />ON AIR</span>
           <h1>現在放送中の番組を取得できません</h1>
@@ -31,7 +28,7 @@ export function AbemaLiveHero({ slot, channel, now }: AbemaLiveHeroProps) {
   }
 
   return (
-    <article className="ab-live">
+    <article ref={ref} className="ab-live">
       <div className="ab-live-scr">
         <span className="ab-onair"><i aria-hidden="true" />ON AIR</span>
         <span className="ab-ch-tag">{channel?.name || slot.channelId}</span>
@@ -50,9 +47,9 @@ export function AbemaLiveHero({ slot, channel, now }: AbemaLiveHeroProps) {
         <span className="ab-play-note">アプリ内再生</span>
         <div className="ab-prg">
           <div className="ab-prg-t">
-            <span>{formatTime(slot.startMs)}</span>
-            <span>いま {formatTime(now)}</span>
-            <span>{formatTime(slot.endMs)}</span>
+            <span>{formatJstTime(slot.startMs)}</span>
+            <span>いま {formatJstTime(now)}</span>
+            <span>{formatJstTime(slot.endMs)}</span>
           </div>
           <div className="ab-prg-bar"><i style={{ width: `${slot.progressPercent}%` }} /></div>
         </div>

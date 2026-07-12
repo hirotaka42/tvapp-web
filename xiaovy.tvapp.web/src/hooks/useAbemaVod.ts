@@ -10,6 +10,7 @@ interface AbemaVodRankingPayload {
 
 export interface AbemaVodState {
   shelves: AbemaVodShelf[];
+  fetchedAt: number | null;
   loading: boolean;
   error: string | null;
   reload: () => void;
@@ -28,6 +29,7 @@ async function getAuthToken(): Promise<string> {
 
 export function useAbemaVod(): AbemaVodState {
   const [shelves, setShelves] = useState<AbemaVodShelf[]>([]);
+  const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -49,6 +51,7 @@ export function useAbemaVod(): AbemaVodState {
         const payload = (await response.json()) as AbemaVodRankingPayload;
         if (!active) return;
         setShelves(payload.shelves ?? []);
+        setFetchedAt(Date.now());
       } catch (caught) {
         if (!active) return;
         setError(caught instanceof Error ? caught.message : 'ABEMA VOD fetch failed');
@@ -62,5 +65,5 @@ export function useAbemaVod(): AbemaVodState {
     };
   }, [reloadKey]);
 
-  return { shelves, loading, error, reload };
+  return { shelves, fetchedAt, loading, error, reload };
 }

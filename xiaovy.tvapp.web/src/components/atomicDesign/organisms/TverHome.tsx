@@ -1,3 +1,4 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ConvertedContent } from '@/types/CardItem/RankingContent';
 import { CategoryChips } from '@/components/atomicDesign/molecules/CategoryChips';
 import { EndingSoonBand } from '@/components/atomicDesign/molecules/EndingSoonBand';
@@ -14,14 +15,29 @@ import { sectionAccentForLabel } from '@/utils/tver/homeView/sectionAccentForLab
 interface TverHomeProps {
   rankingLabels: string[];
   rankingContents: Record<string, ConvertedContent[]>;
+  active?: boolean;
 }
 
-export function TverHome({ rankingLabels, rankingContents }: TverHomeProps) {
-  const firstLabel = rankingLabels[0];
-  const primaryContents = firstLabel ? rankingContents[firstLabel] || [] : [];
-  const featured = deriveFeatured(primaryContents);
-  const tickerItems = deriveTickerItems(primaryContents);
-  const endingSoon = deriveEndingSoon(rankingContents);
+export const TverHome = React.memo(function TverHome({ rankingLabels, rankingContents, active = true }: TverHomeProps) {
+  const [now, setNow] = useState(() => Date.now());
+  const wasActiveRef = useRef(active);
+
+  useEffect(() => {
+    if (active && !wasActiveRef.current) {
+      setNow(Date.now());
+    }
+    wasActiveRef.current = active;
+  }, [active]);
+
+  const { featured, tickerItems, endingSoon } = useMemo(() => {
+    const firstLabel = rankingLabels[0];
+    const primaryContents = firstLabel ? rankingContents[firstLabel] || [] : [];
+    return {
+      featured: deriveFeatured(primaryContents),
+      tickerItems: deriveTickerItems(primaryContents),
+      endingSoon: deriveEndingSoon(rankingContents),
+    };
+  }, [rankingLabels, rankingContents, now]);
 
   return (
     <section className="world tv-world" id="tv" role="tabpanel" aria-labelledby="dk-tver" aria-label="TVER ホーム">
@@ -43,4 +59,4 @@ export function TverHome({ rankingLabels, rankingContents }: TverHomeProps) {
       <TverFooter />
     </section>
   );
-}
+});

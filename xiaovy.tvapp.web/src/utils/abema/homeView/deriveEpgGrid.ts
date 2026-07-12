@@ -1,17 +1,9 @@
 import { AbemaChannel, AbemaEpgGrid, AbemaSlot } from '@/types/abema/view';
 import { deriveNowPercent } from './deriveNowPercent';
+import { formatJstTime } from './formatJstTime';
 
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
-
-function formatHour(ms: number): string {
-  return new Intl.DateTimeFormat('ja-JP', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Tokyo',
-  }).format(new Date(ms));
-}
 
 export function deriveEpgGrid(
   channels: AbemaChannel[],
@@ -26,7 +18,7 @@ export function deriveEpgGrid(
   const columnCount = Math.ceil((endMs - startMs) / slotMs);
   const columns = Array.from({ length: columnCount }, (_, index) => {
     const columnStart = startMs + index * slotMs;
-    return { label: formatHour(columnStart), startMs: columnStart };
+    return { label: formatJstTime(columnStart), startMs: columnStart };
   });
 
   const rows = channels.map((channel) => {
