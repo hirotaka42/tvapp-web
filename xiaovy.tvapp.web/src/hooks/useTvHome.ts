@@ -20,7 +20,6 @@ export function useTvHomeService(session: sessionToken | null) {
       try {
         const result = await tvHomeService.callHome(session.platformUid, session.platformToken);
         setData(result);
-        console.log('TVホームデータが取得されました');
       } catch (error) {
         console.error("Error fetching TV home data:", error);
       }

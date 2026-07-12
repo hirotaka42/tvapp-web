@@ -19,7 +19,6 @@ export function useRankingService(genre: string | null) {
       try {
         const result = await RankingService.callRanking(genre);
         setData(result);
-        console.log(`${genre}のランキングが取得されました`);
       } catch (error) {
         console.error("Error fetching genre ranking data:", error);
       }
