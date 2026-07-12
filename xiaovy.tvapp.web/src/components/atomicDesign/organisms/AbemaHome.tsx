@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AbemaEpg } from '@/components/atomicDesign/molecules/abema/AbemaEpg';
 import { AbemaFooter } from '@/components/atomicDesign/molecules/abema/AbemaFooter';
 import { AbemaLiveHero } from '@/components/atomicDesign/molecules/abema/AbemaLiveHero';
@@ -17,6 +17,7 @@ import { deriveLiveNow } from '@/utils/abema/homeView/deriveLiveNow';
 import { deriveShelves } from '@/utils/abema/homeView/deriveShelves';
 import { deriveTicker } from '@/utils/abema/homeView/deriveTicker';
 import { deriveUpNext } from '@/utils/abema/homeView/deriveUpNext';
+import { formatJstTime } from '@/utils/abema/homeView/formatJstTime';
 import { AbemaVodHeroPick, orderVodHeroCarousel } from '@/utils/abema/pickVodHero';
 
 interface AbemaHomeProps {
@@ -26,20 +27,18 @@ interface AbemaHomeProps {
   now?: number;
 }
 
-function formatNow(ms: number): string {
-  return new Intl.DateTimeFormat('ja-JP', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Tokyo',
-  }).format(new Date(ms));
-}
-
-export function AbemaHome({ channels, slots, vod, now = Date.now() }: AbemaHomeProps) {
-  const liveSlots = deriveLiveNow(slots, now);
-  const upNext = deriveUpNext(slots, now, 5);
-  const shelves = deriveShelves(slots, channels, now);
-  const grid = deriveEpgGrid(channels, slots, now);
+export function AbemaHome({ channels, slots, vod, now: nowProp }: AbemaHomeProps) {
+  const view = useMemo(() => {
+    const now = nowProp ?? Date.now();
+    return {
+      now,
+      liveSlots: deriveLiveNow(slots, now),
+      upNext: deriveUpNext(slots, now, 5),
+      shelves: deriveShelves(slots, channels, now),
+      grid: deriveEpgGrid(channels, slots, now),
+    };
+  }, [channels, slots, nowProp]);
+  const { now, liveSlots, upNext, shelves, grid } = view;
   const heroSlot = liveSlots[0];
   const heroChannel = heroSlot ? channels.find((channel) => channel.id === heroSlot.channelId) : undefined;
 
@@ -65,7 +64,7 @@ export function AbemaHome({ channels, slots, vod, now = Date.now() }: AbemaHomeP
       </div>
       <div className="wrap">
         <AbemaVodRanking vod={vod} />
-        <AbemaEpg grid={grid} liveCount={liveSlots.length} nowLabel={formatNow(now)} />
+        <AbemaEpg grid={grid} liveCount={liveSlots.length} nowLabel={formatJstTime(now)} />
         {shelves.map((shelf) => (
           <AbemaShelf key={shelf.key} shelf={shelf} channels={channels} liveSlots={liveSlots} />
         ))}
@@ -75,9 +74,25 @@ export function AbemaHome({ channels, slots, vod, now = Date.now() }: AbemaHomeP
   );
 }
 
-export function AbemaHomeContainer() {
-  const { channels, slots, loading, error, reload } = useAbemaHome();
+interface AbemaHomeContainerProps {
+  active?: boolean;
+}
+
+export function AbemaHomeContainer({ active = true }: AbemaHomeContainerProps) {
+  const { channels, slots, fetchedAt, loading, error, reload } = useAbemaHome();
   const vod = useAbemaVod();
+  const [now, setNow] = useState(() => Date.now());
+  const wasActiveRef = useRef(active);
+
+  useEffect(() => {
+    if (active && !wasActiveRef.current) {
+      const currentNow = Date.now();
+      setNow(currentNow);
+      if (!loading && (error || !fetchedAt || currentNow - fetchedAt > 120_000)) reload();
+      if (!vod.loading && (vod.error || !vod.fetchedAt || currentNow - vod.fetchedAt > 120_000)) vod.reload();
+    }
+    wasActiveRef.current = active;
+  }, [active, error, fetchedAt, loading, reload, vod.error, vod.fetchedAt, vod.loading, vod.reload]);
 
   if (loading) {
     return (
@@ -99,5 +114,5 @@ export function AbemaHomeContainer() {
     );
   }
 
-  return <AbemaHome channels={channels} slots={slots} vod={vod} />;
+  return <AbemaHome channels={channels} slots={slots} vod={vod} now={now} />;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, PropsWithChildren, useCallback, useContext, useLayoutEffect, useState } from 'react';
 import { ServiceId, isServiceId } from '@/utils/service/serviceCatalog';
 
 const STORAGE_KEY = 'tvapp-svc-v2';
@@ -36,7 +36,7 @@ function syncService(service: ServiceId) {
 export function ServiceProvider({ children }: PropsWithChildren) {
   const [service, setServiceState] = useState<ServiceId>('tver');
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const initial = readInitialService();
     setServiceState(initial);
     syncService(initial);

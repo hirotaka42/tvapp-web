@@ -17,6 +17,7 @@ export interface AbemaHomeState {
   channels: AbemaChannel[];
   slots: AbemaSlot[];
   date: string;
+  fetchedAt: number | null;
   loading: boolean;
   error: string | null;
   reload: () => void;
@@ -63,6 +64,7 @@ export function useAbemaHome(): AbemaHomeState {
   const [channels, setChannels] = useState<AbemaChannel[]>([]);
   const [slots, setSlots] = useState<AbemaSlot[]>([]);
   const [date, setDate] = useState(() => jstToday());
+  const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -87,6 +89,7 @@ export function useAbemaHome(): AbemaHomeState {
         setChannels(channelPayload.channels);
         setSlots(slotPayload.slots);
         setDate(slotPayload.date);
+        setFetchedAt(Date.now());
       })
       .catch((caught: unknown) => {
         if (!active) return;
@@ -101,5 +104,8 @@ export function useAbemaHome(): AbemaHomeState {
     };
   }, [reloadKey]);
 
-  return useMemo(() => ({ channels, slots, date, loading, error, reload }), [channels, date, error, loading, reload, slots]);
+  return useMemo(
+    () => ({ channels, slots, date, fetchedAt, loading, error, reload }),
+    [channels, date, error, fetchedAt, loading, reload, slots],
+  );
 }

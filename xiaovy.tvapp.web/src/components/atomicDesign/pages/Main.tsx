@@ -23,6 +23,7 @@ export const Main: FC = () => {
     const { service } = useService();
     const [rankingContents, setRankingContents] = useState<Record<string, ConvertedContent[]>>({});
     const [rankingLabels, setRankingLabels] = useState<string[]>([]);
+    const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set());
 
     // 認証チェック: 未認証の場合はログイン画面へリダイレクト
     useEffect(() => {
@@ -36,12 +37,19 @@ export const Main: FC = () => {
             const allLabels = getAllLabels(tvHomeData);
             const contents = allLabels.reduce<Record<string, ConvertedContent[]>>((acc, label) => {
                 const labelContents = convertRankingToCardData(getContentsByLabel(tvHomeData, label));
-                return { ...acc, [label]: labelContents };
+                acc[label] = labelContents;
+                return acc;
             }, {});
             setRankingContents(contents);
             setRankingLabels(allLabels);
         }
     }, [tvHomeData, loginUser]);
+
+    useEffect(() => {
+        if (service === 'tver' || service === 'abema') {
+            setVisited((prev) => (prev.has(service) ? prev : new Set(prev).add(service)));
+        }
+    }, [service]);
 
     if (loading || !loginUser) {
         return <div className="flex justify-center items-center min-h-screen">
@@ -49,26 +57,22 @@ export const Main: FC = () => {
         </div>;
     }
 
-    if (service === 'abema') {
-        return <AbemaHomeContainer />;
-    }
-
-    if (service === 'cinema') {
-        return <CinemaWorldContainer />;
-    }
-
-    // TVER は既存のセッション/ホームデータを必要とする
-    if (!session || !tvHomeData) {
-        return <div className="flex justify-center items-center min-h-screen">
-            <div className="text-gray-600 dark:text-gray-400">Loading...</div>
-        </div>;
-    }
-
-    if (!rankingLabels.length) {
-        return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
-    }
-
-    return service === 'tver'
-        ? <TverHome rankingLabels={rankingLabels} rankingContents={rankingContents} />
-        : <ComingSoonWorld service={service} />;
+    return (
+        <>
+            {(service === 'abema' || visited.has('abema')) && (
+                <div hidden={service !== 'abema'}>
+                    <AbemaHomeContainer active={service === 'abema'} />
+                </div>
+            )}
+            {service === 'cinema' && <CinemaWorldContainer />}
+            {(service === 'tver' || visited.has('tver')) && (
+                <div hidden={service !== 'tver'}>
+                    {(!session || !tvHomeData || !rankingLabels.length)
+                        ? <div className="flex justify-center items-center min-h-screen"><div className="text-gray-600 dark:text-gray-400">Loading...</div></div>
+                        : <TverHome rankingLabels={rankingLabels} rankingContents={rankingContents} active={service === 'tver'} />}
+                </div>
+            )}
+            {service !== 'tver' && service !== 'abema' && service !== 'cinema' && <ComingSoonWorld service={service} />}
+        </>
+    );
 };
