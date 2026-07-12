@@ -15,15 +15,27 @@ export function AbemaVodHero({ picks }: AbemaVodHeroProps) {
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [state, setState] = useState<'idle' | 'resolving' | 'error'>('idle');
+  const rootRef = useRef<HTMLElement>(null);
   const pausedRef = useRef(false);
 
   useEffect(() => {
     if (picks.length <= 1) return;
     const timer = setInterval(() => {
-      if (!pausedRef.current) setIndex((current) => (current + 1) % picks.length);
+      if (pausedRef.current || document.hidden || !rootRef.current?.offsetParent) return;
+      setIndex((current) => (current + 1) % picks.length);
     }, ROTATE_MS);
     return () => clearInterval(timer);
   }, [picks.length]);
+
+  useEffect(() => {
+    if (picks.length <= 1) return;
+    if (!rootRef.current?.offsetParent) return;
+    const next = picks[(index + 1) % picks.length];
+    if (next?.item.thumbnailUrl) {
+      const img = new window.Image();
+      img.src = next.item.thumbnailUrl;
+    }
+  }, [index, picks]);
 
   if (picks.length === 0) return null;
   const pick = picks[index % picks.length] ?? picks[0];
@@ -43,6 +55,7 @@ export function AbemaVodHero({ picks }: AbemaVodHeroProps) {
 
   return (
     <article
+      ref={rootRef}
       className="ab-live ab-vhero"
       onMouseEnter={() => {
         pausedRef.current = true;

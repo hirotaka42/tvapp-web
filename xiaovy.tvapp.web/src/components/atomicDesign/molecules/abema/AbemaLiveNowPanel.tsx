@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useOffscreenPaused } from '@/hooks/useOffscreenPaused';
 import { AbemaChannel, AbemaLiveSlot } from '@/types/abema/view';
 import { abemaPlaybackPath } from '@/utils/abema/playbackUrl';
 
@@ -9,11 +12,12 @@ interface AbemaLiveNowPanelProps {
 
 /** Right-hand top panel: what is airing live right now (realtime), each plays in-app. */
 export function AbemaLiveNowPanel({ liveSlots, channels }: AbemaLiveNowPanelProps) {
+  const pauseRef = useOffscreenPaused<HTMLElement>();
   const channelName = (channelId: string) => channels.find((channel) => channel.id === channelId)?.name || channelId;
   const items = liveSlots.slice(0, 6);
 
   return (
-    <aside className="ab-next" aria-label="いま放送中">
+    <aside ref={pauseRef} className="ab-next" aria-label="いま放送中">
       <div className="ab-next-h">
         <span className="lv">LIVE NOW</span>
         <h2>いま放送中</h2>
